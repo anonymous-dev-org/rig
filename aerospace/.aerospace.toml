@@ -1,13 +1,12 @@
-# AeroSpace config - per-monitor 3x3 grid
-# Each monitor has 9 desktops arranged as:
-#   NW  N  NE
-#    W  C  E
-#   SW  S  SE
-# Workspace IDs are <position><monitor-index>, e.g. nw1, c1, se2.
+# AeroSpace config - per-display cardinal desktops
+# Each display has 4 desktops arranged clockwise: n -> e -> s -> w.
+# Workspace IDs are <position><display-slot>, e.g. n1, e2.
+# Display slot 1 is always the Mac built-in display when present; external
+# displays are assigned after it, independent of left-to-right monitor order.
 # Bindings act on the focused monitor via scripts in $HOME/.config/aerospace/scripts/.
 
 after-login-command = []
-after-startup-command = ['workspace c1']
+after-startup-command = ['exec-and-forget $HOME/.config/aerospace/scripts/normalize-display-workspaces.sh --show']
 
 start-at-login = true
 
@@ -28,27 +27,6 @@ outer.right = 0
 outer.top = 0
 outer.bottom = 0
 
-# Pin each monitor's 9 grid positions to its physical monitor
-[workspace-to-monitor-force-assignment]
-nw1 = 1
-n1  = 1
-ne1 = 1
-w1  = 1
-c1  = 1
-e1  = 1
-sw1 = 1
-s1  = 1
-se1 = 1
-nw2 = 2
-n2  = 2
-ne2 = 2
-w2  = 2
-c2  = 2
-e2  = 2
-sw2 = 2
-s2  = 2
-se2 = 2
-
 [mode.main.binding]
 
 # --- Window focus inside a workspace: alt + hjkl
@@ -63,31 +41,18 @@ alt-shift-j = 'move down'
 alt-shift-k = 'move up'
 alt-shift-l = 'move right'
 
-# --- 3x3 grid navigation on focused monitor: cmd + alt + <key>
-# Cardinals (hjkl cross, vim-style):  h=W  j=S  k=N  l=E   .=Center
-# Corners (uiop, hjkl rotated 45°):
-#   u i        NW NE
-#   o p   =>   SW SE
-cmd-alt-u      = 'exec-and-forget $HOME/.config/aerospace/scripts/switch-workspace.sh nw'
-cmd-alt-k      = 'exec-and-forget $HOME/.config/aerospace/scripts/switch-workspace.sh n'
-cmd-alt-i      = 'exec-and-forget $HOME/.config/aerospace/scripts/switch-workspace.sh ne'
-cmd-alt-h      = 'exec-and-forget $HOME/.config/aerospace/scripts/switch-workspace.sh w'
-cmd-alt-period = 'exec-and-forget $HOME/.config/aerospace/scripts/switch-workspace.sh c'
-cmd-alt-l      = 'exec-and-forget $HOME/.config/aerospace/scripts/switch-workspace.sh e'
-cmd-alt-o      = 'exec-and-forget $HOME/.config/aerospace/scripts/switch-workspace.sh sw'
-cmd-alt-j      = 'exec-and-forget $HOME/.config/aerospace/scripts/switch-workspace.sh s'
-cmd-alt-p      = 'exec-and-forget $HOME/.config/aerospace/scripts/switch-workspace.sh se'
+# --- Cardinal desktop navigation on focused display: cmd + alt + hjkl
+# Vim-style positions: h=W  j=S  k=N  l=E
+cmd-alt-k = 'exec-and-forget $HOME/.config/aerospace/scripts/switch-workspace.sh n'
+cmd-alt-h = 'exec-and-forget $HOME/.config/aerospace/scripts/switch-workspace.sh w'
+cmd-alt-l = 'exec-and-forget $HOME/.config/aerospace/scripts/switch-workspace.sh e'
+cmd-alt-j = 'exec-and-forget $HOME/.config/aerospace/scripts/switch-workspace.sh s'
 
-# --- Send focused window to a grid position on the focused monitor
-cmd-alt-shift-u      = 'exec-and-forget $HOME/.config/aerospace/scripts/move-to-workspace.sh nw'
-cmd-alt-shift-k      = 'exec-and-forget $HOME/.config/aerospace/scripts/move-to-workspace.sh n'
-cmd-alt-shift-i      = 'exec-and-forget $HOME/.config/aerospace/scripts/move-to-workspace.sh ne'
-cmd-alt-shift-h      = 'exec-and-forget $HOME/.config/aerospace/scripts/move-to-workspace.sh w'
-cmd-alt-shift-period = 'exec-and-forget $HOME/.config/aerospace/scripts/move-to-workspace.sh c'
-cmd-alt-shift-l      = 'exec-and-forget $HOME/.config/aerospace/scripts/move-to-workspace.sh e'
-cmd-alt-shift-o      = 'exec-and-forget $HOME/.config/aerospace/scripts/move-to-workspace.sh sw'
-cmd-alt-shift-j      = 'exec-and-forget $HOME/.config/aerospace/scripts/move-to-workspace.sh s'
-cmd-alt-shift-p      = 'exec-and-forget $HOME/.config/aerospace/scripts/move-to-workspace.sh se'
+# --- Send focused window to a cardinal desktop on the focused display
+cmd-alt-shift-k = 'exec-and-forget $HOME/.config/aerospace/scripts/move-to-workspace.sh n'
+cmd-alt-shift-h = 'exec-and-forget $HOME/.config/aerospace/scripts/move-to-workspace.sh w'
+cmd-alt-shift-l = 'exec-and-forget $HOME/.config/aerospace/scripts/move-to-workspace.sh e'
+cmd-alt-shift-j = 'exec-and-forget $HOME/.config/aerospace/scripts/move-to-workspace.sh s'
 
 # Resize mode
 alt-r = 'mode resize'
@@ -100,21 +65,21 @@ alt-f = 'fullscreen'
 # Focus back-and-forth
 alt-tab = 'focus-back-and-forth'
 
-# Monitors: jump focus / send window across screens
-alt-m       = 'focus-monitor --wrap-around next'
-alt-shift-m = ['move-node-to-monitor --wrap-around next', 'focus-monitor --wrap-around next']
+# Displays: jump focus / send window across screens
+alt-m       = 'exec-and-forget $HOME/.config/aerospace/scripts/focus-display.sh next'
+alt-shift-m = 'exec-and-forget $HOME/.config/aerospace/scripts/move-to-display.sh next'
 
 # Directional monitor focus by physical arrangement: ctrl + alt + cmd + hjkl
-ctrl-alt-cmd-h = 'focus-monitor left'
-ctrl-alt-cmd-j = 'focus-monitor down'
-ctrl-alt-cmd-k = 'focus-monitor up'
-ctrl-alt-cmd-l = 'focus-monitor right'
+ctrl-alt-cmd-h = 'exec-and-forget $HOME/.config/aerospace/scripts/focus-display.sh left'
+ctrl-alt-cmd-j = 'exec-and-forget $HOME/.config/aerospace/scripts/focus-display.sh down'
+ctrl-alt-cmd-k = 'exec-and-forget $HOME/.config/aerospace/scripts/focus-display.sh up'
+ctrl-alt-cmd-l = 'exec-and-forget $HOME/.config/aerospace/scripts/focus-display.sh right'
 
 # Send focused window to the monitor in that direction (and follow focus)
-ctrl-alt-cmd-shift-h = ['move-node-to-monitor left', 'focus-monitor left']
-ctrl-alt-cmd-shift-j = ['move-node-to-monitor down', 'focus-monitor down']
-ctrl-alt-cmd-shift-k = ['move-node-to-monitor up',   'focus-monitor up']
-ctrl-alt-cmd-shift-l = ['move-node-to-monitor right','focus-monitor right']
+ctrl-alt-cmd-shift-h = 'exec-and-forget $HOME/.config/aerospace/scripts/move-to-display.sh left'
+ctrl-alt-cmd-shift-j = 'exec-and-forget $HOME/.config/aerospace/scripts/move-to-display.sh down'
+ctrl-alt-cmd-shift-k = 'exec-and-forget $HOME/.config/aerospace/scripts/move-to-display.sh up'
+ctrl-alt-cmd-shift-l = 'exec-and-forget $HOME/.config/aerospace/scripts/move-to-display.sh right'
 
 # Join with direction
 alt-v = 'join-with right'

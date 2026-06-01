@@ -30,6 +30,19 @@ compile_swift_apps() {
   done
 }
 
+clean_aerospace_generated_apps() {
+  local scripts_dir="$HOME/.config/aerospace/scripts"
+  [[ -d "$scripts_dir" ]] || return
+
+  for src in "$SCRIPT_DIR"/aerospace/.config/aerospace/scripts/*.swift; do
+    [ -f "$src" ] || continue
+    local name bin
+    name=$(basename "$src" .swift)
+    bin=$(echo "$name" | sed 's/\([a-z]\)\([A-Z]\)/\1-\2/g' | tr '[:upper:]' '[:lower:]')-app
+    rm -f "$scripts_dir/$bin"
+  done
+}
+
 echo "=== anonymous.rig — Update ==="
 
 # Pull latest
@@ -39,13 +52,17 @@ git pull
 PACKAGES=(neovim zsh aerospace kitty git codex claude)
 for pkg in "${PACKAGES[@]}"; do
   if [[ -d "$pkg" ]]; then
+    if [[ "$pkg" == "aerospace" ]]; then
+      clean_aerospace_generated_apps
+    fi
     stow --no-folding -t ~ -R "$pkg" 2>/dev/null && echo "✓ $pkg updated" || echo "⚠ $pkg skipped (not stowed on this machine)"
   fi
 done
 
-# Clean up stale files from previous versions
-rm -f "$HOME/.config/aerospace/scripts/notification-picker-app"
+# Clean up generated app binaries before recompiling them locally
+clean_aerospace_generated_apps
 rm -f "$HOME/.config/aerospace/last-layout"
+rm -f "$HOME/.config/aerospace/last-desktop"
 
 # Recompile Swift picker apps
 if command -v swiftc &>/dev/null && [[ -d "$HOME/.config/aerospace/scripts" ]]; then

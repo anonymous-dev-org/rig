@@ -1,15 +1,20 @@
 #!/bin/bash
-# Jump to a 3x3 grid position on the currently focused monitor.
-# Workspaces are named <position><monitor-index>, e.g. nw1, c1, se2.
-# Usage: switch-workspace.sh <nw|n|ne|w|c|e|sw|s|se>
+# Jump to a cardinal desktop on the currently focused display.
+# Workspaces are named <position><display-slot>, e.g. n1, e2.
+# Display slot 1 is always the Mac built-in display when present.
+# Usage: switch-workspace.sh <n|e|s|w>
 
 set -euo pipefail
 
-pos="${1:-}"
-case "$pos" in
-    nw|n|ne|w|c|e|sw|s|se) ;;
-    *) echo "usage: $(basename "$0") <nw|n|ne|w|c|e|sw|s|se>" >&2; exit 1 ;;
-esac
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/display-workspaces-lib.sh"
 
-mon=$(aerospace list-monitors --focused | awk '{print $1; exit}')
-aerospace workspace "${pos}${mon}"
+pos="${1:-}"
+if ! is_cardinal_position "$pos"; then
+    echo "usage: $(basename "$0") <n|e|s|w>" >&2
+    exit 1
+fi
+
+normalize_display_workspaces
+aerospace workspace "$(workspace_for_position_on_focused_display "$pos")"

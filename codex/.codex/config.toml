@@ -37,3 +37,6 @@ args = ["-y", "xcodebuildmcp@latest", "mcp"]
 [features]
 memories = true
 terminal_resize_reflow = true
+
+[projects."/Users/p78tr4/Documents/anonymous/rig"]
+trust_level = "trusted"

@@ -775,6 +775,11 @@ later(function()
 		nes = { enabled = false },
 		cli = {
 			watch = true,
+			win = {
+				split = {
+					width = 0.5,
+				},
+			},
 			tools = {
 				claude = {},
 				codex = {},

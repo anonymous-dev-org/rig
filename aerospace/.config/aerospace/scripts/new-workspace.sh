@@ -1,21 +1,21 @@
 #!/bin/bash
-# Find the next unused workspace row and switch to its first desktop.
-# A workspace is "unused" if none of its desktops (N.1 through N.9) have windows.
+# Switch to the next empty cardinal desktop on the focused display.
 
-occupied=$(aerospace list-workspaces --monitor all --empty no)
+set -euo pipefail
 
-for g in $(seq 1 9); do
-    ws_used=false
-    for d in $(seq 1 9); do
-        if echo "$occupied" | grep -qx "${g}\.${d}"; then
-            ws_used=true
-            break
-        fi
-    done
-    if ! $ws_used; then
-        aerospace workspace "${g}.1"
-        exit 0
-    fi
-done
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/display-workspaces-lib.sh"
 
-osascript -e 'display notification "All 9 workspaces are in use" with title "AeroSpace"'
+normalize_display_workspaces
+
+current=$(aerospace list-workspaces --focused)
+slot=$(focused_display_slot)
+preferred=$(workspace_position "$current")
+
+if workspace=$(first_workspace_clockwise "$preferred" "$slot"); then
+    aerospace workspace "$workspace"
+    exit 0
+fi
+
+osascript -e 'display notification "All 4 desktops on this display are in use" with title "AeroSpace"'

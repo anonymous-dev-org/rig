@@ -50,7 +50,9 @@ enum FocusArea: Equatable {
     case presets
 }
 
-let allDesktops = Array(1...9)
+let desktopPositions = ["n", "e", "s", "w"]
+let desktopLabels = ["N", "E", "S", "W"]
+let allDesktops = Array(1...desktopPositions.count)
 let presetsPath = NSHomeDirectory() + "/.config/aerospace/saved-workspaces.json"
 
 func run(_ args: String...) -> String {
@@ -63,6 +65,49 @@ func run(_ args: String...) -> String {
     try? p.run()
     p.waitUntilExit()
     return String(data: pipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
+}
+
+func parseWorkspaceId(_ workspaceId: String) -> (position: String, displaySlot: Int)? {
+    guard let first = workspaceId.first else { return nil }
+    let position = String(first)
+    guard desktopPositions.contains(position) else { return nil }
+    let slotText = String(workspaceId.dropFirst())
+    guard let displaySlot = Int(slotText), displaySlot > 0 else { return nil }
+    return (position, displaySlot)
+}
+
+func workspaceId(position: String, displaySlot: Int) -> String {
+    "\(position)\(displaySlot)"
+}
+
+func isBuiltinMonitorName(_ name: String) -> Bool {
+    let lowercased = name.lowercased()
+    return lowercased.contains("built-in")
+        || lowercased.contains("retina")
+        || lowercased.contains("macbook")
+        || lowercased.contains("color lcd")
+}
+
+func monitorIdsByDisplaySlot() -> [String] {
+    let lines = run("aerospace", "list-monitors", "--format", "%{monitor-id}|%{monitor-name}")
+        .split(separator: "\n")
+        .map(String.init)
+
+    var builtIn: [String] = []
+    var external: [String] = []
+
+    for line in lines {
+        let parts = line.split(separator: "|", maxSplits: 1, omittingEmptySubsequences: false)
+        guard let id = parts.first.map(String.init), !id.isEmpty else { continue }
+        let name = parts.count > 1 ? String(parts[1]) : ""
+        if isBuiltinMonitorName(name) {
+            builtIn.append(id)
+        } else {
+            external.append(id)
+        }
+    }
+
+    return builtIn.isEmpty ? external : builtIn + external
 }
 
 let notifDbPath = NSHomeDirectory() + "/Library/Group Containers/group.com.apple.usernoted/db2/db"
@@ -123,9 +168,12 @@ func getBadgeAppsFromLsappinfo(_ appNames: Set<String>) -> Set<String> {
 func getWorkspaces() -> (workspaces: [[Desktop]], activeWorkspaces: [Int], currentPos: GridPos?, notifyBundleIds: Set<String>) {
     let currentWs = run("aerospace", "list-workspaces", "--focused").trimmingCharacters(in: .whitespacesAndNewlines)
 
-    // Parse current workspace
-    let currentParts = currentWs.split(separator: ".")
-    let currentWsNum = currentParts.count >= 1 ? Int(currentParts[0]) ?? 1 : 1
+    let currentParsed = parseWorkspaceId(currentWs)
+    let monitorSlotCount = max(1, monitorIdsByDisplaySlot().count)
+    var maxDisplaySlot = monitorSlotCount
+    if let currentParsed {
+        maxDisplaySlot = max(maxDisplaySlot, currentParsed.displaySlot)
+    }
 
     // Collect all window metadata in one AeroSpace call. Spawning one process per desktop
     // makes the picker noticeably slow when many workspaces are populated.
@@ -144,10 +192,8 @@ func getWorkspaces() -> (workspaces: [[Desktop]], activeWorkspaces: [Int], curre
         guard parts.count >= 2 else { continue }
 
         let wsName = String(parts[0]).trimmingCharacters(in: .whitespacesAndNewlines)
-        let wsParts = wsName.split(separator: ".")
-        guard wsParts.count == 2,
-              let wsRow = Int(wsParts[0]), (1...9).contains(wsRow),
-              let desktop = Int(wsParts[1]), allDesktops.contains(desktop) else { continue }
+        guard let parsed = parseWorkspaceId(wsName) else { continue }
+        maxDisplaySlot = max(maxDisplaySlot, parsed.displaySlot)
 
         let name = String(parts[1]).trimmingCharacters(in: .whitespacesAndNewlines)
         guard !name.isEmpty else { continue }
@@ -184,20 +230,21 @@ func getWorkspaces() -> (workspaces: [[Desktop]], activeWorkspaces: [Int], curre
         notifyBundleIds = Set(bundleIdToName.filter { badgedNames.contains($0.value) }.map { $0.key })
     }
 
-    // Second pass: build grid (all 9 workspace rows always shown)
+    // Second pass: build grid. Row 1 is always the Mac built-in display when present.
     var grid: [[Desktop]] = []
-    let activeWorkspaces = Array(1...9)
+    let activeWorkspaces = Array(1...maxDisplaySlot)
 
-    for w in 1...9 {
+    for displaySlot in activeWorkspaces {
         var row: [Desktop] = []
-        for d in allDesktops {
-            let wsName = "\(w).\(d)"
+        for (idx, position) in desktopPositions.enumerated() {
+            let desktop = idx + 1
+            let wsName = workspaceId(position: position, displaySlot: displaySlot)
             let uniqueApps = desktopApps[wsName] ?? []
             let bids = desktopBundleIds[wsName] ?? []
             let notifyingBidsOnDesktop = bids.intersection(notifyBundleIds)
             let notifyApps = notifyingBidsOnDesktop.compactMap { bundleIdToName[$0] }.sorted()
             let dt = Desktop(
-                id: wsName, workspace: w, desktop: d, apps: uniqueApps,
+                id: wsName, workspace: displaySlot, desktop: desktop, apps: uniqueApps,
                 previews: desktopPreviews[wsName] ?? [],
                 notifyApps: notifyApps, isCurrent: wsName == currentWs
             )
@@ -207,8 +254,9 @@ func getWorkspaces() -> (workspaces: [[Desktop]], activeWorkspaces: [Int], curre
     }
 
     var currentPos: GridPos?
-    if let dPart = currentParts.count >= 2 ? Int(currentParts[1]) : nil {
-        currentPos = GridPos(row: currentWsNum - 1, col: dPart - 1)
+    if let currentParsed,
+       let positionIndex = desktopPositions.firstIndex(of: currentParsed.position) {
+        currentPos = GridPos(row: currentParsed.displaySlot - 1, col: positionIndex)
     }
 
     return (grid, activeWorkspaces, currentPos, notifyBundleIds)
@@ -234,15 +282,15 @@ func savePresetsToFile(_ presets: [Preset]) {
 func captureCurrentWorkspace() -> [String: [String]] {
     let current = run("aerospace", "list-workspaces", "--focused")
         .trimmingCharacters(in: .whitespacesAndNewlines)
-    let currentWs = String(current.split(separator: ".").first ?? "1")
+    let currentSlot = parseWorkspaceId(current)?.displaySlot ?? 1
 
     var desktopMap: [String: [String]] = [:]
-    for d in allDesktops {
-        let wsName = "\(currentWs).\(d)"
+    for position in desktopPositions {
+        let wsName = workspaceId(position: position, displaySlot: currentSlot)
         let apps = run("aerospace", "list-windows", "--workspace", wsName, "--format", "%{app-name}")
             .split(separator: "\n").map { String($0) }.filter { !$0.isEmpty }
         if !apps.isEmpty {
-            desktopMap["\(d)"] = Array(Set(apps)).sorted()
+            desktopMap[position] = Array(Set(apps)).sorted()
         }
     }
     return desktopMap
@@ -251,10 +299,14 @@ func captureCurrentWorkspace() -> [String: [String]] {
 func findNextEmptyWorkspace() -> Int? {
     let occupied = run("aerospace", "list-workspaces", "--monitor", "all", "--empty", "no")
         .split(separator: "\n").map(String.init)
-    for w in 1...9 {
+    let displaySlotCount = max(1, monitorIdsByDisplaySlot().count)
+    for w in 1...displaySlotCount {
         var used = false
-        for d in allDesktops {
-            if occupied.contains("\(w).\(d)") { used = true; break }
+        for position in desktopPositions {
+            if occupied.contains(workspaceId(position: position, displaySlot: w)) {
+                used = true
+                break
+            }
         }
         if !used { return w }
     }
@@ -264,7 +316,7 @@ func findNextEmptyWorkspace() -> Int? {
 func applyPreset(_ preset: Preset) {
     guard let ws = findNextEmptyWorkspace() else {
         _ = run("osascript", "-e",
-            "display notification \"All 9 workspaces are in use\" with title \"AeroSpace\"")
+            "display notification \"All connected displays already have windows\" with title \"AeroSpace\"")
         return
     }
 
@@ -281,8 +333,8 @@ func applyPreset(_ preset: Preset) {
         }
     }
 
-    for (desktop, apps) in preset.desktops.sorted(by: { $0.key < $1.key }) {
-        let targetWs = "\(ws).\(desktop)"
+    for (desktop, apps) in preset.desktops.sorted(by: { $0.key < $1.key }) where desktopPositions.contains(desktop) {
+        let targetWs = workspaceId(position: desktop, displaySlot: ws)
         for app in apps {
             if var ids = windowsByApp[app], !ids.isEmpty {
                 let wid = ids.removeFirst()
@@ -294,7 +346,7 @@ func applyPreset(_ preset: Preset) {
         }
     }
 
-    _ = run("aerospace", "workspace", "\(ws).1")
+    _ = run("aerospace", "workspace", workspaceId(position: "n", displaySlot: ws))
 }
 
 // MARK: - State
@@ -366,13 +418,11 @@ class PickerState: ObservableObject {
     @Published var showingNotifications: Bool = false
     @Published var desktopNotifications: [DesktopNotification] = []
     @Published var notifCursor: Int = 0
-    @Published var pendingDigit: Int? = nil
     @Published var swapSourceId: String? = nil
 
     let grid: [[Desktop]]
     let activeWorkspaces: [Int]
     let notifyBundleIds: Set<String>
-    var digitTimer: Timer?
 
     init() {
         let result = getWorkspaces()
@@ -458,44 +508,6 @@ class PickerState: ObservableObject {
 
     func moveRight() {
         if focus == .grid && gridCursor.col < allDesktops.count - 1 { gridCursor.col += 1 }
-    }
-
-    func handleDigit(_ digit: Int) {
-        guard !isSwapMode else {
-            // In swap mode, digits select target desktop directly
-            if let first = pendingDigit {
-                pendingDigit = nil
-                digitTimer?.invalidate()
-                let targetRow = first - 1
-                let targetCol = digit - 1
-                if targetRow >= 0, targetRow < grid.count, targetCol >= 0, targetCol < allDesktops.count {
-                    gridCursor = GridPos(row: targetRow, col: targetCol)
-                }
-            } else {
-                pendingDigit = digit
-                digitTimer?.invalidate()
-                digitTimer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: false) { [weak self] _ in
-                    DispatchQueue.main.async { self?.pendingDigit = nil }
-                }
-            }
-            return
-        }
-        digitTimer?.invalidate()
-
-        if let first = pendingDigit {
-            // Second digit: navigate to workspace.desktop
-            pendingDigit = nil
-            let targetWs = "\(first).\(digit)"
-            activateWorkspace(targetWs)
-        } else {
-            // First digit: wait for second
-            pendingDigit = digit
-            digitTimer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: false) { [weak self] _ in
-                DispatchQueue.main.async {
-                    self?.pendingDigit = nil
-                }
-            }
-        }
     }
 
     func confirm() {
@@ -717,15 +729,12 @@ struct HelpView: View {
                 ("/ / ,", "Tiles / accordion"),
                 ("r", "Resize mode"),
                 ("v / b", "Join right / down"),
-                ("n", "New workspace"),
                 ("p", "Picker (this)"),
                 ("tab", "Focus back-and-forth"),
             ])
 
             helpSection("Workspaces", "cmd+alt", [
-                ("1-9", "Switch workspace row"),
-                ("j / k", "Next / prev workspace"),
-                ("h / l", "Prev / next desktop"),
+                ("hjkl", "Switch desktop"),
                 ("+shift", "Send window instead"),
             ])
 
@@ -737,10 +746,9 @@ struct HelpView: View {
 
             helpSection("This Picker", "", [
                 ("hjkl", "Navigate"),
-                ("1-9 1-9", "Jump to W.D"),
                 ("\u{23ce}", "Select / load preset"),
                 ("m", "Start desktop swap"),
-                ("hjkl / 1-9", "Choose swap target"),
+                ("hjkl", "Choose swap target"),
                 ("\u{23ce}", "Confirm desktop swap"),
                 ("i", "Desktop notifications"),
                 ("s", "Save workspace"),
@@ -796,7 +804,7 @@ struct HelpView: View {
 
 enum WorkspacePaletteLayout {
     static let visibleRows = 5
-    static let visibleColumns = 5
+    static let visibleColumns = 4
     static let cellWidth: CGFloat = 58
     static let cellHeight: CGFloat = 44
     static let appIconSize: CGFloat = 17
@@ -1058,7 +1066,7 @@ struct PickerView: View {
                 Text("")
                     .frame(width: WorkspacePaletteLayout.rowLabelWidth)
                 ForEach(Array(state.visibleColumnRange), id: \.self) { colIdx in
-                    Text("\(allDesktops[colIdx])")
+                    Text(desktopLabels[colIdx])
                         .font(.system(size: 9, weight: .medium, design: .monospaced))
                         .foregroundColor(.secondary)
                         .frame(width: WorkspacePaletteLayout.cellWidth)
@@ -1097,20 +1105,6 @@ struct PickerView: View {
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 1)
-            }
-
-            // Pending digit indicator
-            if let digit = state.pendingDigit {
-                HStack(spacing: 4) {
-                    Text("\(digit)._")
-                        .font(.system(size: 14, weight: .bold, design: .monospaced))
-                        .foregroundColor(.accentColor)
-                    Text("type desktop number")
-                        .font(.system(size: 10))
-                        .foregroundColor(.secondary)
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
             }
 
             if let source = state.swapSourceDesktop, let target = state.selectedDesktop {
@@ -1254,7 +1248,6 @@ struct PickerView: View {
 
             HStack(spacing: 6) {
                 hintLabel("hjkl", "nav")
-                hintLabel("1-9", "jump")
                 hintLabel("\u{23ce}", "sel")
                 hintLabel("m", state.isSwapMode ? "swap\u{00d7}" : "swap")
                 hintLabel("i", "notif")
@@ -1268,7 +1261,7 @@ struct PickerView: View {
             .padding(.horizontal, 12)
             .padding(.bottom, 10)
         }
-        .frame(width: 350)
+        .frame(width: 292)
         .background(VisualEffectBlur())
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .overlay(
@@ -1353,8 +1346,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 case "\u{1b}", "i": self.state.showingNotifications = false
                 default: break
                 }
-            } else if let digit = Int(chars), (1...9).contains(digit) {
-                self.state.handleDigit(digit)
             } else {
                 switch chars {
                 case "h": self.state.moveLeft()

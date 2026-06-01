@@ -36,6 +36,20 @@ compile_swift_apps() {
   done
 }
 
+clean_aerospace_generated_apps() {
+  local scripts_dir="$HOME/.config/aerospace/scripts"
+  [[ -d "$scripts_dir" ]] || return
+
+  for src in "$SCRIPT_DIR"/aerospace/.config/aerospace/scripts/*.swift; do
+    [ -f "$src" ] || continue
+    local name bin
+    name=$(basename "$src" .swift)
+    # Convert CamelCase to kebab-case for the binary name
+    bin=$(echo "$name" | sed 's/\([a-z]\)\([A-Z]\)/\1-\2/g' | tr '[:upper:]' '[:lower:]')-app
+    rm -f "$scripts_dir/$bin"
+  done
+}
+
 confirm() {
   if $YES_ALL; then
     return 0
@@ -82,6 +96,7 @@ fi
 # --- Compile Swift picker apps ---
 if command -v swiftc &>/dev/null && [[ -d "$HOME/.config/aerospace/scripts" ]]; then
   if confirm "Compile Aerospace picker apps?"; then
+    clean_aerospace_generated_apps
     compile_swift_apps
   fi
 fi
