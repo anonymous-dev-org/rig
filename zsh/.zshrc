@@ -141,6 +141,10 @@ alias n='nvim'
 alias nt='nvim +term'
 alias claude='caffeinate -i claude'
 alias codex='caffeinate -i codex'
+# Cursor agent CLI (brew cursor-cli); ACP adapter is ~/.local/bin/cursor-acp.
+if command -v cursor-agent &>/dev/null && ! command -v agent &>/dev/null; then
+  alias agent='cursor-agent'
+fi
 
 alias ai='nvim "+lua require(\"agentic\").toggle()"'
 ###

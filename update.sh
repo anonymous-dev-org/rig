@@ -59,6 +59,10 @@ for pkg in "${PACKAGES[@]}"; do
   fi
 done
 
+if [[ -x "$SCRIPT_DIR/brew/install-acp-agents.sh" ]]; then
+  "$SCRIPT_DIR/brew/install-acp-agents.sh"
+fi
+
 # Clean up generated app binaries before recompiling them locally
 clean_aerospace_generated_apps
 rm -f "$HOME/.config/aerospace/last-layout"

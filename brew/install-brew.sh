@@ -16,3 +16,8 @@ fi
 
 # Install everything from Brewfile
 brew bundle --file="$SCRIPT_DIR/Brewfile"
+
+# ACP registry adapters (claude-acp, codex-acp, cursor) — not the Zed editor
+if [[ -x "$SCRIPT_DIR/install-acp-agents.sh" ]]; then
+  "$SCRIPT_DIR/install-acp-agents.sh"
+fi

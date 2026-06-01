@@ -7,7 +7,7 @@ notify = [
   "case \"$1\" in *'\"type\":\"agent-turn-complete\"'*|*'\"type\":\"approval-requested\"'*) afplay /System/Library/Sounds/Blow.aiff >/dev/null 2>&1 & ;; esac",
   "codex-notify",
 ]
-service_tier = "fast"
+service_tier = "default"
 
 [tui]
 notifications = ["agent-turn-complete", "approval-requested"]
@@ -39,4 +39,7 @@ memories = true
 terminal_resize_reflow = true
 
 [projects."/Users/p78tr4/Documents/anonymous/rig"]
+trust_level = "trusted"
+
+[projects."/Users/p78tr4/Documents/anonymous/0x0"]
 trust_level = "trusted"
