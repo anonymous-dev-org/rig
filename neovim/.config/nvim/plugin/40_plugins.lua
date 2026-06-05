@@ -726,9 +726,9 @@ now(function()
 	require("zxz").setup({
 		complete = {
 			enabled = true,
-			-- Default to Cursor's fast composer model for inline completion.
+			-- Default to the Codex Spark model for inline completion.
 			-- Swap model or toggle completion through `<Leader>i`.
-			model = "composer-2.5-fast",
+			model = "gpt-5.3-codex-spark",
 			keymaps = {
 				-- <Tab> accept is wired through mini.keymap's multistep in
 				-- 30_mini.lua so it composes with pmenu_next. Disabling built-in

@@ -66,7 +66,7 @@ _G.Config.leader_group_clues = {
   { mode = 'n', keys = '<Leader>e', desc = '+Explore/Edit' },
   { mode = 'n', keys = '<Leader>f', desc = '+Find' },
   { mode = 'n', keys = '<Leader>g', desc = '+Git' },
-  { mode = 'n', keys = '<Leader>l', desc = '+Language' },
+  { mode = 'n', keys = '<Leader>l', desc = '+Code' },
   { mode = 'n', keys = '<Leader>m', desc = '+Map' },
   { mode = 'n', keys = '<Leader>o', desc = '+Octo' },
   { mode = 'n', keys = '<Leader>r', desc = '+Request' },
@@ -75,7 +75,7 @@ _G.Config.leader_group_clues = {
 
   { mode = 'x', keys = '<Leader>a', desc = '+AI (sidekick)' },
   { mode = 'x', keys = '<Leader>g', desc = '+Git' },
-  { mode = 'x', keys = '<Leader>l', desc = '+Language' },
+  { mode = 'x', keys = '<Leader>l', desc = '+Code' },
   { mode = 'x', keys = '<Leader>r', desc = '+Request' },
 }
 
@@ -388,41 +388,24 @@ nmap_leader('en', '<Cmd>lua MiniNotify.show_history()<CR>', 'Notifications')
 nmap_leader('eq', explore_quickfix,                         'Quickfix list')
 nmap_leader('eQ', explore_locations,                        'Location list')
 
--- f is for 'Fuzzy Find'. Common usage:
--- - `<Leader>ff` - find files; for best performance requires `ripgrep`
--- - `<Leader>fg` - find inside files; requires `ripgrep`
--- - `<Leader>fh` - find help tag
--- - `<Leader>fr` - resume latest picker
--- - `<Leader>fv` - all visited paths; requires 'mini.visits'
+-- f is for 'Find'. Keep this surface focused on browsing: files, buffers,
+-- text, symbols, diagnostics, and recent visits. Less common pickers are still
+-- available through `:Pick`.
 --
 -- All these use 'mini.pick'. See `:h MiniPick-overview` for an overview.
-local pick_added_hunks_buf = '<Cmd>Pick git_hunks path="%" scope="staged"<CR>'
 local pick_workspace_symbols_live = '<Cmd>Pick lsp scope="workspace_symbol_live"<CR>'
 
-nmap_leader('f/', '<Cmd>Pick history scope="/"<CR>',            '"/" history')
-nmap_leader('f:', '<Cmd>Pick history scope=":"<CR>',            '":" history')
-nmap_leader('fa', '<Cmd>Pick git_hunks scope="staged"<CR>',     'Added hunks (all)')
-nmap_leader('fA', pick_added_hunks_buf,                         'Added hunks (buf)')
 nmap_leader('fb', '<Cmd>Pick buffers<CR>',                      'Buffers')
-nmap_leader('fc', '<Cmd>Pick git_commits<CR>',                  'Commits (all)')
-nmap_leader('fC', '<Cmd>Pick git_commits path="%"<CR>',         'Commits (buf)')
 nmap_leader('fd', '<Cmd>Pick diagnostic scope="all"<CR>',       'Diagnostic workspace')
-nmap_leader('fD', '<Cmd>Pick diagnostic scope="current"<CR>',   'Diagnostic buffer')
 nmap_leader('ff', '<Cmd>Pick files<CR>',                        'Files')
 nmap_leader('fg', '<Cmd>Pick grep_live<CR>',                    'Grep live')
 nmap_leader('fG', '<Cmd>Pick grep pattern="<cword>"<CR>',       'Grep current word')
 nmap_leader('fh', '<Cmd>Pick help<CR>',                         'Help tags')
-nmap_leader('fH', '<Cmd>Pick hl_groups<CR>',                    'Highlight groups')
 nmap_leader('fl', '<Cmd>Pick buf_lines scope="all"<CR>',        'Lines (all)')
-
-nmap_leader('fm', '<Cmd>Pick git_hunks<CR>',                    'Modified hunks (all)')
-nmap_leader('fM', '<Cmd>Pick git_hunks path="%"<CR>',           'Modified hunks (buf)')
 nmap_leader('fr', '<Cmd>Pick resume<CR>',                       'Resume')
-nmap_leader('fR', '<Cmd>Pick lsp scope="references"<CR>',       'References (LSP)')
 nmap_leader('fs', pick_workspace_symbols_live,                  'Symbols workspace (live)')
 nmap_leader('fS', '<Cmd>Pick lsp scope="document_symbol"<CR>',  'Symbols document')
-nmap_leader('fv', '<Cmd>Pick visit_paths cwd=""<CR>',           'Visit paths (all)')
-nmap_leader('fV', '<Cmd>Pick visit_paths<CR>',                  'Visit paths (cwd)')
+nmap_leader('fv', '<Cmd>Pick visit_paths<CR>',                  'Recent files')
 
 -- g is for 'Git'. Common usage:
 -- - `<Leader>gg` - open Neogit status (main Git interface)
@@ -553,10 +536,11 @@ nmap_leader('dO', function() with_module('dap', function(dap) dap.step_out() end
 nmap_leader('dr', function() with_module('dap', function(dap) dap.repl.open() end) end, 'REPL')
 nmap_leader('du', function() with_module('dapui', function(dapui) dapui.toggle() end) end, 'UI toggle')
 
--- l is for 'Language'. Common usage:
+-- l is for 'Code'. Common usage:
 -- - `<Leader>ld` - show more diagnostic details in a floating window
 -- - `<Leader>lr` - perform rename via LSP
--- - `<Leader>ls` - navigate to source definition of symbol under cursor
+-- - `<Leader>ls` - navigate to definition of symbol under cursor
+-- - `<Leader>lu` - list usages/references of symbol under cursor
 --
 -- NOTE: most LSP mappings represent a more structured way of replacing built-in
 -- LSP mappings (like `:h gra` and others). This is needed because `gr` is mapped
@@ -566,13 +550,15 @@ nmap_leader('ld', '<Cmd>lua vim.diagnostic.open_float()<CR>',   'Diagnostic popu
 nmap_leader('lj', goto_next_error,                                'Next error')
 nmap_leader('lk', goto_prev_error,                                'Previous error')
 nmap_leader('lf', function() with_module('conform', function(conform) conform.format() end) end, 'Format')
+nmap_leader('lh', function() with_lsp(function() vim.lsp.buf.hover() end) end, 'Hover docs')
 nmap_leader('li', function() with_lsp(function() vim.lsp.buf.implementation() end) end, 'Implementation')
 nmap_leader('lI', add_missing_imports,                             'Add missing imports')
 nmap_leader('lm', enable_lsp_server,                            'Manual enable server')
 nmap_leader('lo', organize_imports,                             'Organize imports')
 nmap_leader('lr', function() with_lsp(function() vim.lsp.buf.rename() end) end, 'Rename')
-nmap_leader('ls', function() with_lsp(function() vim.lsp.buf.definition() end) end, 'Source definition')
+nmap_leader('ls', function() with_lsp(function() vim.lsp.buf.definition() end) end, 'Definition')
 nmap_leader('lt', function() with_lsp(function() vim.lsp.buf.type_definition() end) end, 'Type definition')
+nmap_leader('lu', function() with_lsp(function() vim.cmd('Pick lsp scope="references"') end) end, 'Usages / references')
 
 xmap_leader('lf', function() with_module('conform', function(conform) conform.format() end) end, 'Format selection')
 
