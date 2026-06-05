@@ -21,8 +21,8 @@ end
 -- Usage: `yiw` to yank a word and `]p` to put it on the next line.
 nmap("[p", '<Cmd>exe "put! " . v:register<CR>', "Paste Above")
 nmap("]p", '<Cmd>exe "put "  . v:register<CR>', "Paste Below")
-nmap("<C-d>", "<C-d>zz", "Half page down and center")
-nmap("<C-u>", "<C-u>zz", "Half page up and center")
+nmap("<C-j>", "<C-d>zz", "Half page down and center")
+nmap("<C-k>", "<C-u>zz", "Half page up and center")
 nmap("n", "nzzzv", "Next search result centered")
 nmap("N", "Nzzzv", "Previous search result centered")
 tmap("<Esc><Esc>", "<C-\\><C-n>", "Terminal normal mode")

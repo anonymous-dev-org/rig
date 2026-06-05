@@ -47,12 +47,16 @@ now(function()
 		-- Manage options in 'plugin/10_options.lua' for didactic purposes
 		options = { basic = false },
 		mappings = {
-			-- Create `<C-hjkl>` mappings for window navigation
+			-- Create `<C-hjkl>` window navigation; vertical keys are reassigned below.
 			windows = true,
 			-- Create `<M-hjkl>` mappings for navigation in Insert and Command modes
 			move_with_alt = true,
 		},
 	})
+
+	-- Prefer Vim-like vertical movement for centered half-page scrolling.
+	vim.keymap.set("n", "<C-j>", "<C-d>zz", { desc = "Half page down and center" })
+	vim.keymap.set("n", "<C-k>", "<C-u>zz", { desc = "Half page up and center" })
 end)
 
 -- Icon provider. Usually no need to use manually. It is used by plugins like
