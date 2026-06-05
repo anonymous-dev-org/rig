@@ -622,13 +622,11 @@ later(function()
 		return data
 	end
 
-	local function all_dap_configs_by_name()
+	local function all_dap_configs_by_name(configurations)
 		local out = {}
-		for _, cfgs in pairs(require("dap").configurations) do
-			for _, cfg in ipairs(cfgs) do
-				if cfg.name and not out[cfg.name] then
-					out[cfg.name] = cfg
-				end
+		for _, cfg in ipairs(configurations or {}) do
+			if cfg.name and not out[cfg.name] then
+				out[cfg.name] = cfg
 			end
 		end
 		return out
@@ -669,7 +667,7 @@ later(function()
 				return
 			end
 
-			local by_name = all_dap_configs_by_name()
+			local by_name = all_dap_configs_by_name(data.configurations)
 			for i, cfg_name in ipairs(selected.configurations or {}) do
 				local cfg = by_name[cfg_name]
 				if not cfg then
