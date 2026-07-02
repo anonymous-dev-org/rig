@@ -68,7 +68,6 @@ _G.Config.leader_group_clues = {
   { mode = 'n', keys = '<Leader>g', desc = '+Git' },
   { mode = 'n', keys = '<Leader>l', desc = '+Code' },
   { mode = 'n', keys = '<Leader>m', desc = '+Map' },
-  { mode = 'n', keys = '<Leader>o', desc = '+Octo' },
   { mode = 'n', keys = '<Leader>r', desc = '+Request' },
   { mode = 'n', keys = '<Leader>t', desc = '+Terminal' },
   { mode = 'n', keys = '<Leader>v', desc = '+Visits' },
@@ -240,31 +239,6 @@ local goto_prev_error = function()
   })
 end
 
-local gh_auth_checked, gh_auth_ok = false, false
-local ensure_gh_auth = function()
-  if gh_auth_checked then return gh_auth_ok end
-
-  if vim.fn.executable('gh') ~= 1 then
-    gh_auth_checked, gh_auth_ok = true, false
-    notify_warn('GitHub CLI `gh` is not installed.')
-    return false
-  end
-
-  vim.fn.system({ 'gh', 'auth', 'status' })
-  gh_auth_ok = vim.v.shell_error == 0
-  gh_auth_checked = true
-
-  if not gh_auth_ok then notify_warn('GitHub CLI is not authenticated. Run `gh auth login`.') end
-  return gh_auth_ok
-end
-
-local with_octo = function(fn)
-  with_git_repo(function()
-    if not ensure_gh_auth() then return end
-    fn()
-  end)
-end
-
 local enable_lsp_server = function()
   local servers = {}
   for _, path in ipairs(vim.api.nvim_get_runtime_file('lsp/*.lua', true)) do
@@ -412,6 +386,8 @@ nmap_leader('fv', '<Cmd>Pick visit_paths<CR>',                  'Recent files')
 -- - `:Git <subcommand>` - run any git command with subcommand completion
 -- - `<Leader>go` - toggle 'mini.diff' overlay to show in-buffer unstaged changes
 -- - `<Leader>gm` - toggle inline blame for current line
+-- - `<Leader>gv` / `:LLMDiffReview` - review generated working tree changes
+-- - `]g` / `[g` - cycle hunks; `<Leader>gy` accepts, `<Leader>gx` rejects
 local git_switch_branch = function()
   with_git_repo(function()
     local refs = vim.fn.systemlist({
@@ -439,6 +415,64 @@ local git_switch_branch = function()
     end)
   end)
 end
+
+local diff_hunk_jump = function(direction)
+  if vim.wo.diff then
+    local key = direction == 'prev' and '[c' or ']c'
+    local before = vim.api.nvim_win_get_cursor(0)
+    pcall(vim.cmd, 'normal! ' .. key)
+
+    local after = vim.api.nvim_win_get_cursor(0)
+    if after[1] ~= before[1] or after[2] ~= before[2] then return end
+
+    pcall(vim.cmd, direction == 'prev' and 'normal! G$' or 'normal! gg0')
+    pcall(vim.cmd, 'normal! ' .. key)
+    return
+  end
+
+  with_git_repo(function()
+    with_module('gitsigns', function(gs)
+      gs.nav_hunk(direction, { wrap = true, preview = true, target = 'unstaged' })
+    end)
+  end)
+end
+
+local open_generated_diff_review = function()
+  with_git_repo(function()
+    if vim.fn.exists(':DiffviewOpen') == 0 then
+      notify_warn('Diffview is not available yet.')
+      return
+    end
+
+    vim.cmd('DiffviewOpen')
+    notify_info('Review diffs with ]g/[g. Accept with <Leader>gy, reject with <Leader>gx.')
+  end)
+end
+
+local git_hunk_action_then_next = function(action, label)
+  with_git_repo(function()
+    with_module('gitsigns', function(gs)
+      gs[action](nil, nil, function(err)
+        vim.schedule(function()
+          if err then
+            notify_warn(label .. ' failed: ' .. err)
+            return
+          end
+          diff_hunk_jump('next')
+        end)
+      end)
+    end)
+  end)
+end
+
+if vim.fn.exists(':LLMDiffReview') == 0 then
+  vim.api.nvim_create_user_command('LLMDiffReview', open_generated_diff_review, {
+    desc = 'Review LLM-generated working tree changes',
+  })
+end
+
+nmap('[g', function() diff_hunk_jump('prev') end, 'Previous Git hunk')
+nmap(']g', function() diff_hunk_jump('next') end, 'Next Git hunk')
 
 nmap_leader('ga', function()
   with_git_repo(function()
@@ -519,6 +553,9 @@ nmap_leader('gu', function()
   end)
 end, 'Unstage buffer')
 nmap_leader('gU', function() with_git_repo(function() run_git({ 'restore', '--staged', '--', '.' }, 'Git unstage all') end) end, 'Unstage all')
+nmap_leader('gv', open_generated_diff_review, 'Review generated diff')
+nmap_leader('gx', function() git_hunk_action_then_next('reset_hunk', 'Reject hunk') end, 'Reject hunk')
+nmap_leader('gy', function() git_hunk_action_then_next('stage_hunk', 'Accept hunk') end, 'Accept hunk')
 
 -- d is for 'Debug'.
 nmap_leader('db', function() with_module('dap', function(dap) dap.toggle_breakpoint() end) end, 'Breakpoint toggle')
@@ -571,12 +608,8 @@ nmap_leader('mr', '<Cmd>lua MiniMap.refresh()<CR>',      'Refresh')
 nmap_leader('ms', '<Cmd>lua MiniMap.toggle_side()<CR>',  'Side (toggle)')
 nmap_leader('mt', '<Cmd>lua MiniMap.toggle()<CR>',       'Toggle')
 
--- o is for 'Octo' (GitHub via Octo.nvim).
-nmap_leader('od', function() with_octo(function() run_cmd('Octo discussion list', 'Octo discussions') end) end, 'Discussions')
-nmap_leader('oi', function() with_octo(function() run_cmd('Octo issue list', 'Octo issues') end) end, 'Issues')
-nmap_leader('on', function() with_octo(function() run_cmd('Octo notification list', 'Octo notifications') end) end, 'Notifications')
-nmap_leader('op', function() with_octo(function() run_cmd('Octo pr list', 'Octo PRs') end) end, 'PRs')
-nmap_leader('os', function() with_octo(function() run_cmd('Octo search', 'Octo search') end) end, 'Search')
+-- o opens Octo's command surface directly.
+nmap_leader('o', ':Octo ', 'Octo')
 
 -- r is for 'Request' (hurl.nvim HTTP client).
 nmap_leader('ra', '<Cmd>HurlRunnerAt<CR>',          'Run at cursor')
