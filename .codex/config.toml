@@ -1,0 +1,21 @@
+# Shared Codex defaults for this repository.
+# User trust and machine-local state stay in ~/.codex/config.toml.
+
+model = "gpt-5.5"
+model_reasoning_effort = "xhigh"
+plan_mode_reasoning_effort = "xhigh"
+service_tier = "fast"
+
+[mcp_servers.openaiDeveloperDocs]
+url = "https://developers.openai.com/mcp"
+
+[mcp_servers.openaiDeveloperDocs.tools.fetch_openai_doc]
+approval_mode = "approve"
+
+[mcp_servers.openaiDeveloperDocs.tools.search_openai_docs]
+approval_mode = "approve"
+
+[features]
+memories = true
+terminal_resize_reflow = true
+js_repl = false

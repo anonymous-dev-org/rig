@@ -521,6 +521,150 @@ later(function()
 	})
 end)
 
+-- Database ====================================================================
+
+later(function()
+	add({
+		source = "joryeugene/dadbod-grip.nvim",
+		checkout = "v3.3.1",
+		monitor = "main",
+	})
+
+	local function free_er_diagram_name()
+		local target = "grip://er_diagram"
+		for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
+			if vim.api.nvim_buf_is_valid(bufnr) then
+				local ok, name = pcall(vim.api.nvim_buf_get_name, bufnr)
+				if ok and name == target then
+					local stale_name = target .. ".stale." .. bufnr .. "." .. tostring(vim.uv.hrtime())
+					pcall(vim.api.nvim_buf_set_name, bufnr, stale_name)
+					pcall(vim.api.nvim_buf_delete, bufnr, { force = true })
+				end
+			end
+		end
+	end
+
+	local function is_grip_buffer(bufnr)
+		if not vim.api.nvim_buf_is_valid(bufnr) then
+			return false
+		end
+		local ok, name = pcall(vim.api.nvim_buf_get_name, bufnr)
+		if ok and name:match("^grip://") then
+			return true
+		end
+		local filetype = vim.bo[bufnr].filetype
+		return filetype == "grip_schema" or filetype == "grip_er" or filetype == "grip-welcome"
+	end
+
+	local function find_normal_window()
+		for _, winid in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+			if vim.api.nvim_win_is_valid(winid) then
+				local bufnr = vim.api.nvim_win_get_buf(winid)
+				if not is_grip_buffer(bufnr) then
+					return winid
+				end
+			end
+		end
+	end
+
+	local function close_dadbod_grip()
+		local normal_win = find_normal_window()
+		if normal_win then
+			vim.api.nvim_set_current_win(normal_win)
+		else
+			vim.cmd("enew!")
+			normal_win = vim.api.nvim_get_current_win()
+		end
+
+		local ok_schema, schema = pcall(require, "dadbod-grip.schema")
+		if ok_schema and type(schema.close) == "function" then
+			pcall(schema.close)
+		end
+
+		free_er_diagram_name()
+
+		for _, winid in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+			if winid ~= normal_win and vim.api.nvim_win_is_valid(winid) then
+				local bufnr = vim.api.nvim_win_get_buf(winid)
+				if is_grip_buffer(bufnr) then
+					pcall(vim.api.nvim_win_close, winid, true)
+				end
+			end
+		end
+
+		for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
+			if is_grip_buffer(bufnr) then
+				pcall(vim.api.nvim_buf_delete, bufnr, { force = true })
+			end
+		end
+
+		if normal_win and vim.api.nvim_win_is_valid(normal_win) then
+			vim.api.nvim_set_current_win(normal_win)
+		end
+		vim.notify("Grip: closed database UI", vim.log.levels.INFO)
+	end
+
+	_G.Config.close_dadbod_grip = close_dadbod_grip
+	vim.api.nvim_create_user_command("GripClose", close_dadbod_grip, {
+		desc = "Close dadbod-grip windows and return to code",
+	})
+
+	local er_path = vim.fn.stdpath("data") .. "/site/pack/deps/opt/dadbod-grip.nvim/lua/dadbod-grip/er_diagram.lua"
+	local load_er, load_err = loadfile(er_path)
+	if not load_er then
+		vim.notify("dadbod-grip: failed to patch ER diagram: " .. tostring(load_err), vim.log.levels.WARN)
+	else
+		local ok, er = pcall(load_er)
+		if ok and type(er) == "table" and type(er.show) == "function" then
+			local show = er.show
+			er.show = function(url, scroll_to)
+				free_er_diagram_name()
+				return show(url, scroll_to)
+			end
+			package.loaded["dadbod-grip.er_diagram"] = er
+		end
+	end
+
+	vim.api.nvim_create_autocmd("FileType", {
+		pattern = "grip_schema",
+		callback = function(event)
+			vim.schedule(function()
+				if not vim.api.nvim_buf_is_valid(event.buf) or vim.bo[event.buf].filetype ~= "grip_schema" then
+					return
+				end
+				vim.keymap.set("n", "<CR>", function()
+					local db = require("dadbod-grip.db")
+					local schema = require("dadbod-grip.schema")
+					local url = db.get_url()
+					if not url then
+						vim.notify(
+							"Grip: no database connection. Use :GripConnect or set vim.g.db.",
+							vim.log.levels.WARN
+						)
+						return
+					end
+
+					local state = schema.get_state(url)
+					local offset = state.filter and 4 or 2
+					local node = state.nodes[vim.api.nvim_win_get_cursor(0)[1] - offset]
+					local table_name = node
+						and ((node.kind == "table" and node.name) or (node.kind == "column" and node.table_name))
+					if not table_name then
+						vim.notify("Grip: move cursor to a table", vim.log.levels.INFO)
+						return
+					end
+
+					local target_win = require("dadbod-grip.view").find_content_win()
+					if target_win then
+						vim.api.nvim_set_current_win(target_win)
+					end
+					require("dadbod-grip").open(table_name, url, { reuse_win = target_win })
+				end, { buffer = event.buf, desc = "Open table", silent = true })
+			end)
+		end,
+	})
+end)
+
 -- Debugging ===================================================================
 
 later(function()

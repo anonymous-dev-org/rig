@@ -50,6 +50,23 @@ clean_aerospace_generated_apps() {
   done
 }
 
+prepare_codex_config() {
+  local local_config="$SCRIPT_DIR/codex/.codex/config.toml"
+  local example_config="$SCRIPT_DIR/codex/.codex/config.example.toml"
+  local home_config="$HOME/.codex/config.toml"
+
+  [[ -e "$local_config" ]] && return
+
+  mkdir -p "$(dirname "$local_config")"
+  if [[ -f "$home_config" && ! -L "$home_config" ]]; then
+    cp "$home_config" "$local_config"
+    echo "  Preserved existing ~/.codex/config.toml as local ignored config"
+  elif [[ -f "$example_config" ]]; then
+    cp "$example_config" "$local_config"
+    echo "  Seeded codex local config from config.example.toml"
+  fi
+}
+
 confirm() {
   if $YES_ALL; then
     return 0
@@ -75,6 +92,10 @@ for pkg in "${PACKAGES[@]}"; do
   fi
 
   if confirm "Install $pkg config?"; then
+    if [[ "$pkg" == "codex" ]]; then
+      prepare_codex_config
+    fi
+
     # Remove any existing non-symlink files that would conflict with stow
     while IFS= read -r -d '' file; do
       rel="${file#$SCRIPT_DIR/$pkg/}"

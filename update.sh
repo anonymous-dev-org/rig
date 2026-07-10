@@ -43,6 +43,23 @@ clean_aerospace_generated_apps() {
   done
 }
 
+prepare_codex_config() {
+  local local_config="$SCRIPT_DIR/codex/.codex/config.toml"
+  local example_config="$SCRIPT_DIR/codex/.codex/config.example.toml"
+  local home_config="$HOME/.codex/config.toml"
+
+  [[ -e "$local_config" ]] && return
+
+  mkdir -p "$(dirname "$local_config")"
+  if [[ -f "$home_config" && ! -L "$home_config" ]]; then
+    cp "$home_config" "$local_config"
+    echo "Preserved existing ~/.codex/config.toml as local ignored config"
+  elif [[ -f "$example_config" ]]; then
+    cp "$example_config" "$local_config"
+    echo "Seeded codex local config from config.example.toml"
+  fi
+}
+
 echo "=== anonymous.rig — Update ==="
 
 # Pull latest
@@ -52,6 +69,10 @@ git pull
 PACKAGES=(neovim zsh aerospace kitty git codex claude)
 for pkg in "${PACKAGES[@]}"; do
   if [[ -d "$pkg" ]]; then
+    if [[ "$pkg" == "codex" ]]; then
+      prepare_codex_config
+    fi
+
     if [[ "$pkg" == "aerospace" ]]; then
       clean_aerospace_generated_apps
     fi
