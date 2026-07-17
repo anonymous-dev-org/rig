@@ -84,7 +84,7 @@ if confirm "Install Homebrew + common formulas?"; then
 fi
 
 # --- Stow packages ---
-PACKAGES=(neovim zsh aerospace kitty git codex claude)
+PACKAGES=(neovim zsh aerospace kitty git codex claude pi)
 for pkg in "${PACKAGES[@]}"; do
   if [[ ! -d "$SCRIPT_DIR/$pkg" ]]; then
     echo "  ⚠ $pkg skipped (package directory missing)"

@@ -66,7 +66,7 @@ echo "=== anonymous.rig — Update ==="
 git pull
 
 # Re-stow all packages (stow is idempotent, safe to re-run)
-PACKAGES=(neovim zsh aerospace kitty git codex claude)
+PACKAGES=(neovim zsh aerospace kitty git codex claude pi)
 for pkg in "${PACKAGES[@]}"; do
   if [[ -d "$pkg" ]]; then
     if [[ "$pkg" == "codex" ]]; then
