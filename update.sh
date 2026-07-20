@@ -65,6 +65,9 @@ echo "=== anonymous.rig — Update ==="
 # Pull latest
 git pull
 
+# Install or update Pi with its official npm package.
+npm install -g --ignore-scripts @earendil-works/pi-coding-agent
+
 # Re-stow all packages (stow is idempotent, safe to re-run)
 PACKAGES=(neovim zsh aerospace kitty git codex claude pi)
 for pkg in "${PACKAGES[@]}"; do
@@ -79,10 +82,6 @@ for pkg in "${PACKAGES[@]}"; do
     stow --no-folding -t ~ -R "$pkg" 2>/dev/null && echo "✓ $pkg updated" || echo "⚠ $pkg skipped (not stowed on this machine)"
   fi
 done
-
-if [[ -x "$SCRIPT_DIR/brew/install-acp-agents.sh" ]]; then
-  "$SCRIPT_DIR/brew/install-acp-agents.sh"
-fi
 
 # Clean up generated app binaries before recompiling them locally
 clean_aerospace_generated_apps

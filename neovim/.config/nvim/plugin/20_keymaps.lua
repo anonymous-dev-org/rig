@@ -272,8 +272,8 @@ local enable_lsp_server = function()
   end)
 end
 
--- a is for 'AI' (sidekick.nvim). Hosts `claude`, `codex`, and `cursor` CLIs in
--- a side terminal and lets us push selections + prompts into them. Mappings
+-- a is for 'AI' (sidekick.nvim). Hosts `claude`, `codex`, `cursor`, and `pi`
+-- CLIs in a side terminal and lets us push selections + prompts into them. Mappings
 -- live in 40_plugins.lua. Common usage:
 -- - `<Leader>aa` - toggle CLI terminal
 -- - `<Leader>as` - select / attach a CLI tool (normal); send selection (visual)
@@ -286,14 +286,6 @@ end
 -- - `<Leader>ab` - pick open buffers to send (`<C-x>` mark, `<M-CR>` send marked)
 -- - `<Leader>aF` - pick repo files to send (same multi-select keys)
 -- - `<Leader>av` - send visual selection
-
--- i is for 'Inline AI' (0x0.nvim ghost-text completion). Mappings live in
--- 40_plugins.lua next to the zxz setup. Common usage:
--- - `<Leader>i` - settings picker (toggle + model; plugin built-in)
--- Insert mode:
--- - `<Tab>`    - accept current ghost suggestion (via mini.keymap multistep
---                in 30_mini.lua; falls through to pmenu_next when no ghost)
--- - any other  - implicitly dismisses the ghost
 
 -- b is for 'Buffer'. Common usage:
 -- - `<Leader>bs` - create scratch (temporary) buffer

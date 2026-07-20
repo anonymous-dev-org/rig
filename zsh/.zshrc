@@ -141,7 +141,8 @@ alias n='nvim'
 alias nt='nvim +term'
 alias claude='caffeinate -i claude'
 alias codex='caffeinate -i codex'
-# Cursor agent CLI (brew cursor-cli); ACP adapter is ~/.local/bin/cursor-acp.
+alias pi='caffeinate -i pi'
+# Cursor CLI installs as cursor-agent; expose its shorter command too.
 if command -v cursor-agent &>/dev/null && ! command -v agent &>/dev/null; then
   alias agent='cursor-agent'
 fi

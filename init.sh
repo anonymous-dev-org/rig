@@ -79,7 +79,7 @@ echo "=== anonymous.rig — New Mac Init ==="
 echo ""
 
 # --- Brew ---
-if confirm "Install Homebrew + common formulas?"; then
+if confirm "Install Homebrew, common tools, and Pi?"; then
   ./brew/install-brew.sh
 fi
 

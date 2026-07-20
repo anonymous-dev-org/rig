@@ -849,67 +849,17 @@ later(function()
 end)
 
 -- AI tools ====================================================================
---
--- Inline ghost-text completion: 0x0.nvim (Cursor ACP by default).
--- CLI pair-programming + selection-as-context: sidekick.nvim hosting the
--- `claude`, `codex`, and `cursor` CLIs in a side terminal with diff-review
--- workflows.
 
 now(function()
 	-- vim-fugitive: owns the `:Git` command. Kept because 30_mini.lua disables
 	-- MiniGit on purpose, so fugitive is the only `:Git` provider.
 	add("tpope/vim-fugitive")
-
-	-- 0x0.nvim: inline ghost-text completion via ACP providers.
-	-- The standalone anonymous-dev-org/0x0.nvim repo is the plugin source.
-	-- Provider routing is model-driven inside 0x0: this config only chooses the
-	-- default model and leaves the catalog/provider map to the plugin.
-	add("anonymous-dev-org/0x0.nvim")
-	require("zxz").setup({
-		complete = {
-			enabled = true,
-			-- Default to the Codex Spark model for inline completion.
-			-- Swap model or toggle completion through `<Leader>i`.
-			model = "gpt-5.3-codex-spark",
-			keymaps = {
-				-- <Tab> accept is wired through mini.keymap's multistep in
-				-- 30_mini.lua so it composes with pmenu_next. Disabling built-in
-				-- keymaps avoids a raw <Tab> mapping that would be overridden.
-				-- Any other keystroke implicitly dismisses the ghost via the
-				-- TextChangedI autocmd in zxz/complete/init.lua.
-				enabled = false,
-			},
-		},
-	})
-
-	-- The completion error path notifies natively in 0x0.nvim. We still raise
-	-- log.error (silent disk-only by default) to a visible toast so codex-acp's
-	-- stderr passthrough — invalid-model warnings, transport exits — surfaces.
-	local log = require("zxz.core.log")
-	local original_log_error = log.error
-	log.error = function(...)
-		original_log_error(...)
-		local parts = {}
-		for i = 1, select("#", ...) do
-			parts[#parts + 1] = tostring(select(i, ...))
-		end
-		vim.schedule(function()
-			vim.notify("0x0: " .. table.concat(parts, " "), vim.log.levels.ERROR)
-		end)
-	end
-
-	-- `<Leader>i` opens 0x0's built-in settings picker: enabled toggle + model.
-	vim.keymap.set("n", "<Leader>i", function()
-		require("zxz.complete").settings()
-	end, { desc = "Inline AI settings" })
 end)
 
 -- sidekick.nvim ==============================================================
 --
--- Hosts the `claude`, `codex`, and `cursor` CLIs in a side terminal and lets
--- us push selections / prompts into them as context — the human-in-the-loop
--- primitive we want next to 0x0's ghost completion. NES (Copilot LSP next-edit
--- suggestions) is left off because we don't run Copilot LSP.
+-- Hosts AI CLIs in a side terminal and sends selections and prompts as context.
+-- NES stays off because Copilot LSP is not configured.
 later(function()
 	add("folke/sidekick.nvim")
 
@@ -926,6 +876,7 @@ later(function()
 				claude = {},
 				codex = {},
 				cursor = {},
+				pi = {},
 			},
 		},
 	})
@@ -933,6 +884,7 @@ later(function()
 		claude = {},
 		codex = {},
 		cursor = {},
+		pi = {},
 	}
 
 	local cli = function(fn)
@@ -994,8 +946,7 @@ later(function()
 		})
 	end
 
-	-- `<Leader>a*` group: AI CLI controls (sidekick). 0x0 ghost-text completion
-	-- keeps the single `<Leader>i` settings binding above.
+	-- `<Leader>a*` group: AI CLI controls.
 	vim.keymap.set("n", "<Leader>aa", cli("toggle"), { desc = "Toggle CLI" })
 	vim.keymap.set("n", "<Leader>as", cli("select"), { desc = "Select CLI" })
 	vim.keymap.set("n", "<Leader>aw", cli("focus"), { desc = "Focus CLI" })

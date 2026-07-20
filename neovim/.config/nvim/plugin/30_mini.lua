@@ -567,27 +567,8 @@ end)
 -- - `:h MiniKeymap.map_combo()` - map combo
 later(function()
 	require("mini.keymap").setup()
-	-- 0x0.nvim ghost-text accept step. Must come before "pmenu_next" so that
-	-- when an inline suggestion is visible, <Tab> accepts it instead of moving
-	-- to the next pmenu item. Falls through to pmenu_next when no ghost is up.
-	local zxz_accept = {
-		condition = function()
-			local ok, c = pcall(require, "zxz.complete")
-			return ok and c.is_visible()
-		end,
-		action = function()
-			-- Return the mutation as a deferred callback. The action body
-			-- itself runs inside an expr-mapping context (textlock), so
-			-- calling nvim_buf_set_text here errors with E565. Returning a
-			-- function makes mini.keymap execute it via `<Cmd>lua f()<CR>`,
-			-- which is allowed to modify the buffer.
-			return function()
-				require("zxz.complete").accept()
-			end
-		end,
-	}
 	-- Navigate 'mini.completion' menu with `<Tab>` /  `<S-Tab>`
-	MiniKeymap.map_multistep("i", "<Tab>", { zxz_accept, "pmenu_next" })
+	MiniKeymap.map_multistep("i", "<Tab>", { "pmenu_next" })
 	MiniKeymap.map_multistep("i", "<S-Tab>", { "pmenu_prev" })
 	-- On `<CR>` try to accept current completion item, fall back to accounting
 	-- for pairs from 'mini.pairs'
