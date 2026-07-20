@@ -7,7 +7,6 @@ import SQLite3
 struct NotificationEntry: Identifiable {
     let id: String
     let appName: String
-    let bundleId: String
     let windowId: String
     let desktopId: String
     let badgeCount: Int?
@@ -157,7 +156,6 @@ func getAllNotifications() -> [NotificationEntry] {
             entries.append(NotificationEntry(
                 id: key,
                 appName: w.appName,
-                bundleId: w.bundleId,
                 windowId: w.wid,
                 desktopId: w.ws,
                 badgeCount: info.badge > 0 ? info.badge : nil,

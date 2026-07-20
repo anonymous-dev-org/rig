@@ -731,7 +731,6 @@ later(function()
 			tools = {
 				claude = {},
 				codex = {},
-				cursor = {},
 				pi = {
 					cmd = { "caffeinate", "-i", "pi" },
 					env = { PI_SKIP_VERSION_CHECK = "1" },
@@ -742,7 +741,6 @@ later(function()
 	require("sidekick.config").cli.tools = {
 		claude = {},
 		codex = {},
-		cursor = {},
 		pi = {
 			cmd = { "caffeinate", "-i", "pi" },
 			env = { PI_SKIP_VERSION_CHECK = "1" },

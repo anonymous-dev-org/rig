@@ -49,8 +49,6 @@ class ClipboardHistoryState: ObservableObject {
         }
     }
 
-    var isEmpty: Bool { filteredEntries.isEmpty }
-
     var selectedEntry: ClipboardEntry? {
         filteredEntries.indices.contains(cursor) ? filteredEntries[cursor] : nil
     }

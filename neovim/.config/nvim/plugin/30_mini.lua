@@ -53,10 +53,6 @@ now(function()
 			move_with_alt = true,
 		},
 	})
-
-	-- Prefer Vim-like vertical movement for centered half-page scrolling.
-	vim.keymap.set("n", "<C-j>", "<C-d>zz", { desc = "Half page down and center" })
-	vim.keymap.set("n", "<C-k>", "<C-u>zz", { desc = "Half page up and center" })
 end)
 
 -- Icon provider. Usually no need to use manually. It is used by plugins like

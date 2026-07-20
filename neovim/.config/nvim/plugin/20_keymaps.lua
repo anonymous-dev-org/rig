@@ -271,7 +271,7 @@ local enable_lsp_server = function()
   end)
 end
 
--- a is for 'AI' (sidekick.nvim). Hosts `claude`, `codex`, `cursor`, and `pi`
+-- a is for 'AI' (sidekick.nvim). Hosts `claude`, `codex`, and `pi`
 -- CLIs in a side terminal and lets us push selections + prompts into them. Mappings
 -- live in 40_plugins.lua. Common usage:
 -- - `<Leader>aa` - toggle CLI terminal

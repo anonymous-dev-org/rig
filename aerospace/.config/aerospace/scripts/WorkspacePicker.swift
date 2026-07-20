@@ -6,8 +6,6 @@ import SQLite3
 
 struct Desktop: Identifiable {
     let id: String
-    let workspace: Int
-    let desktop: Int
     let apps: [String]
     let previews: [AppPreview]
     let notifyApps: [String]
@@ -52,7 +50,6 @@ enum FocusArea: Equatable {
 
 let desktopPositions = ["n", "e", "s", "w"]
 let desktopLabels = ["N", "E", "S", "W"]
-let allDesktops = Array(1...desktopPositions.count)
 let presetsPath = NSHomeDirectory() + "/.config/aerospace/saved-workspaces.json"
 
 func run(_ args: String...) -> String {
@@ -165,7 +162,7 @@ func getBadgeAppsFromLsappinfo(_ appNames: Set<String>) -> Set<String> {
     return badged
 }
 
-func getWorkspaces() -> (workspaces: [[Desktop]], activeWorkspaces: [Int], currentPos: GridPos?, notifyBundleIds: Set<String>) {
+func getWorkspaces() -> (workspaces: [[Desktop]], currentPos: GridPos?, notifyBundleIds: Set<String>) {
     let currentWs = run("aerospace", "list-workspaces", "--focused").trimmingCharacters(in: .whitespacesAndNewlines)
 
     let currentParsed = parseWorkspaceId(currentWs)
@@ -232,20 +229,16 @@ func getWorkspaces() -> (workspaces: [[Desktop]], activeWorkspaces: [Int], curre
 
     // Second pass: build grid. Row 1 is always the Mac built-in display when present.
     var grid: [[Desktop]] = []
-    let activeWorkspaces = Array(1...maxDisplaySlot)
-
-    for displaySlot in activeWorkspaces {
+    for displaySlot in 1...maxDisplaySlot {
         var row: [Desktop] = []
-        for (idx, position) in desktopPositions.enumerated() {
-            let desktop = idx + 1
+        for position in desktopPositions {
             let wsName = workspaceId(position: position, displaySlot: displaySlot)
             let uniqueApps = desktopApps[wsName] ?? []
             let bids = desktopBundleIds[wsName] ?? []
             let notifyingBidsOnDesktop = bids.intersection(notifyBundleIds)
             let notifyApps = notifyingBidsOnDesktop.compactMap { bundleIdToName[$0] }.sorted()
             let dt = Desktop(
-                id: wsName, workspace: displaySlot, desktop: desktop, apps: uniqueApps,
-                previews: desktopPreviews[wsName] ?? [],
+                id: wsName, apps: uniqueApps, previews: desktopPreviews[wsName] ?? [],
                 notifyApps: notifyApps, isCurrent: wsName == currentWs
             )
             row.append(dt)
@@ -259,7 +252,7 @@ func getWorkspaces() -> (workspaces: [[Desktop]], activeWorkspaces: [Int], curre
         currentPos = GridPos(row: currentParsed.displaySlot - 1, col: positionIndex)
     }
 
-    return (grid, activeWorkspaces, currentPos, notifyBundleIds)
+    return (grid, currentPos, notifyBundleIds)
 }
 
 // MARK: - Presets
@@ -421,13 +414,11 @@ class PickerState: ObservableObject {
     @Published var swapSourceId: String? = nil
 
     let grid: [[Desktop]]
-    let activeWorkspaces: [Int]
     let notifyBundleIds: Set<String>
 
     init() {
         let result = getWorkspaces()
         self.grid = result.workspaces
-        self.activeWorkspaces = result.activeWorkspaces
         self.gridCursor = result.currentPos ?? GridPos(row: 0, col: 0)
         self.presets = loadPresets()
         self.notifyBundleIds = result.notifyBundleIds
@@ -455,7 +446,7 @@ class PickerState: ObservableObject {
     var visibleColumnRange: Range<Int> {
         centeredRange(
             around: gridCursor.col,
-            count: allDesktops.count,
+            count: desktopPositions.count,
             visibleCount: WorkspacePaletteLayout.visibleColumns
         )
     }
@@ -507,7 +498,7 @@ class PickerState: ObservableObject {
     }
 
     func moveRight() {
-        if focus == .grid && gridCursor.col < allDesktops.count - 1 { gridCursor.col += 1 }
+        if focus == .grid && gridCursor.col < desktopPositions.count - 1 { gridCursor.col += 1 }
     }
 
     func confirm() {
@@ -1079,7 +1070,7 @@ struct PickerView: View {
             // Grid
             ForEach(Array(state.visibleRowRange), id: \.self) { rowIdx in
                 HStack(spacing: WorkspacePaletteLayout.cellSpacing) {
-                    Text("\(state.activeWorkspaces[rowIdx])")
+                    Text("\(rowIdx + 1)")
                         .font(.system(size: 10, weight: .semibold, design: .monospaced))
                         .foregroundColor(.secondary)
                         .frame(width: WorkspacePaletteLayout.rowLabelWidth, alignment: .trailing)

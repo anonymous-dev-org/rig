@@ -142,11 +142,6 @@ alias nt='nvim +term'
 alias claude='caffeinate -i claude'
 alias codex='caffeinate -i codex'
 alias pi='PI_SKIP_VERSION_CHECK=1 caffeinate -i pi'
-# Cursor CLI installs as cursor-agent; expose its shorter command too.
-if command -v cursor-agent &>/dev/null && ! command -v agent &>/dev/null; then
-  alias agent='cursor-agent'
-fi
-
 alias ai='nvim "+lua require(\"agentic\").toggle()"'
 ###
 

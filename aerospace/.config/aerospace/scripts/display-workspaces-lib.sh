@@ -60,22 +60,6 @@ focused_monitor_id() {
   aerospace list-monitors --focused --format '%{monitor-id}' | awk 'NF { print $1; exit }'
 }
 
-monitor_id_for_slot() {
-  local wanted_slot="$1"
-  local slot=1
-  local id
-
-  while IFS= read -r id; do
-    if [[ "$slot" == "$wanted_slot" ]]; then
-      echo "$id"
-      return 0
-    fi
-    slot=$((slot + 1))
-  done < <(monitor_ids_by_slot)
-
-  return 1
-}
-
 slot_for_monitor_id() {
   local wanted_id="$1"
   local slot=1
@@ -175,12 +159,11 @@ normalize_display_workspaces() {
 show_preferred_workspace_per_display() {
   local current
   local slot=1
-  local monitor_id
   local workspace
 
   current=$(aerospace list-workspaces --focused 2>/dev/null || true)
 
-  while IFS= read -r monitor_id; do
+  while IFS= read -r _; do
     workspace=$(first_occupied_workspace_clockwise "$slot")
     aerospace workspace "$workspace" >/dev/null 2>&1 || true
     slot=$((slot + 1))
