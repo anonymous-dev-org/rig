@@ -876,7 +876,7 @@ later(function()
 				claude = {},
 				codex = {},
 				cursor = {},
-				pi = {},
+				pi = { cmd = { "caffeinate", "-i", "pi" } },
 			},
 		},
 	})
@@ -884,7 +884,7 @@ later(function()
 		claude = {},
 		codex = {},
 		cursor = {},
-		pi = {},
+		pi = { cmd = { "caffeinate", "-i", "pi" } },
 	}
 
 	local cli = function(fn)
