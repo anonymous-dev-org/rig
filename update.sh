@@ -69,7 +69,7 @@ git pull
 npm install -g --ignore-scripts @earendil-works/pi-coding-agent
 
 # Re-stow all packages (stow is idempotent, safe to re-run)
-PACKAGES=(neovim zsh aerospace kitty git codex claude pi)
+PACKAGES=(neovim zsh aerospace kitty git codex claude pi lazysql)
 for pkg in "${PACKAGES[@]}"; do
   if [[ -d "$pkg" ]]; then
     if [[ "$pkg" == "codex" ]]; then

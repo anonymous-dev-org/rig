@@ -63,7 +63,6 @@ _G.Config.leader_group_clues = {
   { mode = 'n', keys = '<Leader>a', desc = '+AI (sidekick)' },
   { mode = 'n', keys = '<Leader>b', desc = '+Buffer' },
   { mode = 'n', keys = '<Leader>d', desc = '+Debug' },
-  { mode = 'n', keys = '<Leader>D', desc = '+Database' },
   { mode = 'n', keys = '<Leader>e', desc = '+Explore/Edit' },
   { mode = 'n', keys = '<Leader>f', desc = '+Find' },
   { mode = 'n', keys = '<Leader>g', desc = '+Git' },
@@ -565,13 +564,6 @@ nmap_leader('do', function() with_module('dap', function(dap) dap.step_over() en
 nmap_leader('dO', function() with_module('dap', function(dap) dap.step_out() end) end, 'Step out')
 nmap_leader('dr', function() with_module('dap', function(dap) dap.repl.open() end) end, 'REPL')
 nmap_leader('du', function() with_module('dapui', function(dapui) dapui.toggle() end) end, 'UI toggle')
-
--- D is for 'Database' (dadbod-grip.nvim).
-nmap_leader('Dc', '<Cmd>GripConnect<CR>', 'Connect')
-nmap_leader('Dx', '<Cmd>GripClose<CR>', 'Close')
-nmap_leader('Dq', '<Cmd>GripQuery<CR>', 'Query pad')
-nmap_leader('Ds', '<Cmd>GripSchema<CR>', 'Schema')
-nmap_leader('Dt', '<Cmd>GripTables<CR>', 'Tables')
 
 -- l is for 'Code'. Common usage:
 -- - `<Leader>ld` - show more diagnostic details in a floating window

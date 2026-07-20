@@ -1,0 +1,3 @@
+[keymap.Tree]
+PageNext = "Ctrl-J"
+PagePrev = "Ctrl-K"

@@ -84,7 +84,7 @@ if confirm "Install Homebrew, common tools, and Pi?"; then
 fi
 
 # --- Stow packages ---
-PACKAGES=(neovim zsh aerospace kitty git codex claude pi)
+PACKAGES=(neovim zsh aerospace kitty git codex claude pi lazysql)
 for pkg in "${PACKAGES[@]}"; do
   if [[ ! -d "$SCRIPT_DIR/$pkg" ]]; then
     echo "  ⚠ $pkg skipped (package directory missing)"

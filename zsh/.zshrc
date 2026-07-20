@@ -136,12 +136,12 @@ printf '\e[2 q'
 
 alias b=bun
 alias bb='bun run'
-alias supa='supabase'
+alias db='lazysql'
 alias n='nvim'
 alias nt='nvim +term'
 alias claude='caffeinate -i claude'
 alias codex='caffeinate -i codex'
-alias pi='caffeinate -i pi'
+alias pi='PI_SKIP_VERSION_CHECK=1 caffeinate -i pi'
 # Cursor CLI installs as cursor-agent; expose its shorter command too.
 if command -v cursor-agent &>/dev/null && ! command -v agent &>/dev/null; then
   alias agent='cursor-agent'
