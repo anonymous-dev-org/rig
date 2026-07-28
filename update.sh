@@ -76,6 +76,14 @@ for pkg in "${PACKAGES[@]}"; do
       prepare_codex_config
     fi
 
+    while IFS= read -r -d '' file; do
+      rel="${file#$SCRIPT_DIR/$pkg/}"
+      dest="$HOME/$rel"
+      if [[ -L "$dest" && "$(readlink "$dest")" == "$file" ]]; then
+        rm "$dest"
+      fi
+    done < <(find "$SCRIPT_DIR/$pkg" -not -type d -print0)
+
     if [[ "$pkg" == "aerospace" ]]; then
       clean_aerospace_generated_apps
     fi

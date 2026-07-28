@@ -96,11 +96,13 @@ for pkg in "${PACKAGES[@]}"; do
       prepare_codex_config
     fi
 
-    # Remove any existing non-symlink files that would conflict with stow
+    # Remove conflicts and migrate absolute links created by older Stow versions
     while IFS= read -r -d '' file; do
       rel="${file#$SCRIPT_DIR/$pkg/}"
       dest="$HOME/$rel"
-      if [[ -e "$dest" && ! -L "$dest" ]]; then
+      if [[ -L "$dest" && "$(readlink "$dest")" == "$file" ]]; then
+        rm "$dest"
+      elif [[ -e "$dest" && ! -L "$dest" ]]; then
         rm -rf "$dest"
       fi
     done < <(find "$SCRIPT_DIR/$pkg" -not -type d -print0)

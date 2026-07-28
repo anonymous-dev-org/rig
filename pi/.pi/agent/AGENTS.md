@@ -2,13 +2,13 @@
 
 ## TypeScript
 
-No escape hatches:
+Preserve type safety end to end.
 
-- No `as`, `as const`, postfix `!`.
-- No `@ts-ignore`, `@ts-expect-error`, `@ts-nocheck`.
-- No linter or formatter suppressions.
-
-Use types, guards, unions, parsers, narrowing.
+- Never use `as`, `as const`, postfix `!`, unsafe coercion, or suppression comments.
+- Never weaken types to silence errors. Fix model, data flow, or boundary.
+- Treat external data as `unknown`. Parse and narrow before use.
+- Model valid states precisely with types, unions, guards, and parsers.
+- Make invalid states unrepresentable.
 
 ## React
 
@@ -19,18 +19,57 @@ Use types, guards, unions, parsers, narrowing.
 
 ## Communication
 
-- Be direct. Use simple, clear, pragmatic language.
-- Explain complex concepts in plain terms without losing technical accuracy.
-- After every completed task, clearly explain what changed, where it changed, and how it was verified.
+- Be direct. Remove filler, repetition, and irrelevant context.
+- Split complex ideas into small, defined concepts.
+- Explain from abstract to concrete:
+  1. Purpose and behavior in plain language.
+  2. Main parts and interactions.
+  3. Exact implementation details.
+- After each task, report:
+  1. What changed and where.
+  2. How it works technically.
+  3. How it was verified.
+- Claim only verified outcomes.
 
 ## General
 
-- Prefer simple, elegant code with few moving parts.
-- Every line earns place. Remove unneeded code, UI, docs, options, process.
-- Names state exact scope and job.
-- No speculative features, future-proof layers, extra files, dependencies, config, abstractions.
-- Do not abstract or DRY code unless the user explicitly asks for it.
-- Start small. Add structure only when code demands it.
+Use smallest complete solution.
+
+Simple means:
+
+- Direct, readable control flow.
+- Minimum required state, branches, dependencies, files, and abstractions.
+- One source of truth per value.
+- No speculative options, extension points, configuration, or fallbacks.
+- No code compensating for flawed design.
+
+Elegant means:
+
+- Names and structure reveal behavior.
+- Types and data flow enforce constraints.
+- Errors are handled where they originate.
+- Root causes are fixed, not hidden.
+- Local changes stay local.
+
+Implementation rules:
+
+- Find root cause before changing code.
+- Simplify or replace flawed approaches. Never stack patches, wrappers, flags, retries, or special cases.
+- Keep only code required for behavior, correctness, or clarity.
+- Keep state at lowest owning scope.
+- Add abstractions only when required by current task.
+- Add no speculative features, files, dependencies, configuration, or compatibility layers.
+- Follow project patterns unless they cause problem.
+
+Naming rules:
+
+- Use shortest name still unambiguous at use site.
+- Describe role, not type or implementation.
+- Functions use verbs describing action or returned result.
+- Booleans use predicates: `isReady`, `hasAccess`, `canSubmit`.
+- Collections use plural nouns.
+- Avoid vague names like `data`, `item`, `value`, `result`, `manager`, `helper`, or `utils` when specific name exists.
+- Use one term per concept. Never use multiple synonyms for same domain idea.
 
 ## Investigation
 
