@@ -16,6 +16,7 @@ codex/.codex/history.jsonl
 codex/.codex/log/
 codex/.codex/sessions/
 codex/.codex/*.local.toml
+lazysql/Library/Application Support/lazysql/config.toml
 *.local
 *.sqlite*
 *.db*

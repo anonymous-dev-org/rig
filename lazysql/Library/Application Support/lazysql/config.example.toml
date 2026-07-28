@@ -1,3 +1,6 @@
+# Shared defaults for each user's ignored config.toml.
+# Keep database connections, credentials, environment values, and machine paths out of git.
+
 [application]
 DefaultPageSize = 300
 DisableSidebar = false

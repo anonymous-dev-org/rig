@@ -1,8 +1,8 @@
 #:schema https://developers.openai.com/codex/config-schema.json
 
 # Shared starting point for ~/.codex/config.toml.
-# Copy to config.toml for local use; keep trust, plugin state, notifications,
-# marketplace cache metadata, and hook trust hashes out of git.
+# Copy to config.toml for local use. Keep secrets, environment values, machine paths,
+# trust, plugin state, notifications, marketplace metadata, and hook hashes out of git.
 
 model = "gpt-5.5"
 model_reasoning_effort = "xhigh"

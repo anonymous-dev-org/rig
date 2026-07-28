@@ -43,27 +43,60 @@ clean_aerospace_generated_apps() {
   done
 }
 
-prepare_codex_config() {
-  local local_config="$SCRIPT_DIR/codex/.codex/config.toml"
-  local example_config="$SCRIPT_DIR/codex/.codex/config.example.toml"
-  local home_config="$HOME/.codex/config.toml"
-
-  [[ -e "$local_config" ]] && return
+prepare_local_config() {
+  local local_config="$SCRIPT_DIR/$1"
+  local example_config="$SCRIPT_DIR/$2"
+  local home_config="$HOME/$3"
 
   mkdir -p "$(dirname "$local_config")"
+
   if [[ -f "$home_config" && ! -L "$home_config" ]]; then
-    cp "$home_config" "$local_config"
-    echo "Preserved existing ~/.codex/config.toml as local ignored config"
-  elif [[ -f "$example_config" ]]; then
-    cp "$example_config" "$local_config"
-    echo "Seeded codex local config from config.example.toml"
+    if [[ -e "$local_config" ]] && ! cmp -s "$home_config" "$local_config"; then
+      echo "✗ Config conflict: $home_config differs from $local_config" >&2
+      return 1
+    fi
+    if [[ ! -e "$local_config" ]]; then
+      install -m 600 "$home_config" "$local_config"
+      cmp -s "$home_config" "$local_config"
+    fi
+    chmod 600 "$local_config"
+    rm "$home_config"
+    echo "Preserved existing $home_config as local ignored config"
+    return
   fi
+
+  if [[ -e "$local_config" ]]; then
+    chmod 600 "$local_config"
+  elif [[ -f "$example_config" ]]; then
+    install -m 600 "$example_config" "$local_config"
+    echo "Seeded local config from $example_config"
+  fi
+}
+
+prepare_package_config() {
+  case "$1" in
+    codex)
+      prepare_local_config \
+        "codex/.codex/config.toml" \
+        "codex/.codex/config.example.toml" \
+        ".codex/config.toml"
+      ;;
+    lazysql)
+      prepare_local_config \
+        "lazysql/Library/Application Support/lazysql/config.toml" \
+        "lazysql/Library/Application Support/lazysql/config.example.toml" \
+        "Library/Application Support/lazysql/config.toml"
+      ;;
+  esac
 }
 
 echo "=== anonymous.rig — Update ==="
 
-# Pull latest
-git pull
+# Re-exec after pull so remaining steps always use latest update logic.
+if [[ "${1:-}" != "--after-pull" ]]; then
+  git pull
+  exec "$SCRIPT_DIR/update.sh" --after-pull
+fi
 
 # Install or update Pi with its official npm package.
 npm install -g --ignore-scripts @earendil-works/pi-coding-agent
@@ -72,9 +105,7 @@ npm install -g --ignore-scripts @earendil-works/pi-coding-agent
 PACKAGES=(neovim zsh aerospace kitty git codex claude pi lazysql)
 for pkg in "${PACKAGES[@]}"; do
   if [[ -d "$pkg" ]]; then
-    if [[ "$pkg" == "codex" ]]; then
-      prepare_codex_config
-    fi
+    prepare_package_config "$pkg"
 
     while IFS= read -r -d '' file; do
       rel="${file#$SCRIPT_DIR/$pkg/}"

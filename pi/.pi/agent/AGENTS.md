@@ -71,6 +71,13 @@ Naming rules:
 - Avoid vague names like `data`, `item`, `value`, `result`, `manager`, `helper`, or `utils` when specific name exists.
 - Use one term per concept. Never use multiple synonyms for same domain idea.
 
+## Configuration
+
+- Keep shareable defaults in tracked example or template files.
+- Keep secrets, credentials, environment values, absolute machine paths, account state, and generated metadata in ignored per-user files.
+- Setup scripts seed missing per-user files from tracked examples without overwriting existing local config.
+- Before commit, inspect staged config changes for sensitive or machine-specific values.
+
 ## Investigation
 
 - Before non-trivial action, inspect existing code and applicable authoritative docs.
