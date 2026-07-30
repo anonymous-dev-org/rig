@@ -85,24 +85,35 @@ Naming rules:
 - Use `scratchpad` for important implementation concepts, applicable best practices and examples from docs, task plan details, decisions, constraints, findings, and open questions.
 - Keep notes concise and durable. Update scratchpad before first mutation.
 - Replace or prune stale notes as understanding changes. Never paste raw tool output.
-- Skip scratchpad for tiny tasks needing no investigation.
+- Skip scratchpad for tiny tasks needing no investigation and for bounded post-implementation reviews.
 
 ## Subagents
 
-- Keep simple, short, or sequential tasks local.
-- Delegate only when independent work can run in parallel, needs deep focused investigation, or would substantially pollute main context.
-- Delegation must save time or context. Never delegate merely to follow process.
-- Avoid default scout → planner → worker chains.
+- At start of non-trivial work, identify independent investigation, implementation, and verification tracks.
+- When two or more tracks can proceed independently, dispatch them together in one parallel subagent call. Do not serialize independent calls.
+- Keep simple tasks and work on one blocking path local. Use single subagents only when focused investigation or context isolation saves time.
 - Give each subagent bounded scope, exact context, expected output, and disjoint file ownership.
-- Keep blocking decisions and final integration in main agent.
+- Keep blocking decisions, shared files, and final integration in main agent.
+- Avoid ritual scout → planner → worker chains. Delegate work, not process.
 
 ## Review
 
-- Reviewer is post-implementation, not pair programmer.
-- Invoke reviewer only after coding changes and initial validation are complete.
-- Use reviewer for non-trivial, risky, security-sensitive, or broad changes.
-- Skip reviewer for tiny edits, routine config or docs changes, and investigation-only tasks unless user requests review.
-- Verify reviewer findings before applying them. Re-run relevant validation after fixes.
+- Review is post-implementation, after initial validation. Reviewers never pair-program.
+- Select only the smallest applicable review scope:
+  - `reviewer`: runtime correctness, state, edge cases, and directly affected data flow; use as the fallback when no narrower specialist covers the concern.
+  - `reviewer-requirements`: whether multi-part or acceptance-criteria-driven work fully implements the supplied requirements and observable outcomes.
+  - `reviewer-quality`: maintainability of structural changes, refactors, shared abstractions, complex data flow, types, naming, ownership, or duplication.
+  - `reviewer-data`: schemas, migrations, persistence, caches, serialization, transactions, data compatibility, or integrity.
+  - `reviewer-api`: public APIs, shared contracts, request or response schemas, events, protocols, integrations, or compatibility.
+  - `reviewer-ui`: UI, interaction, frontend state, accessibility, or responsive behavior.
+  - `reviewer-security`: authentication, authorization, secrets, untrusted input, command execution, filesystem or network boundaries, permissions, cryptography, or sensitive data.
+- Never invoke a specialist merely because it exists. A UI-only change does not need a security review; a small direct implementation does not automatically need requirements and quality reviews.
+- A specialist replaces the fallback for the concern it covers. Combine reviewers only when each has a distinct, explicitly assigned concern that the others do not cover.
+- Give every reviewer the exact concern, requirements, changed files, and completed validation. Review changed code and directly affected callers, consumers, contracts, and state paths—not the entire codebase.
+- For broad cross-domain changes, dispatch independent applicable reviews together in one parallel subagent call. Use disjoint concerns or file scopes and at most three reviewers.
+- Keep routine and low-risk changes local. Use no reviewer for tiny edits, routine config or docs, or investigation-only tasks unless requested.
+- Main agent integrates findings. Do not add a synthesis reviewer or automatically re-review fixes.
+- Verify findings before applying them and re-run relevant validation after fixes.
 
 ## Docs
 
