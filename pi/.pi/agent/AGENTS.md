@@ -109,8 +109,8 @@ Naming rules:
 ## Review
 
 - Review is post-implementation, after initial validation. Reviewers never pair-program.
-- Select only the smallest applicable review scope:
-  - `reviewer`: runtime correctness, state, edge cases, and directly affected data flow; use as the fallback when no narrower specialist covers the concern.
+- Identify the concrete review concerns first, then select one or more specific reviewers that cover only those concerns:
+  - `reviewer-runtime`: runtime correctness, control flow, state, edge cases, and directly affected data flow.
   - `reviewer-requirements`: whether multi-part or acceptance-criteria-driven work fully implements the supplied requirements and observable outcomes.
   - `reviewer-quality`: maintainability of structural changes, refactors, shared abstractions, complex data flow, types, naming, ownership, or duplication.
   - `reviewer-data`: schemas, migrations, persistence, caches, serialization, transactions, data compatibility, or integrity.
@@ -118,7 +118,7 @@ Naming rules:
   - `reviewer-ui`: UI, interaction, frontend state, accessibility, or responsive behavior.
   - `reviewer-security`: authentication, authorization, secrets, untrusted input, command execution, filesystem or network boundaries, permissions, cryptography, or sensitive data.
 - Never invoke a specialist merely because it exists. A UI-only change does not need a security review; a small direct implementation does not automatically need requirements and quality reviews.
-- A specialist replaces the fallback for the concern it covers. Combine reviewers only when each has a distinct, explicitly assigned concern that the others do not cover.
+- Use multiple reviewers only when the change has multiple distinct concerns. Assign each reviewer one explicit, non-overlapping concern; never add a generic or synthesis review.
 - Give every reviewer the exact concern, requirements, changed files, and completed validation. Review changed code and directly affected callers, consumers, contracts, and state paths—not the entire codebase.
 - For broad cross-domain changes, dispatch independent applicable reviews together in one parallel subagent call. Use disjoint concerns or file scopes and at most three reviewers.
 - Keep routine and low-risk changes local. Use no reviewer for tiny edits, routine config or docs, or investigation-only tasks unless requested.
