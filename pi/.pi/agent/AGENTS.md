@@ -25,15 +25,19 @@ Preserve type safety end to end.
   1. Purpose and behavior in plain language.
   2. Main parts and interactions.
   3. Exact implementation details.
-- After each task, report:
-  1. What changed and where.
-  2. How it works technically.
-  3. How it was verified.
+- When a task is finished, the final response must contain these sections in this order:
+  1. **Overview** — Explain in simple terms exactly which functionality was implemented and what the user can now do. Describe behavior, not just changed files. Add a small Mermaid diagram only when it makes a multi-part flow easier to understand.
+  2. **Technical integration** — Explain how the new functionality works as a system: its main parts, data or control flow, and how it connects to the existing code.
+  3. **Implementation details** — Briefly explain the important code-level decisions, algorithms, state, types, and files. Use simple wording and keep this concise.
+  4. **Verification** — State the checks actually run and their outcomes.
+- Keep the sections distinct: overview covers behavior, technical integration covers system interactions, and implementation details covers the code.
 - Claim only verified outcomes.
 
 ## General
 
 Use smallest complete solution.
+
+- Avoid computer-use tools whenever possible. Use them only when the user explicitly requests computer use or when the task requires it.
 
 Simple means:
 
