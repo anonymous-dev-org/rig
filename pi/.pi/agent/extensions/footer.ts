@@ -39,25 +39,46 @@ function getDelegation(input: unknown): Delegation {
 
 export default function (pi: ExtensionAPI) {
   let model = "no-model";
-  let worktree = "no-worktree";
-  let worktreeLookup = 0;
+  let checkout = "no-checkout";
+  let checkoutLookup = 0;
   let requestRender: (() => void) | undefined;
   const activeDelegations = new Set<string>();
 
-  async function updateWorktree(cwd: string): Promise<void> {
-    const lookup = ++worktreeLookup;
-    const result = await pi.exec("git", ["rev-parse", "--show-toplevel"], { cwd, timeout: 2_000 });
-    if (lookup !== worktreeLookup) return;
+  async function updateCheckout(cwd: string): Promise<void> {
+    const lookup = ++checkoutLookup;
+    const result = await pi.exec(
+      "git",
+      [
+        "rev-parse",
+        "--path-format=absolute",
+        "--show-toplevel",
+        "--git-dir",
+        "--git-common-dir",
+      ],
+      { cwd, timeout: 2_000 },
+    );
+    if (lookup !== checkoutLookup) return;
 
-    const root = result.code === 0 ? result.stdout.trim() : "";
-    worktree = path.basename(root || cwd) || cwd;
+    const [root = "", gitDir = "", commonGitDir = ""] = result.code === 0
+      ? result.stdout.trim().split(/\r?\n/)
+      : [];
+    const directory = path.basename(root || cwd) || cwd;
+
+    if (!root || !gitDir || !commonGitDir) {
+      checkout = `dir:${directory}`;
+    } else if (path.normalize(gitDir) === path.normalize(commonGitDir)) {
+      checkout = `repo:${directory}`;
+    } else {
+      const repository = path.basename(path.dirname(commonGitDir));
+      checkout = `wt:${directory} · repo:${repository}`;
+    }
     requestRender?.();
   }
 
   pi.on("session_start", async (_event, ctx) => {
     model = ctx.model?.id ?? "no-model";
     activeDelegations.clear();
-    await updateWorktree(ctx.cwd);
+    await updateCheckout(ctx.cwd);
 
     ctx.ui.setFooter((tui, theme, footerData) => {
       requestRender = () => tui.requestRender();
@@ -93,7 +114,7 @@ export default function (pi: ExtensionAPI) {
           const branch = footerData.getGitBranch() ?? "no-git";
           const thinking = pi.getThinkingLevel();
 
-          const left = theme.fg("accent", ` wt:${worktree} `) + theme.fg("dim", ` ${branch}`);
+          const left = theme.fg("accent", ` ${checkout} `) + theme.fg("dim", ` ${branch}`);
           const active = activeDelegations.size > 0 ? ` active:${activeDelegations.size}` : "";
           const right =
             theme.fg(
@@ -115,7 +136,7 @@ export default function (pi: ExtensionAPI) {
   });
 
   pi.on("before_agent_start", async (event) => {
-    await updateWorktree(event.systemPromptOptions.cwd);
+    await updateCheckout(event.systemPromptOptions.cwd);
   });
 
   pi.on("tool_execution_start", async (event) => {

@@ -78,12 +78,17 @@ Naming rules:
 - Setup scripts seed missing per-user files from tracked examples without overwriting existing local config.
 - Before commit, inspect staged config changes for sensitive or machine-specific values.
 
+## Planning
+
+- Always divide plans into trackable tasks.
+- Each task must recap its intended outcome and include a todo list.
+
 ## Investigation
 
 - Before non-trivial action, inspect existing code and applicable authoritative docs.
 - During non-trivial code or docs exploration, update `scratchpad` after each useful read/search batch.
 - Use `scratchpad` for important implementation concepts, applicable best practices and examples from docs, task plan details, decisions, constraints, findings, and open questions.
-- Before implementing a plan, load the active plan slice into `scratchpad`: its goal, requirements, target files, dependencies, decisions, and validation. Refresh it before each slice so implementation-critical context stays close to the work.
+- Before starting each planned task, load that task's complete active plan slice into `scratchpad`: its goal, requirements, todo list, target files, dependencies, decisions, and validation. Refresh it whenever the task or plan changes so implementation-critical context stays close to the work.
 - Keep notes concise and durable. Update scratchpad before first mutation.
 - Replace completed plan slices and prune stale notes as understanding changes. Never paste raw tool output.
 - Skip scratchpad for tiny tasks needing no investigation and for bounded post-implementation reviews.
