@@ -83,8 +83,9 @@ Naming rules:
 - Before non-trivial action, inspect existing code and applicable authoritative docs.
 - During non-trivial code or docs exploration, update `scratchpad` after each useful read/search batch.
 - Use `scratchpad` for important implementation concepts, applicable best practices and examples from docs, task plan details, decisions, constraints, findings, and open questions.
+- Before implementing a plan, load the active plan slice into `scratchpad`: its goal, requirements, target files, dependencies, decisions, and validation. Refresh it before each slice so implementation-critical context stays close to the work.
 - Keep notes concise and durable. Update scratchpad before first mutation.
-- Replace or prune stale notes as understanding changes. Never paste raw tool output.
+- Replace completed plan slices and prune stale notes as understanding changes. Never paste raw tool output.
 - Skip scratchpad for tiny tasks needing no investigation and for bounded post-implementation reviews.
 
 ## Subagents
