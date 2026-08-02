@@ -3,8 +3,19 @@
     "defaultMode": "auto"
   },
   "model": "claude-opus-4-8",
+  "extraKnownMarketplaces": {
+    "caveman": {
+      "source": {
+        "source": "github",
+        "repo": "JuliusBrussee/caveman"
+      }
+    }
+  },
   "effortLevel": "medium",
   "theme": "dark-ansi",
   "agentPushNotifEnabled": true,
-  "skipAutoPermissionPrompt": true
+  "skipAutoPermissionPrompt": true,
+  "enabledPlugins": {
+    "caveman@caveman": true
+  }
 }

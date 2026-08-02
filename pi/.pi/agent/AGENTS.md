@@ -2,136 +2,135 @@
 
 ## TypeScript
 
-Preserve type safety end to end.
+Preserve end-to-end type safety.
 
 - Never use `as`, `as const`, postfix `!`, unsafe coercion, or suppression comments.
-- Never weaken types to silence errors. Fix model, data flow, or boundary.
-- Treat external data as `unknown`. Parse and narrow before use.
-- Model valid states precisely with types, unions, guards, and parsers.
+- Never weaken types to silence errors; fix model, data flow, or boundary.
+- Treat external data as `unknown`; parse, narrow before use.
+- Precisely model valid states via types, unions, guards, parsers.
 - Make invalid states unrepresentable.
 
 ## React
 
-- `useEffect` last resort: browser APIs, widgets, subscriptions, timers, external systems only.
-- State at lowest owner. Lift only when shared. Use Jotai when props or local state get awkward.
-- Small, focused components. Split large components.
-- Prefer flexbox. Grid only when clearly better.
+- `useEffect` only as last resort: browser APIs, widgets, subscriptions, timers, external systems.
+- State at lowest owner; lift only when shared. Use Jotai when props/local state get awkward.
+- Small, focused components; split large ones.
+- Prefer flexbox; grid only when clearly better.
 
 ## Communication
 
-- Be direct. Remove filler, repetition, and irrelevant context.
-- Split complex ideas into small, defined concepts.
-- Explain from abstract to concrete:
-  1. Purpose and behavior in plain language.
-  2. Main parts and interactions.
+- Direct: omit filler, repetition, irrelevant context.
+- Split complexity: small, defined concepts.
+- Explain abstract → concrete:
+  1. Plain-language purpose, behavior.
+  2. Main parts, interactions.
   3. Exact implementation details.
-- When a task is finished, the final response must contain these sections in this order:
-  1. **Overview** — Explain in simple terms exactly which functionality was implemented and what the user can now do. Describe behavior, not just changed files. Add a small Mermaid diagram only when it makes a multi-part flow easier to understand.
-  2. **Technical integration** — Explain how the new functionality works as a system: its main parts, data or control flow, and how it connects to the existing code.
-  3. **Implementation details** — Briefly explain the important code-level decisions, algorithms, state, types, and files. Use simple wording and keep this concise.
-  4. **Verification** — State the checks actually run and their outcomes.
-- Keep the sections distinct: overview covers behavior, technical integration covers system interactions, and implementation details covers the code.
+- Finished-task final response sections, in order:
+  1. **Overview** — Simply state exact implemented functionality and new user capabilities. Behavior, not only changed files. Small Mermaid diagram only when clarifying multi-part flow.
+  2. **Technical integration** — System operation: main parts, data or control flow, existing-code connections.
+  3. **Implementation details** — Brief, simple key code decisions, algorithms, state, types, files.
+  4. **Verification** — Checks actually run; outcomes.
+- Sections distinct: overview = behavior; technical integration = system interactions; implementation details = code.
 - Claim only verified outcomes.
 
 ## General
 
 Use smallest complete solution.
 
-- Avoid computer-use tools whenever possible. Use them only when the user explicitly requests computer use or when the task requires it.
+- Avoid computer-use tools unless explicitly user-requested or task-required.
 
 Simple means:
 
 - Direct, readable control flow.
-- Minimum required state, branches, dependencies, files, and abstractions.
+- Minimum required state, branches, dependencies, files, abstractions.
 - One source of truth per value.
-- No speculative options, extension points, configuration, or fallbacks.
+- No speculative options, extension points, configuration, fallbacks.
 - No code compensating for flawed design.
 
 Elegant means:
 
-- Names and structure reveal behavior.
-- Types and data flow enforce constraints.
-- Errors are handled where they originate.
-- Root causes are fixed, not hidden.
+- Behavior-revealing names, structure.
+- Constraint-enforcing types, data flow.
+- Handle errors at origin.
+- Fix, never hide, root causes.
 - Local changes stay local.
 
 Implementation rules:
 
-- Find root cause before changing code.
-- Simplify or replace flawed approaches. Never stack patches, wrappers, flags, retries, or special cases.
-- Keep only code required for behavior, correctness, or clarity.
-- Keep state at lowest owning scope.
-- Add abstractions only when required by current task.
-- Add no speculative features, files, dependencies, configuration, or compatibility layers.
-- Follow project patterns unless they cause problem.
+- Find root cause before changes.
+- Simplify/replace flaws; never stack patches, wrappers, flags, retries, special cases.
+- Only code required for behavior, correctness, clarity.
+- State at lowest owning scope.
+- Abstractions only when current task requires.
+- No speculative features, files, dependencies, configuration, compatibility layers.
+- Follow project patterns unless problematic.
 
 Naming rules:
 
-- Use shortest name still unambiguous at use site.
-- Describe role, not type or implementation.
-- Functions use verbs describing action or returned result.
-- Booleans use predicates: `isReady`, `hasAccess`, `canSubmit`.
-- Collections use plural nouns.
-- Avoid vague names like `data`, `item`, `value`, `result`, `manager`, `helper`, or `utils` when specific name exists.
-- Use one term per concept. Never use multiple synonyms for same domain idea.
+- Shortest unambiguous name at use site.
+- Role, not type/implementation.
+- Function verbs describe action/return.
+- Boolean predicates: `isReady`, `hasAccess`, `canSubmit`.
+- Collections: plural nouns.
+- Avoid vague `data`, `item`, `value`, `result`, `manager`, `helper`, or `utils` when specific name exists.
+- One term per concept; never multiple synonyms.
 
 ## Configuration
 
-- Keep shareable defaults in tracked example or template files.
-- Keep secrets, credentials, environment values, absolute machine paths, account state, and generated metadata in ignored per-user files.
+- Shareable defaults in tracked example/template files.
+- Secrets, credentials, environment values, absolute machine paths, account state, generated metadata in ignored per-user files.
 - Setup scripts seed missing per-user files from tracked examples without overwriting existing local config.
-- Before commit, inspect staged config changes for sensitive or machine-specific values.
+- Before commit, inspect staged config changes for sensitive/machine-specific values.
 
 ## Planning
 
-- Always divide plans into trackable tasks.
-- Each task must recap its intended outcome and include a todo list.
+- Create a structured plan when the user asks or work is complex, ambiguous, risky, or has multiple dependent steps.
+- Skip planning for simple, obvious, bounded tasks.
+- Each planned task needs an intended outcome and todo list.
+- Keep the active plan as task and progress source of truth. Revise unfinished tasks when discoveries change the work; preserve completed-task history.
+- `/plan` is an optional strict read-only planning mode, not required for normal adaptive planning.
 
 ## Investigation
 
 - Before non-trivial action, inspect existing code and applicable authoritative docs.
-- During non-trivial code or docs exploration, update `scratchpad` after each useful read/search batch.
-- Use `scratchpad` for important implementation concepts, applicable best practices and examples from docs, task plan details, decisions, constraints, findings, and open questions.
-- Before starting each planned task, load that task's complete active plan slice into `scratchpad`: its goal, requirements, todo list, target files, dependencies, decisions, and validation. Refresh it whenever the task or plan changes so implementation-critical context stays close to the work.
-- Keep notes concise and durable. Update scratchpad before first mutation.
-- Replace completed plan slices and prune stale notes as understanding changes. Never paste raw tool output.
-- Skip scratchpad for tiny tasks needing no investigation and for bounded post-implementation reviews.
+- Do not maintain duplicate task or planning state outside the structured plan.
 
 ## Subagents
 
-- At start of non-trivial work, identify independent investigation, implementation, and verification tracks.
-- When two or more tracks can proceed independently, dispatch them together in one parallel subagent call. Do not serialize independent calls.
-- Keep simple tasks and work on one blocking path local. Use single subagents only when focused investigation or context isolation saves time.
-- Give each subagent bounded scope, exact context, expected output, and disjoint file ownership.
-- Keep blocking decisions, shared files, and final integration in main agent.
-- Avoid ritual scout → planner → worker chains. Delegate work, not process.
+- Use non-review subagents only to parallelize two or more independent tasks. Dispatch them together in one parallel call; never delegate single or sequential work.
+- Keep simple tasks and blocking paths in main agent.
+- Give each subagent bounded scope, exact context, expected output, disjoint file ownership.
+- Main agent keeps blocking decisions, shared files, final integration.
+- Avoid ritual scout → planner → worker chains; delegate parallel work, not process.
+- Review specialists are exception: use one reviewer alone when its domain-specific prompt materially improves post-implementation review.
 
 ## Review
 
-- Review is post-implementation, after initial validation. Reviewers never pair-program.
-- Identify the concrete review concerns first, then select one or more specific reviewers that cover only those concerns:
-  - `reviewer-runtime`: runtime correctness, control flow, state, edge cases, and directly affected data flow.
-  - `reviewer-requirements`: whether multi-part or acceptance-criteria-driven work fully implements the supplied requirements and observable outcomes.
-  - `reviewer-quality`: maintainability of structural changes, refactors, shared abstractions, complex data flow, types, naming, ownership, or duplication.
-  - `code-simplifier`: accidental complexity or overengineering where a smaller design may preserve behavior with a better concrete tradeoff.
-  - `reviewer-data`: schemas, migrations, persistence, caches, serialization, transactions, data compatibility, or integrity.
-  - `reviewer-api`: public APIs, shared contracts, request or response schemas, events, protocols, integrations, or compatibility.
-  - `reviewer-ui`: UI, interaction, frontend state, accessibility, or responsive behavior.
-  - `reviewer-security`: authentication, authorization, secrets, untrusted input, command execution, filesystem or network boundaries, permissions, cryptography, or sensitive data.
-- Never invoke a specialist merely because it exists. A UI-only change does not need a security review; a small direct implementation does not automatically need requirements and quality reviews.
-- Use multiple reviewers only when the change has multiple distinct concerns. Assign each reviewer one explicit, non-overlapping concern; never add a generic or synthesis review.
-- Give every reviewer the exact concern, requirements, changed files, and completed validation. Review changed code and directly affected callers, consumers, contracts, and state paths—not the entire codebase.
-- For broad cross-domain changes, dispatch independent applicable reviews together in one parallel subagent call. Use disjoint concerns or file scopes and at most three reviewers.
-- Keep routine and low-risk changes local. Use no reviewer for tiny edits, routine config or docs, or investigation-only tasks unless requested.
-- Main agent integrates findings. Do not add a synthesis reviewer or automatically re-review fixes.
-- Verify findings before applying them and re-run relevant validation after fixes.
+- Review only post-implementation and initial validation; never pair-program.
+- First identify concrete concerns; select only matching reviewers:
+  - `reviewer-runtime`: runtime correctness, control flow, state, edge cases, affected data flow.
+  - `reviewer-requirements`: multi-part/acceptance-criteria requirement completeness, observable outcomes.
+  - `reviewer-quality`: structural-change maintainability, refactors, shared abstractions, complex data flow, types, naming, ownership, duplication.
+  - `code-simplifier`: accidental complexity/overengineering; smaller behavior-preserving design with better concrete tradeoff.
+  - `reviewer-data`: schemas, migrations, persistence, caches, serialization, transactions, data compatibility, integrity.
+  - `reviewer-api`: public APIs, shared contracts, request or response schemas, events, protocols, integrations, compatibility.
+  - `reviewer-ui`: UI, interaction, frontend state, accessibility, responsive behavior.
+  - `reviewer-security`: authentication, authorization, secrets, untrusted input, command execution, filesystem or network boundaries, permissions, cryptography, sensitive data.
+- Never invoke specialists merely for availability. UI-only change: no security review. Small direct implementation: requirements/quality reviews not automatic.
+- Multiple reviewers only for distinct concerns; each gets one explicit, non-overlapping concern; never generic/synthesis review.
+- Give every reviewer exact concern, requirements, changed files, completed validation. Review changed code plus directly affected callers, consumers, contracts, state paths—not entire codebase.
+- Broad cross-domain changes: dispatch independent applicable reviews together in one parallel subagent call; disjoint concerns/file scopes; maximum three reviewers.
+- Keep routine/low-risk changes local. No reviewer for tiny edits, routine config/docs, investigation-only tasks unless requested. Unlike other subagents, a matching reviewer may run alone.
+- Main agent integrates findings; no synthesis reviewer; never automatically re-review fixes.
+- Verify findings before applying; rerun relevant validation after fixes.
 
 ## Docs
 
-- Before working, read current authoritative docs for everything relevant to task.
-- Match project-pinned versions. Follow latest applicable best practices. Never rely on memory alone.
-- Docs unclear or stale: inspect types and source.
+- Before work, read current authoritative docs for everything relevant to task.
+- Match project-pinned versions. Follow latest applicable best practices; never rely on memory alone.
+- Unclear/stale docs: inspect types and source.
 
 ## Validation
 
-No automated tests. Use type-check, build, lint, runtime checks, manual verification.
+- Do not create tests unless the user explicitly asks for them.
+- Use type-check, build, lint, runtime checks, manual verification.
