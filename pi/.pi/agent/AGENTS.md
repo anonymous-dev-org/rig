@@ -113,6 +113,7 @@ Naming rules:
   - `reviewer-runtime`: runtime correctness, control flow, state, edge cases, and directly affected data flow.
   - `reviewer-requirements`: whether multi-part or acceptance-criteria-driven work fully implements the supplied requirements and observable outcomes.
   - `reviewer-quality`: maintainability of structural changes, refactors, shared abstractions, complex data flow, types, naming, ownership, or duplication.
+  - `code-simplifier`: accidental complexity or overengineering where a smaller design may preserve behavior with a better concrete tradeoff.
   - `reviewer-data`: schemas, migrations, persistence, caches, serialization, transactions, data compatibility, or integrity.
   - `reviewer-api`: public APIs, shared contracts, request or response schemas, events, protocols, integrations, or compatibility.
   - `reviewer-ui`: UI, interaction, frontend state, accessibility, or responsive behavior.
