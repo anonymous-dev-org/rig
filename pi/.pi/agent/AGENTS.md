@@ -20,17 +20,15 @@ Preserve end-to-end type safety.
 ## Communication
 
 - Direct: omit filler, repetition, irrelevant context.
-- Split complexity: small, defined concepts.
-- Explain abstract → concrete:
-  1. Plain-language purpose, behavior.
-  2. Main parts, interactions.
-  3. Exact implementation details.
+- Use simple, low-level terms. Explain core concepts before naming abstractions or heuristics.
+- Point to the concrete code that creates the behavior: files, functions, state, branches, and data flow.
+- Describe the new status quo, not only the edit history.
+- Use a small ASCII diagram only when it makes a multi-part flow easier to understand.
 - Finished-task final response sections, in order:
-  1. **Overview** — Simply state exact implemented functionality and new user capabilities. Behavior, not only changed files. Small Mermaid diagram only when clarifying multi-part flow.
-  2. **Technical integration** — System operation: main parts, data or control flow, existing-code connections.
-  3. **Implementation details** — Brief, simple key code decisions, algorithms, state, types, files.
-  4. **Verification** — Checks actually run; outcomes.
-- Sections distinct: overview = behavior; technical integration = system interactions; implementation details = code.
+  1. **What changed** — Explain what changed, why it changed, and how users or the system will behave now. Keep this simple and clear.
+  2. **How it works** — Explain the implemented solution in more detail, still in simple terms. Start with the overall flow, then name the main parts and their interactions, then point to the exact code decisions and files. Include checks actually run and their outcomes.
+  3. **Plan drift** — State what changed from the original plan and why. If nothing changed, say so directly. If no plan existed, say that.
+- Keep sections distinct: current behavior in **What changed**, concrete mechanics and verification in **How it works**, deviations only in **Plan drift**.
 - Claim only verified outcomes.
 
 ## General
