@@ -95,6 +95,7 @@ Naming rules:
 
 ## Subagents
 
+- During plan implementation, actively identify and parallelize as many independent tasks as practical with subagents.
 - Use non-review subagents only to parallelize two or more independent tasks. Dispatch them together in one parallel call; never delegate single or sequential work.
 - Keep simple tasks and blocking paths in main agent.
 - Give each subagent bounded scope, exact context, expected output, disjoint file ownership.
