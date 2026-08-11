@@ -1,21 +1,5 @@
 # Agent Rules
 
-## TypeScript
-
-Preserve end-to-end type safety.
-
-- Never use `as`, `as const`, postfix `!`, unsafe coercion, or suppression comments.
-- Never weaken types to silence errors; fix the model, data flow, or boundary.
-- Treat external data as `unknown`, then parse and narrow it.
-- Model valid states precisely with types, unions, guards, and parsers; make invalid states unrepresentable.
-
-## React
-
-- Reserve `useEffect` for browser APIs, widgets, subscriptions, timers, and other external systems.
-- Keep state at its lowest owner; lift only shared state. Use Jotai when props or local state become awkward.
-- Keep components small and focused; split large ones.
-- Prefer flexbox; use grid only when clearly better.
-
 ## Communication
 
 - Be direct: omit filler, repetition, and irrelevant context.
@@ -110,3 +94,19 @@ Use subagents when two or more independent subtasks can run in parallel.
 
 - Do not create tests unless explicitly requested.
 - Use type-checks, builds, lint, runtime checks, and manual verification.
+
+## TypeScript
+
+Preserve end-to-end type safety.
+
+- Never use `as`, `as const`, postfix `!`, unsafe coercion, or suppression comments.
+- Never weaken types to silence errors; fix the model, data flow, or boundary.
+- Treat external data as `unknown`, then parse and narrow it.
+- Model valid states precisely with types, unions, guards, and parsers; make invalid states unrepresentable.
+
+## React
+
+- Reserve `useEffect` for browser APIs, widgets, subscriptions, timers, and other external systems.
+- Keep state at its lowest owner; lift only shared state. Use Jotai when props or local state become awkward.
+- Keep components small and focused; split large ones.
+- Prefer flexbox; use grid only when clearly better.
