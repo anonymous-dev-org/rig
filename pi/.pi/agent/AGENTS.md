@@ -89,7 +89,7 @@ Use subagents when two or more independent subtasks can run in parallel.
 
 ## Validation
 
-- Do not create tests unless explicitly requested.
+- Do not create tests or documentation unless explicitly requested.
 - Use type-checks, builds, lint, runtime checks, and manual verification.
 
 ## TypeScript
