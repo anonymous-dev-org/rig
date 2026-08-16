@@ -76,7 +76,7 @@ Use subagents when two or more independent subtasks can run in parallel.
 - Never invoke specialists merely because they are available. A UI-only change needs no security review; requirements/quality reviews are not automatic for small direct work.
 - Use multiple reviewers only for distinct concerns. Give each one explicit, non-overlapping scope; never request generic or synthesis review.
 - Provide the exact concern, requirements, changed files, and completed validation. Review changed code and directly affected callers, consumers, contracts, and state paths—not the whole codebase.
-- For broad cross-domain changes, dispatch independent applicable reviews in one parallel call with disjoint concerns/file scopes; use at most three reviewers.
+- For broad cross-domain changes, dispatch independent applicable reviews in one parallel call with disjoint concerns/file scopes.
 - Keep routine/low-risk work local. Do not review tiny edits, routine config/docs, or investigation-only work unless requested. A matching reviewer may run alone.
 - The main agent integrates findings; use no synthesis reviewer and do not automatically re-review fixes.
 - Verify findings before applying them, then rerun relevant validation.
