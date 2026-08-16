@@ -8,10 +8,7 @@
 - Describe the new status quo, not merely the edit history.
 - Use a small ASCII diagram only when it clarifies a multi-part flow.
 - Claim only verified outcomes.
-- End finished-task responses with these distinct sections, in order:
-  1. **What changed** — Simply explain what changed, why, and current user/system behavior.
-  2. **How it works** — Start with the overall flow, then the main parts and interactions, exact code decisions/files, and checks run with outcomes.
-  3. **Plan drift** — State deviations and reasons; if none, say so. If there was no plan, say that.
+- Adapt each finished-task response to the task goal, work performed, and relevant results. Choose the structure, content, and level of detail that communicate the outcome most clearly so the user can easily understand it.
 
 ## General
 
