@@ -6,10 +6,6 @@
 .env
 .env.*
 !.env.example
-.claude/
-!claude/.claude/
-**/.claude/settings.local.json
-**/.claude/*.local.json
 codex/.codex/auth.json
 codex/.codex/config.toml
 codex/.codex/history.jsonl

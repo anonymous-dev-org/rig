@@ -102,7 +102,7 @@ fi
 npm install -g --ignore-scripts @earendil-works/pi-coding-agent
 
 # Re-stow all packages (stow is idempotent, safe to re-run)
-PACKAGES=(neovim zsh aerospace kitty git codex claude pi lazysql)
+PACKAGES=(neovim zsh aerospace kitty git codex pi lazysql)
 for pkg in "${PACKAGES[@]}"; do
   if [[ -d "$pkg" ]]; then
     prepare_package_config "$pkg"
