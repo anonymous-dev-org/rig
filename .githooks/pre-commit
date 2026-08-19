@@ -1,0 +1,22 @@
+#!/bin/sh
+set -eu
+
+# Reject paths and identifiers tied to one user or machine.
+path_pattern='(/Users/[^/[:space:]]+|/home/[^/[:space:]]+|[A-Za-z]:[\\/]Users[\\/][^\\/[:space:]]+|/Volumes/[^/[:space:]]+|/private/var/folders/[^/[:space:]]+)'
+identifier_pattern='(hardware_uuid|serial_number|computer_name|local_host_name|hostname)[[:space:]]*[:=]'
+mac_address_pattern='(^|[^[:xdigit:]])([[:xdigit:]]{2}:){5}[[:xdigit:]]{2}([^[:xdigit:]]|$)'
+
+matches=$(
+  git grep --cached -n -I -i -E \
+    -e "$path_pattern" \
+    -e "$identifier_pattern" \
+    -e "$mac_address_pattern" \
+    -- . ':(exclude).githooks/pre-commit' || true
+)
+
+if [ -n "$matches" ]; then
+  printf '%s\n' 'Commit blocked: staged files contain a user- or machine-specific value:' >&2
+  printf '%s\n' "$matches" >&2
+  printf '%s\n' 'Replace it with $HOME, a relative path, or an example value.' >&2
+  exit 1
+fi

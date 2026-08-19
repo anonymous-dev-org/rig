@@ -2,6 +2,7 @@
 set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"
+git config --local core.hooksPath .githooks
 
 YES_ALL=false
 if [[ "$1" == "--yes" ]]; then

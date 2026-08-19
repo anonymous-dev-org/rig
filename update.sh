@@ -2,6 +2,7 @@
 set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"
+git config --local core.hooksPath .githooks
 
 compile_swift_apps() {
   local scripts_dir="$HOME/.config/aerospace/scripts"
