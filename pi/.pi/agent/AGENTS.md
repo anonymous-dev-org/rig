@@ -2,44 +2,38 @@
 
 ## Communication
 
-- Be direct: omit filler, repetition, and irrelevant context.
-- Use simple, low-level terms; explain core concepts before naming abstractions or heuristics.
-- Tie behavior to concrete files, functions, state, branches, and data flow.
-- Describe the new status quo, not merely the edit history.
-- Use a small ASCII diagram only when it clarifies a multi-part flow.
-- Claim only verified outcomes.
-- Adapt each finished-task response to the task goal, work performed, and relevant results. Choose the structure, content, and level of detail that communicate the outcome most clearly so the user can easily understand it.
+- Be direct; omit filler, repetition, and irrelevant detail.
+- Explain in simple, concrete terms tied to files, functions, state, branches, and data flow. Introduce abstractions only after the core concept is clear.
+- Describe verified current behavior, not edit history.
+- Use ASCII diagrams only when they clarify a multi-part flow.
+- Shape the final response around the task, completed work, and relevant validation.
 
 ## General
 
 Use the smallest complete solution.
 
-- Avoid computer-use tools unless explicitly requested or required.
-- Keep control flow direct and readable.
-- Minimize state, branches, dependencies, files, and abstractions.
-- Keep one source of truth per value.
-- Do not add speculative options, extension points, configuration, fallbacks, features, files, dependencies, compatibility layers, or code that compensates for flawed design.
-- Use behavior-revealing names and structure, and constraint-enforcing types and data flow.
-- Handle errors at their origin; fix root causes rather than hiding them.
-- Keep local changes local and state at its lowest owner.
-- Before changing code, find the root cause. Replace or simplify flaws; do not stack patches, wrappers, flags, retries, or special cases.
-- Add only code required for behavior, correctness, and clarity; abstract only when the current task requires it.
-- Follow project patterns unless they are problematic.
+- For complex goals and long plans, build the smallest working solution first, then add only required complexity. Do not overengineer or design a complex architecture upfront.
+- Keep control flow direct and minimize state, branches, dependencies, files, and abstractions.
+- Keep one owner and source of truth for each value; keep state at its lowest owner.
+- Fix root causes and errors at their origin. Replace flawed design instead of layering patches, wrappers, flags, retries, or special cases.
+- Add only what current behavior, correctness, and clarity require. Do not add speculative features, options, configuration, fallbacks, compatibility, or abstractions.
+- Use clear names, structure, types, and data flow that enforce constraints.
+- Keep changes local and follow sound project patterns.
+- Avoid computer-use tools unless requested or required.
 
 ### Naming
 
-- Use the shortest unambiguous name at the use site; name the role, not the type or implementation.
-- Function verbs describe the action or return.
-- Boolean predicates use forms such as `isReady`, `hasAccess`, and `canSubmit`; collections use plural nouns.
-- Avoid vague `data`, `item`, `value`, `result`, `manager`, `helper`, or `utils` when a specific name exists.
-- Use one term per concept; do not use synonyms for the same concept.
+- Use the shortest unambiguous name for the role, not the type or implementation.
+- Name functions with action or return verbs, predicates as `isReady`, `hasAccess`, or `canSubmit`, and collections with plural nouns.
+- Prefer specific terms over `data`, `item`, `value`, `result`, `manager`, `helper`, or `utils`.
+- Use one term per concept.
 
 ## Configuration
 
-- Put shareable defaults in tracked examples/templates.
-- Put secrets, credentials, environment values, absolute machine paths, account state, and generated metadata in ignored per-user files.
-- Setup scripts seed missing per-user files from tracked examples without overwriting existing files.
-- Before commit, inspect staged configuration for sensitive or machine-specific values.
+- Track shareable defaults in examples or templates.
+- Keep secrets, environment values, machine paths, account state, and generated metadata in ignored per-user files.
+- Setup scripts may seed missing per-user files but must not overwrite them.
+- Before committing, inspect staged configuration for sensitive or machine-specific values.
 
 ## Planning and Investigation
 
