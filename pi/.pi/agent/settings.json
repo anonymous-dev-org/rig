@@ -25,6 +25,7 @@
   "enableInstallTelemetry": false,
   "packages": [
     "npm:pi-mcp-adapter@2.23.0",
-    "npm:@diegopetrucci/pi-openai-fast"
+    "npm:@diegopetrucci/pi-openai-fast",
+    "npm:pi-background-tasks@latest"
   ]
 }
