@@ -60,7 +60,7 @@ nmap("<C-w>z", "<Cmd>lua MiniMisc.zoom()<CR>", "Zoom toggle")
 -- This is used to provide 'mini.clue' with extra clues.
 -- Add an entry if you create a new group.
 _G.Config.leader_group_clues = {
-  { mode = 'n', keys = '<Leader>a', desc = '+AI (sidekick)' },
+  { mode = 'n', keys = '<Leader>a', desc = '+Pi harness' },
   { mode = 'n', keys = '<Leader>b', desc = '+Buffer' },
   { mode = 'n', keys = '<Leader>d', desc = '+Debug' },
   { mode = 'n', keys = '<Leader>e', desc = '+Explore/Edit' },
@@ -72,7 +72,7 @@ _G.Config.leader_group_clues = {
   { mode = 'n', keys = '<Leader>t', desc = '+Terminal' },
   { mode = 'n', keys = '<Leader>v', desc = '+Visits' },
 
-  { mode = 'x', keys = '<Leader>a', desc = '+AI (sidekick)' },
+  { mode = 'x', keys = '<Leader>a', desc = '+Pi harness' },
   { mode = 'x', keys = '<Leader>g', desc = '+Git' },
   { mode = 'x', keys = '<Leader>l', desc = '+Code' },
   { mode = 'x', keys = '<Leader>r', desc = '+Request' },
@@ -271,15 +271,14 @@ local enable_lsp_server = function()
   end)
 end
 
--- a is for 'AI' (sidekick.nvim). Hosts `claude`, `codex`, and `pi`
--- CLIs in a side terminal and lets us push selections + prompts into them. Mappings
--- live in 40_plugins.lua. Common usage:
--- - `<Leader>aa` - toggle CLI terminal
--- - `<Leader>as` - select / attach a CLI tool (normal); send selection (visual)
+-- a is for the Pi harness (sidekick.nvim). Hosts Pi in a side terminal and lets
+-- us push selections + prompts into it. Mappings live in 40_plugins.lua. Common usage:
+-- - `<Leader>aa` - toggle the Pi harness
+-- - `<Leader>as` - send selection (visual)
 -- - `<Leader>ap` - open prompt library (normal); prompt with selection (visual)
--- - `<Leader>aw` - focus the CLI window
--- - `<Leader>ax` - close the CLI session
--- Direct context shortcuts (sent straight to the CLI, no prompt-library step):
+-- - `<Leader>aw` - focus the Pi harness
+-- - `<Leader>ax` - close the Pi harness
+-- Direct context shortcuts (sent straight to Pi, no prompt-library step):
 -- - `<Leader>af` - send current file
 -- - `<Leader>at` - send cursor context ("this")
 -- - `<Leader>ab` - pick open buffers to send (`<C-x>` mark, `<M-CR>` send marked)

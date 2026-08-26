@@ -714,7 +714,7 @@ end)
 
 -- sidekick.nvim ==============================================================
 --
--- Hosts AI CLIs in a side terminal and sends selections and prompts as context.
+-- Hosts the Pi harness in a side terminal and sends selections and prompts as context.
 -- NES stays off because Copilot LSP is not configured.
 later(function()
 	add("folke/sidekick.nvim")
@@ -729,8 +729,6 @@ later(function()
 				},
 			},
 			tools = {
-				claude = {},
-				codex = {},
 				pi = {
 					cmd = { "caffeinate", "-i", "pi" },
 					env = { PI_SKIP_VERSION_CHECK = "1" },
@@ -739,8 +737,6 @@ later(function()
 		},
 	})
 	require("sidekick.config").cli.tools = {
-		claude = {},
-		codex = {},
 		pi = {
 			cmd = { "caffeinate", "-i", "pi" },
 			env = { PI_SKIP_VERSION_CHECK = "1" },
@@ -806,14 +802,15 @@ later(function()
 		})
 	end
 
-	-- `<Leader>a*` group: AI CLI controls.
-	vim.keymap.set("n", "<Leader>aa", cli("toggle"), { desc = "Toggle CLI" })
-	vim.keymap.set("n", "<Leader>as", cli("select"), { desc = "Select CLI" })
-	vim.keymap.set("n", "<Leader>aw", cli("focus"), { desc = "Focus CLI" })
-	vim.keymap.set("n", "<Leader>ax", cli("close"), { desc = "Close CLI" })
+	-- `<Leader>a*` group: Pi harness controls.
+	vim.keymap.set("n", "<Leader>aa", function()
+		require("sidekick.cli").toggle({ name = "pi" })
+	end, { desc = "Toggle Pi harness" })
+	vim.keymap.set("n", "<Leader>aw", cli("focus"), { desc = "Focus Pi harness" })
+	vim.keymap.set("n", "<Leader>ax", cli("close"), { desc = "Close Pi harness" })
 	vim.keymap.set("n", "<Leader>ap", cli("prompt"), { desc = "Prompt library" })
 
-	-- Send context straight to the CLI input (no prompt-library step).
+	-- Send context straight to Pi (no prompt-library step).
 	vim.keymap.set("n", "<Leader>af", function()
 		require("sidekick.cli").send({ msg = "{file}" })
 	end, { desc = "Send file" })
