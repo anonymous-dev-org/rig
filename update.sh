@@ -76,12 +76,6 @@ prepare_local_config() {
 
 prepare_package_config() {
   case "$1" in
-    codex)
-      prepare_local_config \
-        "codex/.codex/config.toml" \
-        "codex/.codex/config.example.toml" \
-        ".codex/config.toml"
-      ;;
     lazysql)
       prepare_local_config \
         "lazysql/Library/Application Support/lazysql/config.toml" \
@@ -103,7 +97,7 @@ fi
 npm install -g --ignore-scripts @earendil-works/pi-coding-agent
 
 # Re-stow all packages (stow is idempotent, safe to re-run)
-PACKAGES=(neovim zsh aerospace kitty git codex pi lazysql)
+PACKAGES=(neovim zsh aerospace kitty git pi lazysql)
 for pkg in "${PACKAGES[@]}"; do
   if [[ -d "$pkg" ]]; then
     prepare_package_config "$pkg"

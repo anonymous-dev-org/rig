@@ -83,12 +83,6 @@ prepare_local_config() {
 
 prepare_package_config() {
   case "$1" in
-    codex)
-      prepare_local_config \
-        "codex/.codex/config.toml" \
-        "codex/.codex/config.example.toml" \
-        ".codex/config.toml"
-      ;;
     lazysql)
       prepare_local_config \
         "lazysql/Library/Application Support/lazysql/config.toml" \
@@ -115,7 +109,7 @@ if confirm "Install Homebrew, common tools, and Pi?"; then
 fi
 
 # --- Stow packages ---
-PACKAGES=(neovim zsh aerospace kitty git codex pi lazysql)
+PACKAGES=(neovim zsh aerospace kitty git pi lazysql)
 for pkg in "${PACKAGES[@]}"; do
   if [[ ! -d "$SCRIPT_DIR/$pkg" ]]; then
     echo "  ⚠ $pkg skipped (package directory missing)"
