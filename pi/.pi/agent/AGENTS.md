@@ -5,12 +5,12 @@
 - Be direct. Omit filler, repetition, and irrelevant detail.
 - Explain with concrete files, functions, state, branches, and data flow.
 - Report verified behavior, not edit history. Use ASCII diagrams only when they clarify a multi-part flow.
-- In the final response, state the outcome, changed files, validation, and relevant risks.
+- In the final response, include what is relevant for the user to understand the completed work.
 
 ## General
 
-- Build the smallest direct solution for current requirements. Minimize state, branches, dependencies, files, and moving parts. Do not add speculative features, fallbacks, compatibility, or configuration.
-- Avoid abstractions and DRY unless the task explicitly requests refactoring or optimization. Local duplication is acceptable.
+- Keep architecture, design choices, and features simple. Build the smallest direct solution for current requirements, then build new behavior on top of that foundation instead of introducing parallel systems or redesigning it unnecessarily. Minimize state, branches, dependencies, files, and moving parts. Do not add speculative features, fallbacks, compatibility, or configuration.
+- Avoid new layers, abstractions, and DRY unless the task explicitly requests refactoring or optimization. Prefer extending existing code and patterns. Local duplication is acceptable.
 - Keep one owner and source of truth for each value. Keep state at its lowest owner.
 - Fix errors at their origin. Replace flawed design instead of adding wrappers, flags, retries, or special cases.
 - Keep changes local and follow project patterns. Use names, structure, types, and data flow to enforce constraints.
