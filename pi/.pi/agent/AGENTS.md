@@ -22,6 +22,11 @@
 - Name functions with action or return verbs, predicates as `isReady`, `hasAccess`, or `canSubmit`, and collections with plural nouns.
 - Use one term per concept.
 
+## Shell Scripts
+
+- Keep Bash/sh scripts short, readable, and direct. Use simple commands and straightforward control flow; avoid unnecessary wrappers, abstractions, nested logic, and retry loops.
+- Avoid long waits or sleeps unless strictly necessary. When waiting is required, use a bounded wait tied to a concrete completion condition rather than an arbitrary delay.
+
 ## Configuration
 
 - Put shareable defaults in examples or templates.
