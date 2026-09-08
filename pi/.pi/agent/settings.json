@@ -4,7 +4,7 @@
   "externalEditor": "nvim",
   "defaultProvider": "openai-codex",
   "defaultModel": "gpt-6-astra",
-  "defaultThinkingLevel": "high",
+  "defaultThinkingLevel": "low",
   "hideThinkingBlock": false,
   "transport": "auto",
   "httpIdleTimeoutMs": 1800000,
