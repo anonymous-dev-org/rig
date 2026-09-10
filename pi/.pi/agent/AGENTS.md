@@ -25,6 +25,7 @@
 ## Shell Scripts
 
 - Keep Bash/sh scripts short, readable, and direct. Use simple commands and control flow; avoid unnecessary wrappers, abstractions, nesting, and retry loops.
+- Minimize execution time for Bash commands and scripts. Avoid redundant work; keep required validation and safety checks.
 - Avoid long waits or sleeps unless strictly necessary. Bound required waits by concrete completion conditions, not arbitrary delays.
 
 ## Configuration
