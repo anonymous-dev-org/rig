@@ -7,6 +7,17 @@
 .env.*
 !.env.example
 lazysql/Library/Application Support/lazysql/config.toml
+
+# Pi config and runtime state are local; only templates and shared resources belong in Git.
+/pi/.pi/*
+!/pi/.pi/agent/
+/pi/.pi/agent/*
+!/pi/.pi/agent/settings.example.json
+!/pi/.pi/agent/AGENTS.md
+!/pi/.pi/agent/agents/
+!/pi/.pi/agent/extensions/
+!/pi/.pi/agent/themes/
+
 *.local
 *.sqlite*
 *.db*

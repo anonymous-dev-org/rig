@@ -1,0 +1,11 @@
+{
+  "theme": "rig",
+  "defaultThinkingLevel": "low",
+  "enableInstallTelemetry": false,
+  "packages": [
+    "npm:pi-mcp-adapter@2.23.0",
+    "npm:@diegopetrucci/pi-openai-fast",
+    "npm:pi-subagents@latest",
+    "npm:pi-web-access"
+  ]
+}

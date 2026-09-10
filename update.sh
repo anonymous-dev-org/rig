@@ -76,6 +76,12 @@ prepare_local_config() {
 
 prepare_package_config() {
   case "$1" in
+    pi)
+      prepare_local_config \
+        "pi/.pi/agent/settings.json" \
+        "pi/.pi/agent/settings.example.json" \
+        ".pi/agent/settings.json"
+      ;;
     lazysql)
       prepare_local_config \
         "lazysql/Library/Application Support/lazysql/config.toml" \
