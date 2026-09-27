@@ -1,5 +1,7 @@
 {
   "theme": "rig",
+  "defaultProvider": "openai-codex",
+  "defaultModel": "gpt-6-astra",
   "defaultThinkingLevel": "low",
   "enableInstallTelemetry": false,
   "packages": [
