@@ -7,8 +7,8 @@
 This is the default operating model, not an optional technique. The main agent manages the work and owns decisions, integration, and correctness.
 
 1. **Analyze using subagents.** Delegate bounded investigations of relevant code, affected callers, constraints, and documentation. Verify their findings and resolve the approach before planning implementation.
-2. **Plan implementation as scoped tasks.** Turn the analysis into small, implementation-ready tasks with clear outcomes, owned files, exclusions, dependencies, and validation. Obtain user approval before implementation as required below.
-3. **Implement using subagents.** Delegate approved tasks with explicit ownership and acceptance criteria. Run independent tasks in parallel and dependent tasks in order. Keep coordination and shared-file integration in the main agent.
+2. **Plan implementation as scoped tasks.** Turn the analysis into small, implementation-ready tasks with clear outcomes, owned files, exclusions, dependencies, and validation. Proceed autonomously within the user's requested scope unless an approval gate applies below.
+3. **Implement using subagents.** Delegate planned tasks with explicit ownership and acceptance criteria. Run independent tasks in parallel and dependent tasks in order. Keep coordination and shared-file integration in the main agent.
 4. **Review the work.** Inspect actual changes against the plan and requirements, verify affected callers, and run relevant checks. Request focused specialist review for distinct risks. Return findings for correction and recheck before accepting work or reporting completion.
 
 For trivial, tightly coupled changes, perform the same analyze -> plan -> implement -> review sequence directly; a formal plan and subagents are unnecessary. This exception does not justify bypassing delegation for substantial work. Review is never optional.
@@ -55,7 +55,8 @@ For trivial, tightly coupled changes, perform the same analyze -> plan -> implem
 ## Planning and Investigation
 
 - Follow the Fundamental Workflow. Create a formal plan when requested or work is complex, ambiguous, risky, or dependent. Only trivial, tightly coupled changes may use a brief internal plan.
-- `/plan`: optional read-only planning mode.
+- Implementation requests authorize planning and execution within the requested scope; do not ask for approval of each task or routine implementation decision.
+- `/plan` and planning-only requests remain read-only until the user approves implementation. Honor any explicit user approval gates.
 - Active plan: sole source of task/progress state.
 
 ### Build the Plan
@@ -63,16 +64,16 @@ For trivial, tightly coupled changes, perform the same analyze -> plan -> implem
 1. Research first. Read official tool/framework docs at project versions. Inspect relevant code and affected callers. Choose simplest correct approach; no assumed facts.
 2. State goal, simplest approach, main work parts. No speculative features or needless abstractions.
 3. Split into small, precise tasks. Each: one clear outcome, one focused commit. Larger plans need smaller tasks.
-4. Every task: deeply detailed, implementation-ready. Specify outcome, scope, exclusions, dependencies, ordered steps, affected functions/types, data flow, minimal checks and expected results. Include exact repository paths/symbols and authoritative documentation links/sections for involved APIs/behavior. Read every reference; verify against current code and project-pinned versions. No guessed paths, stale references, vague instructions. Resolve design before approval; don't leave implementers inventing approaches. Detail clarifies smallest solution, never expands scope.
+4. Every task: deeply detailed, implementation-ready. Specify outcome, scope, exclusions, dependencies, ordered steps, affected functions/types, data flow, minimal checks and expected results. Include exact repository paths/symbols and authoritative documentation links/sections for involved APIs/behavior. Read every reference; verify against current code and project-pinned versions. No guessed paths, stale references, vague instructions. Resolve design before implementation; don't leave implementers inventing approaches. Detail clarifies smallest solution, never expands scope.
 5. Large plans: multiple merge requests (MRs). Separate MRs for independent changes; stacked MRs for dependencies. Explain scope/order.
-6. Explain tasks simply. Obtain user approval for each before implementation.
+6. Explain tasks simply, then proceed without waiting for approval when implementation is authorized. Ask only when an explicit approval gate applies, the plan conflicts with requirements or verified facts, or implementation requires departing from its scope or approach.
 
 ### Follow the Plan
 
-1. Implement approved tasks in dependency order. Stay in scope; no unrelated work.
+1. Implement planned tasks in dependency order. Continue through implementation, validation, corrections, and review without per-task approval. Stay in scope; no unrelated work.
 2. Run task checks before marking complete. Each completed task ready for one focused commit.
 3. Issues or growing complexity: pause affected work, step back. Find failed assumption/root cause through smallest scoped inspection/probe. Seek simpler approach, not symptom patches. Search official docs first, then trustworthy sources/issues. Verify solutions against project versions/code.
-4. Continue only with verified solution fitting approved plan. No reliable solution or changed scope/approach: stop, replan. Explain blocker, revise affected tasks, obtain approval before resuming. Never guess or add workarounds merely to proceed.
+4. Resolve routine implementation details and failures autonomously when the verified solution fits the plan and requirements. If the plan conflicts with requirements or verified facts, no reliable in-scope solution exists, or scope/approach must change: stop affected work, explain the discrepancy and smallest proposed revision, and obtain user approval before resuming it. Never silently depart from the plan, guess, or add workarounds merely to proceed.
 5. Keep progress current. Update unfinished tasks for discoveries; preserve completed history.
 
 ## Delegation and Review
