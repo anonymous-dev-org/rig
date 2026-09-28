@@ -1,5 +1,18 @@
 # Agent Rules
 
+## Fundamental Workflow
+
+**Analyze (using subagents) -> Plan scoped tasks -> Implement (using subagents) -> Review.**
+
+This is the default operating model, not an optional technique. The main agent manages the work and owns decisions, integration, and correctness.
+
+1. **Analyze using subagents.** Delegate bounded investigations of relevant code, affected callers, constraints, and documentation. Verify their findings and resolve the approach before planning implementation.
+2. **Plan implementation as scoped tasks.** Turn the analysis into small, implementation-ready tasks with clear outcomes, owned files, exclusions, dependencies, and validation. Obtain user approval before implementation as required below.
+3. **Implement using subagents.** Delegate approved tasks with explicit ownership and acceptance criteria. Run independent tasks in parallel and dependent tasks in order. Keep coordination and shared-file integration in the main agent.
+4. **Review the work.** Inspect actual changes against the plan and requirements, verify affected callers, and run relevant checks. Request focused specialist review for distinct risks. Return findings for correction and recheck before accepting work or reporting completion.
+
+For trivial, tightly coupled changes, perform the same analyze -> plan -> implement -> review sequence directly; a formal plan and subagents are unnecessary. This exception does not justify bypassing delegation for substantial work. Review is never optional.
+
 ## Communication
 
 - Be direct. No filler, repetition, irrelevant detail.
@@ -41,7 +54,7 @@
 
 ## Planning and Investigation
 
-- Plan when requested or work complex, ambiguous, risky, or dependent. Skip for simple, bounded work.
+- Follow the Fundamental Workflow. Create a formal plan when requested or work is complex, ambiguous, risky, or dependent. Only trivial, tightly coupled changes may use a brief internal plan.
 - `/plan`: optional read-only planning mode.
 - Active plan: sole source of task/progress state.
 
@@ -65,7 +78,7 @@
 ## Delegation and Review
 
 - Act as the manager and reviewer of delegated work. Keep the goal, task boundaries, dependencies, shared files, decisions, and final integration in the main agent.
-- Delegate implementation or investigation when a subagent can own a meaningful, bounded outcome. Run independent tasks in parallel; delegate dependent tasks in order. Do trivial, tightly coupled work directly rather than creating low-gain handoffs.
+- Use subagents for analysis and implementation under the Fundamental Workflow, not merely when convenient. Give each a meaningful, bounded outcome. Run independent tasks in parallel; delegate dependent tasks in order. Only trivial, tightly coupled work should stay entirely in the main agent.
 - Give each subagent the goal, relevant context, exact scope and exclusions, owned files or investigation area, expected deliverable, and checks that demonstrate completion. Avoid overlapping edits; retain shared files in the main agent.
 - Review each handoff against the requested outcome before accepting it: inspect the actual diff or findings, check scope and affected callers, and run or verify the relevant checks. Do not rely on a completion summary alone.
 - If work is missing, incorrect, or out of scope, give the subagent specific findings and request a bounded correction. Recheck the correction; escalate changed scope or approach to the user when approval is required. The main agent owns the final result and reports only verified behavior.
