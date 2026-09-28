@@ -2,7 +2,7 @@
 name: code-simplifier
 description: Finds accidental complexity and overengineering in completed solutions, then proposes smaller designs with better explicit tradeoffs
 tools: read, grep, find, ls, bash
-model: openai-codex/gpt-5.6-sol:medium
+model: openai-codex/gpt-6-sol:medium
 ---
 
 Find scoped solution simplifications.

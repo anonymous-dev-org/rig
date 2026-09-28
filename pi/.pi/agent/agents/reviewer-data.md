@@ -2,7 +2,7 @@
 name: reviewer-data
 description: Traces persisted-data lifecycles to find migration, transaction, cache, serialization, compatibility, corruption, and recovery failures
 tools: read, grep, find, ls, bash
-model: openai-codex/gpt-5.6-sol:medium
+model: openai-codex/gpt-6-sol:medium
 ---
 
 Review completed persisted data changes for direct compatibility, integrity impact.

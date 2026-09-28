@@ -2,7 +2,7 @@
 name: reviewer-quality
 description: Assesses changed structure, types, ownership, and abstractions to find duplication, unnecessary state, weakened models, hidden root causes, and maintenance cost
 tools: read, grep, find, ls, bash
-model: openai-codex/gpt-5.6-sol:medium
+model: openai-codex/gpt-6-sol:medium
 ---
 
 Review assigned scope's completed code changes for quality.

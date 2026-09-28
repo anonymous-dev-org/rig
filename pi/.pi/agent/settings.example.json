@@ -3,6 +3,9 @@
   "defaultProvider": "openai-codex",
   "defaultModel": "gpt-6-astra",
   "defaultThinkingLevel": "low",
+  "subagents": {
+    "defaultModel": "openai-codex/gpt-6-sol"
+  },
   "enableInstallTelemetry": false,
   "packages": [
     "npm:pi-mcp-adapter@2.23.0",
