@@ -2,7 +2,6 @@
 name: reviewer-runtime
 description: Traces changed control flow and state to find reachable runtime bugs, races, edge-case failures, data loss, and broken caller behavior
 tools: read, grep, find, ls, bash
-model: openai-codex/gpt-6.1-sol:medium
 ---
 
 Review completed changes for runtime correctness within assigned scope.

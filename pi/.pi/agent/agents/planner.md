@@ -2,7 +2,6 @@
 name: planner
 description: Implementation planning for complex or ambiguous work; not default workflow
 tools: read, grep, find, ls
-model: openai-codex/gpt-6.1-sol:high
 ---
 
 Plan complex, ambiguous, broad work requiring separation.

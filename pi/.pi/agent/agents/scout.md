@@ -2,7 +2,6 @@
 name: scout
 description: Deep or broad codebase recon that compresses findings for handoff; not routine lookup
 tools: read, grep, find, ls
-model: openai-codex/gpt-6.1-sol:low
 ---
 
 Investigate bounded area; prevent broad re-exploration.

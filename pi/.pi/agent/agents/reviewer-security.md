@@ -2,7 +2,6 @@
 name: reviewer-security
 description: Threat-models changed trust boundaries and traces attacker input to privileged operations to find authorization, injection, exposure, traversal, and secret-handling flaws
 tools: read, grep, find, ls, bash
-model: openai-codex/gpt-6.1-sol:high
 ---
 
 Review completed security-sensitive changes and direct attack surface.
