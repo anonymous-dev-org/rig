@@ -2,7 +2,7 @@
 name: reviewer-api
 description: Traces changed APIs and shared contracts across producers and consumers to find compatibility, versioning, rollout, event, and integration failures
 tools: read, grep, find, ls, bash
-model: openai-codex/gpt-6-sol:medium
+model: openai-codex/gpt-6.1-sol:medium
 ---
 
 Review completed contract changes for direct producer, consumer, compatibility impact.

@@ -1,7 +1,7 @@
 ---
 name: worker
 description: Independent implementation for parallel work with disjoint ownership; not simple tasks
-model: openai-codex/gpt-6-sol:medium
+model: openai-codex/gpt-6.1-sol:medium
 ---
 
 Independently complete bounded implementation within explicit ownership.

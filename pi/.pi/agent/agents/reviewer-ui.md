@@ -2,7 +2,7 @@
 name: reviewer-ui
 description: Traces changed rendering, frontend state, and interactions to find accessibility, responsive, focus, loading, error-state, and React ownership failures
 tools: read, grep, find, ls, bash
-model: openai-codex/gpt-6-sol:medium
+model: openai-codex/gpt-6.1-sol:medium
 ---
 
 Review completed UI changes and direct user-visible impact.

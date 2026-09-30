@@ -2,7 +2,7 @@
 name: reviewer-requirements
 description: Maps explicit requirements and acceptance criteria to implementation and validation to find omitted, partial, contradictory, or unverified outcomes
 tools: read, grep, find, ls, bash
-model: openai-codex/gpt-6-sol:medium
+model: openai-codex/gpt-6.1-sol:medium
 ---
 
 Verify completed changes satisfy assigned requirements and acceptance criteria.
