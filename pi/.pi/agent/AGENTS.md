@@ -1,89 +1,13 @@
 # Agent Rules
 
-## Fundamental Workflow
+## Workflow and Delegation
 
-**Analyze (using subagents) -> Plan scoped tasks -> Implement (using subagents) -> Review.**
+**Analyze with subagents -> Plan scoped tasks -> Implement with subagents -> Review.** Mandatory default. Only trivial, tightly coupled work permits direct execution with brief internal plan. Delegate substantial analysis and implementation. Always review.
 
-This is the default operating model, not an optional technique. The main agent manages the work and owns decisions, integration, and correctness.
-
-1. **Analyze using subagents.** Delegate bounded investigations of relevant code, affected callers, constraints, and documentation. Verify their findings and resolve the approach before planning implementation.
-2. **Plan implementation as scoped tasks.** Turn the analysis into small, implementation-ready tasks with clear outcomes, owned files, exclusions, dependencies, and validation. Proceed autonomously within the user's requested scope unless an approval gate applies below.
-3. **Implement using subagents.** Delegate planned tasks with explicit ownership and acceptance criteria. Run independent tasks in parallel and dependent tasks in order. Keep coordination and shared-file integration in the main agent.
-4. **Review the work.** Inspect actual changes against the plan and requirements, verify affected callers, and run relevant checks. Request focused specialist review for distinct risks. Return findings for correction and recheck before accepting work or reporting completion.
-
-For trivial, tightly coupled changes, perform the same analyze -> plan -> implement -> review sequence directly; a formal plan and subagents are unnecessary. This exception does not justify bypassing delegation for substantial work. Review is never optional.
-
-## Communication
-
-- Be direct. No filler, repetition, irrelevant detail.
-- Explain through concrete files, functions, state, branches, data flow.
-- Report verified behavior, not edit history. ASCII diagrams only for multi-part flows.
-- Final response: completed work, relevant details only.
-
-## General
-
-- Always choose simplest correct solution for current requirements. Simplicity required across architecture, implementation, plans, validation. No overengineering. Extend existing code; no parallel systems or needless redesign. Minimize state, branches, dependencies, files, moving parts. No speculative features, fallbacks, compatibility, configuration.
-- No new layers, abstractions, or DRY unless explicitly asked to refactor or optimize. Prefer existing code. Local duplication OK.
-- Each value: one owner, one source of truth. State stays at lowest owner.
-- Fix root causes. When work drifts, assumptions fail, or complexity grows: stop, step back, trace cause, question approach, seek simpler solution. Replace flawed design; no added wrappers, flags, retries, special cases. Sunk effort never justifies complexity.
-- Keep changes local; follow project patterns. Enforce constraints through names, structure, types, data flow.
-- Avoid computer-use tools unless requested or required.
-
-### Naming
-
-- Shortest specific, unambiguous names. Avoid generic `data`, `item`, `value`, `result`, `manager`, `helper`, `utils`.
-- Functions: action or return verbs. Predicates: `isReady`, `hasAccess`, `canSubmit`. Collections: plural nouns.
-- One term per concept.
-
-## Shell Scripts
-
-- Keep Bash/sh short, readable, direct. Simple commands, control flow. No needless wrappers, abstractions, nesting, retry loops.
-- Optimize Bash for speed. Scope searches/checks to relevant paths; avoid redundant work. Run independent, noninterfering commands concurrently. Retain required validation and safety checks.
-- Prefer short, bounded commands over long chains. Shortest realistic timeout; never default to long timeouts or extend them to hide stalls. Inspect stalls before retrying.
-- No long waits, sleeps, polling unless strictly necessary. Bound waits by concrete completion conditions, not arbitrary delays.
-
-## Configuration
-
-- Shareable defaults: examples or templates.
-- Secrets, environment values, machine paths, account state, generated metadata: ignored local files. Setup creates missing files; never overwrites existing files.
-- Before commit, check staged configuration for sensitive or machine-specific values.
-
-## Git Worktrees
-
-- Worktrees only under `<repository-root>/.local/worktrees/`. First verify `.local/` ignored.
-
-## Planning and Investigation
-
-- Follow the Fundamental Workflow. Create a formal plan when requested or work is complex, ambiguous, risky, or dependent. Only trivial, tightly coupled changes may use a brief internal plan.
-- Implementation requests authorize planning and execution within the requested scope; do not ask for approval of each task or routine implementation decision.
-- `/plan` and planning-only requests remain read-only until the user approves implementation. Honor any explicit user approval gates.
-- Active plan: sole source of task/progress state.
-
-### Build the Plan
-
-1. Research first. Read official tool/framework docs at project versions. Inspect relevant code and affected callers. Choose simplest correct approach; no assumed facts.
-2. State goal, simplest approach, main work parts. No speculative features or needless abstractions.
-3. Split into small, precise tasks. Each: one clear outcome, one focused commit. Larger plans need smaller tasks.
-4. Every task: deeply detailed, implementation-ready. Specify outcome, scope, exclusions, dependencies, ordered steps, affected functions/types, data flow, minimal checks and expected results. Include exact repository paths/symbols and authoritative documentation links/sections for involved APIs/behavior. Read every reference; verify against current code and project-pinned versions. No guessed paths, stale references, vague instructions. Resolve design before implementation; don't leave implementers inventing approaches. Detail clarifies smallest solution, never expands scope.
-5. Large plans: multiple merge requests (MRs). Separate MRs for independent changes; stacked MRs for dependencies. Explain scope/order.
-6. Explain tasks simply, then proceed without waiting for approval when implementation is authorized. Ask only when an explicit approval gate applies, the plan conflicts with requirements or verified facts, or implementation requires departing from its scope or approach.
-
-### Follow the Plan
-
-1. Implement planned tasks in dependency order. Continue through implementation, validation, corrections, and review without per-task approval. Stay in scope; no unrelated work.
-2. Run task checks before marking complete. Each completed task ready for one focused commit.
-3. Issues or growing complexity: pause affected work, step back. Find failed assumption/root cause through smallest scoped inspection/probe. Seek simpler approach, not symptom patches. Search official docs first, then trustworthy sources/issues. Verify solutions against project versions/code.
-4. Resolve routine implementation details and failures autonomously when the verified solution fits the plan and requirements. If the plan conflicts with requirements or verified facts, no reliable in-scope solution exists, or scope/approach must change: stop affected work, explain the discrepancy and smallest proposed revision, and obtain user approval before resuming it. Never silently depart from the plan, guess, or add workarounds merely to proceed.
-5. Keep progress current. Update unfinished tasks for discoveries; preserve completed history.
-
-## Delegation and Review
-
-- Act as the manager and reviewer of delegated work. Keep the goal, task boundaries, dependencies, shared files, decisions, and final integration in the main agent.
-- Use subagents for analysis and implementation under the Fundamental Workflow, not merely when convenient. Give each a meaningful, bounded outcome. Run independent tasks in parallel; delegate dependent tasks in order. Only trivial, tightly coupled work should stay entirely in the main agent.
-- Give each subagent the goal, relevant context, exact scope and exclusions, owned files or investigation area, expected deliverable, and checks that demonstrate completion. Avoid overlapping edits; retain shared files in the main agent.
-- Review each handoff against the requested outcome before accepting it: inspect the actual diff or findings, check scope and affected callers, and run or verify the relevant checks. Do not rely on a completion summary alone.
-- If work is missing, incorrect, or out of scope, give the subagent specific findings and request a bounded correction. Recheck the correction; escalate changed scope or approach to the user when approval is required. The main agent owns the final result and reports only verified behavior.
-- For a distinct risk needing specialist review, request a focused review after implementation and initial validation, not during implementation. Choose the matching specialist:
+- **Main agent owns management.** Own goals, boundaries, dependencies, decisions, shared files, integration, and correctness. Verify analysis before choosing approach and planning.
+- **Delegate bounded, meaningful work.** Supply goal, context, exact scope/exclusions, owned files or investigation area, deliverable, acceptance criteria, and completion checks. Avoid overlapping edits. Parallelize independent tasks; sequence dependencies.
+- **Verify actual handoffs.** Check diffs/findings against outcomes, plan, requirements, scope, affected callers, and relevant checks. Never accept summaries alone. Return specific findings for bounded corrections; recheck before acceptance. Escalate scope/approach changes requiring approval.
+- **Use specialist reviews only for distinct risks, after implementation and initial validation.** Explicit user requests may override both timing and risk criteria. Supply concern, requirements, relevant files, available validation, and affected callers or contracts. Verify findings before applying. No generic or synthesis reviewer. Manager review mandatory.
   - `reviewer-runtime`: control flow, state, edge cases, data flow.
   - `reviewer-requirements`: acceptance criteria, observable outcomes.
   - `reviewer-quality`: structural changes, shared abstractions, types, naming, duplication.
@@ -92,28 +16,40 @@ For trivial, tightly coupled changes, perform the same analyze -> plan -> implem
   - `reviewer-api`: public contracts, schemas, events, protocols, integrations, compatibility.
   - `reviewer-ui`: interaction, frontend state, accessibility, responsive behavior.
   - `reviewer-security`: auth, secrets, untrusted input, execution boundaries, permissions, sensitive data.
-- Give specialist reviewers the concern, requirements, changed files, completed validation, and affected callers/contracts. Verify findings yourself before applying them; no generic review or synthesis reviewer. Skip extra specialist review for routine, low-risk work unless requested. Manager review of delegated work is never optional.
 
-## Docs
+## Planning and Execution
 
-- Current authoritative docs, project-pinned versions. Unclear docs: inspect source/types.
+- **Plan formally when requested or work is complex, ambiguous, risky, or dependent.** Implementation requests authorize scoped execution without routine/per-task approval. `/plan` and planning-only requests stay read-only until implementation approval; honor explicit approval gates.
+- **Understand first, then simplify.** Before planning, trace affected code and callers end to end; choose minimal solution. Read current authoritative tool/framework docs at project-pinned versions; inspect source/types when unclear. Read every reference; verify against code and versions. Assume no facts.
+- **Make plans implementation-ready.** State goal, simplest approach, work parts. Small tasks: one outcome and focused commit each. Specify scope, exclusions, dependencies, ownership, ordered steps, exact paths/functions/types/symbols, data flow, minimal checks/expected results, authoritative API/behavior links/sections. Resolve design first. No guessed paths, stale references, vague instructions, or approaches left to implementers. Detail clarifies smallest solution, never expands scope.
+- **Split large plans into MRs.** Separate independent changes; stack dependent MRs. Explain scope/order. Explain tasks simply; proceed when authorized.
+- **Follow dependencies through implementation, validation, corrections, review.** Stay in scope. Run task checks before completion; each completed task ready for one focused commit.
+- **Trace drift, failed assumptions, failures, and growing complexity to root causes.** Pause affected work; question assumptions/approach with smallest scoped inspection/probe. Seek simpler solutions, not symptom patches. Search official docs first, then trustworthy sources/issues; verify against project versions/code. Resolve routine details and failures autonomously only when verified solution fits plan and requirements.
+- **Obtain approval for plan conflicts, no reliable in-scope solution, or scope/approach changes.** Stop when plan conflicts with requirements or verified facts, no reliable in-scope solution exists, or scope/approach must change. Explain discrepancy and smallest proposed revision before resuming. Never silently depart, guess, or add workarounds merely to proceed.
+- **Keep active plan as sole task/progress state.** Update unfinished tasks for discoveries; preserve completed history.
 
-## Validation
+## Design and Communication
 
-- No new tests or documentation unless requested.
-- Run relevant type checks, builds, lint, runtime checks, manual verification. Start with smallest checks proving changed behavior. Broaden only for affected dependencies/risk.
-- Probes/tests: minimal, fast, scoped to concrete question/failure mode. Prefer existing tools, focused cases. No elaborate harnesses, broad test matrices, new infrastructure for local checks. Stop once evidence answers question.
+- **Choose simplest correct solution for current requirements.** First ask whether code is needed. Simplify architecture, implementation, plans, validation. Prefer deleting unnecessary code; choose boring solutions and smallest correct diff, not merely shorter code. Avoid parallel systems or needless redesign. No speculative scaffolding, features, fallbacks, compatibility support, or configuration. Minimize state, branches, dependencies, files, moving parts.
+- **Evaluate trade-offs, then choose one approach.** Weigh relevant pros/cons against current requirements; pick the best fit. Stop analysis once evidence supports a decision. Never blend competing solutions to avoid choosing. Use hybrids only when concrete requirements justify the added complexity.
+- **Reuse first correct option.** Try existing code, standard library, native platform, already-installed dependency, then minimal custom code, in that order. No dependency for problems few straightforward lines solve.
+- **Never simplify away safeguards or explicit requirements.** Preserve security, trust-boundary input validation, data-loss protection/error handling, accessibility basics.
+- **No new layers, abstractions, or code deduplication unless asked to refactor or optimize.** Reuse existing code; local duplication acceptable. Each value: one owner, one source of truth. Keep state in narrowest scope serving all consumers.
+- **Fix shared root causes, not caller symptoms.** Inspect every affected function's callers. Replace flawed designs; no accumulating wrappers, flags, retries, special cases. Sunk effort never justifies complexity. Keep changes local; follow project patterns. Enforce constraints through names, structure, types, data flow.
+- **Use shortest specific, unambiguous names; one term per concept.** Avoid generic `data`, `item`, `value`, `result`, `manager`, `helper`, `utils`. Functions: action/return verbs. Predicates: names such as `isReady`, `hasAccess`, or `canSubmit`. Collections: plural nouns.
+- **Communicate directly, concretely, proportionally.** No filler, repetition, irrelevant detail. Explain files, functions, state, branches, data flow. ASCII diagrams only for multi-part flows. Report verified behavior, not edit history. Briefly explain meaningful omissions and when more complexity is warranted. Final responses: completed work, relevant details; expand when requested.
+- **Comment real limitations concisely.** Deliberate shortcuts: known ceiling and upgrade trigger, not speculative TODOs.
+- **Avoid computer-use tools unless requested or required.**
 
-## TypeScript
+## Shell, Configuration, and Worktrees
 
-- Preserve end-to-end type safety.
-- Never hide errors with `as`, `as const`, postfix `!`, unsafe coercion, suppression comments, weaker types.
-- External data: `unknown`, then parse/narrow.
-- Model valid states with precise types, unions, guards, parsers.
+- **Keep Bash/sh short, readable, direct, fast.** Simple commands/control flow; no needless wrappers, abstractions, nesting, retry loops. Scope searches/checks; avoid redundant work. Run independent, noninterfering commands concurrently; retain validation/safety checks.
+- **Bound commands and waits.** Prefer short commands over long chains; shortest realistic timeout. Never default to long timeouts or extend them to hide stalls. Inspect stalls before retrying. No long waits, sleeps, polling unless strictly necessary. Use concrete completion conditions, not arbitrary delays.
+- **Separate shareable defaults from local configuration.** Defaults belong in examples/templates; secrets, environment values, machine paths, account state, generated metadata: ignored local files. Setup creates missing files, never overwrites existing files. Check staged configuration for sensitive/machine-specific values before committing.
+- **Worktrees only under `<repository-root>/.local/worktrees/`.** First verify `.local/` is ignored.
 
-## React
+## Validation and Types
 
-- `useEffect` only for external systems: browser APIs, widgets, subscriptions, timers.
-- Lift only shared state; use Jotai when props/local state become awkward.
-- Small, focused components.
-- Prefer flexbox; grid only when clearly better.
+- **Use minimal runnable checks for nontrivial logic.** Checks must fail when behavior breaks. Reuse coverage; add focused regression test/assertion check only when needed. Trivial changes need no new tests. Run relevant type checks, builds, lint, runtime checks, manual verification. Start with smallest checks proving changed behavior; broaden only for affected dependencies/risk. No unrequested standalone documentation.
+- **Keep probes/tests minimal, fast, scoped to concrete question/failure mode.** Prefer existing tools/focused cases. No elaborate harnesses, broad matrices, or new local-check infrastructure. Stop when evidence answers question.
+- **Preserve end-to-end TypeScript safety.** Never hide errors with `as`, `as const`, postfix `!`, unsafe coercion, suppression comments, or weaker types. External data: `unknown`; parse/narrow. Model valid states with precise types, unions, guards, parsers.
