@@ -84,10 +84,7 @@ prepare_local_config() {
 prepare_package_config() {
   case "$1" in
     pi)
-      prepare_local_config \
-        "pi/.pi/agent/settings.json" \
-        "pi/.pi/agent/settings.example.json" \
-        ".pi/agent/settings.json"
+      node "$SCRIPT_DIR/pi/sync-settings.mjs"
       ;;
     lazysql)
       prepare_local_config \
@@ -129,6 +126,9 @@ for pkg in "${PACKAGES[@]}"; do
     while IFS= read -r -d '' file; do
       rel="${file#$SCRIPT_DIR/$pkg/}"
       dest="$HOME/$rel"
+      if [[ "$pkg" == "pi" && ( "$rel" == ".pi/agent/settings.json" || "$rel" == "sync-settings.mjs" || "$rel" == "sync-settings.test.mjs" || "$rel" == ".stow-local-ignore" ) ]]; then
+        continue
+      fi
       if [[ -L "$dest" && "$(readlink "$dest")" == "$file" ]]; then
         rm "$dest"
       elif [[ -e "$dest" && ! -L "$dest" ]]; then

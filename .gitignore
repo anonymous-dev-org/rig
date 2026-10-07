@@ -28,3 +28,5 @@ lazysql/Library/Application Support/lazysql/config.toml
 aerospace/.config/aerospace/last-*
 aerospace/.config/aerospace/saved-workspaces.json
 aerospace/.config/aerospace/scripts/*-app
+
+/.local/pi-settings/

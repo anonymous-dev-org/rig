@@ -8,7 +8,7 @@
   },
   "enableInstallTelemetry": false,
   "packages": [
-    "npm:@diegopetrucci/pi-openai-fast",
+    "npm:@diegopetrucci/pi-fast",
     "npm:pi-subagents@latest",
     "npm:pi-web-access"
   ]
