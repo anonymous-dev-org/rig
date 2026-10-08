@@ -30,6 +30,7 @@ Mandatory default: analyze with subagents -> plan scoped tasks -> implement with
 
 ## Design and Communication
 
+- Build features incrementally from their fundamentals: identify the core user need, implement the smallest correct end-to-end behavior, verify it, then build on that working foundation in small steps. Include required safeguards from the start; add further complexity only when a current requirement demands it. Do not design for hypothetical future needs or solve simple problems with complex solutions.
 - First ask whether code is needed. Choose the simplest correct architecture, implementation, plan, and validation for current requirements. Prefer deleting unnecessary code and the smallest correct diff, not merely shorter code. Avoid parallel systems and needless redesign. No speculative scaffolding, features, fallbacks, compatibility support, or configuration. Minimize state, branches, dependencies, files, moving parts.
 - Weigh relevant pros/cons against current requirements; choose best fit. Stop analysis when evidence supports a decision. Never blend competing solutions to avoid choosing; hybrids require concrete requirements justifying added complexity.
 - Reuse the first correct option, in order: existing code, standard library, native platform, installed dependency, minimal custom code. No dependency for problems a few straightforward lines solve.
@@ -51,5 +52,5 @@ Mandatory default: analyze with subagents -> plan scoped tasks -> implement with
 
 ## Validation and Types
 
-- Keep all probes and tests minimal, fast, and scoped to concrete questions or failure modes. Use runnable checks for nontrivial logic; checks must fail when behavior breaks. Reuse existing coverage, tools, and focused cases. Add focused regression tests or assertion checks only when needed. Trivial changes need no new tests. Run relevant type checks, builds, lint, runtime checks, manual verification. Start with smallest checks proving changed behavior; broaden only for affected dependencies/risk. No elaborate harnesses, broad matrices, new local-check infrastructure, or unrequested standalone documentation. Stop when evidence answers the question.
+- Do not add tests unless the user explicitly asks. Keep validation simple, clean, fast, and focused on the changed behavior. Reuse existing tests and tools; choose the smallest relevant check, such as an existing test, type check, lint, build, or direct manual verification. Do not introduce test harnesses, broad matrices, new validation infrastructure, or unrequested standalone documentation. Broaden checks only when affected dependencies or concrete risks require it. Stop when the evidence answers the question.
 - Preserve end-to-end TypeScript safety. Never hide errors with `as`, `as const`, postfix `!`, unsafe coercion, suppression comments, weaker types. External data: `unknown`; parse/narrow. Model valid states with precise types, unions, guards, parsers.
