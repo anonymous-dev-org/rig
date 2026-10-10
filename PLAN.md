@@ -1,6 +1,6 @@
 # Plan: Require a new worktree for planning and implementation
 
-Status: Implementation and review complete; committing and delivery in progress.
+Status: Implementation, review, and delivery complete.
 
 ## Goal and scope
 Update `pi/.pi/agent/AGENTS.md` to require a new Git worktree before creating a plan or making changes. Keep all unrelated rules unchanged.
@@ -19,9 +19,9 @@ Update `pi/.pi/agent/AGENTS.md` to require a new Git worktree before creating a 
 - Reviewed the Markdown diff: both rules require planning and implementation in a new worktree; unrelated instructions are unchanged.
 - `git diff --check` passed.
 - No tests added or run for this documentation-only change.
-- Remote delivery will be verified after pushing.
+- Pushed to `origin/main` and verified that the remote branch matched the local commit; the main checkout was clean.
 
 ## Tasks
 1. Done — Update the planning and isolation rules in `pi/.pi/agent/AGENTS.md`. No dependencies. Check that planning and implementation both require a new worktree.
 2. Done — Review the diff and run `git diff --check`. Depends on task 1. Confirm unrelated instructions are unchanged.
-3. In progress — Commit, integrate into `main`, and push to `origin/main`. Depends on task 2. Verify the remote branch matches the local commit.
+3. Done — Commit, integrate into `main`, and push to `origin/main`. Depends on task 2. Verify the remote branch matches the local commit.
