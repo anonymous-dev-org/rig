@@ -1,15 +1,71 @@
 {
   "theme": "rig",
-  "defaultProvider": "openai-codex",
+  "defaultProvider": "openai",
   "defaultModel": "gpt-6.1-sol",
   "defaultThinkingLevel": "low",
+  "pi-fast": {
+    "enabledByDefault": true
+  },
   "subagents": {
-    "defaultModel": "openai-codex/gpt-6.1-sol"
+    "defaultModel": "openai/gpt-6.1-sol",
+    "defaultSubagentOnlyExtensions": [
+      "npm:pi-fast@0.3.0"
+    ],
+    "agentOverrides": {
+      "code-simplifier": {
+        "fast": false
+      },
+      "delegate": {
+        "fast": false
+      },
+      "evidence-auditor": {
+        "fast": false
+      },
+      "oracle": {
+        "fast": false
+      },
+      "planner": {
+        "fast": false
+      },
+      "researcher": {
+        "fast": false
+      },
+      "reviewer": {
+        "fast": false
+      },
+      "reviewer-api": {
+        "fast": false
+      },
+      "reviewer-data": {
+        "fast": false
+      },
+      "reviewer-quality": {
+        "fast": false
+      },
+      "reviewer-requirements": {
+        "fast": false
+      },
+      "reviewer-runtime": {
+        "fast": false
+      },
+      "reviewer-security": {
+        "fast": false
+      },
+      "reviewer-ui": {
+        "fast": false
+      },
+      "scout": {
+        "fast": false
+      },
+      "worker": {
+        "fast": false
+      }
+    }
   },
   "enableInstallTelemetry": false,
   "packages": [
-    "npm:@diegopetrucci/pi-fast",
     "npm:pi-subagents@latest",
-    "npm:pi-web-access"
+    "npm:pi-web-access",
+    "npm:pi-fast@0.3.0"
   ]
 }
