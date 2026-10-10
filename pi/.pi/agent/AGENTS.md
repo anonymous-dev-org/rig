@@ -31,6 +31,7 @@
 - Search the web before inventing a solution. If someone already solved it, don't do the damn work twice. Verify existing solutions against official docs and current code before reuse.
 - Create `PLAN.md` at the new worktree's repository root BEFORE implementation. NEVER create or update a plan in the main checkout.
 - Agree on the goal, scope, and approach with the user. NO implementation until the user approves the plan.
+- Once the user approves the plan, the agent is authorized to complete it without seeking approval for each step. If implementation goes off track, encounters a blocker, or requires a change to the agreed scope or approach, stop the affected work and contact the user before proceeding.
 - AFTER approval, split the plan into small, numbered tasks with clear outcomes, affected files, dependencies, and checks.
 
 ## Isolate and delegate
