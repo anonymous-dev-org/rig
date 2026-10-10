@@ -1,6 +1,6 @@
 # Plan: Simple, autonomous, task-linked execution
 
-Status: Tasks 1–4 complete. Task 5/5 in progress: commit, integrate into main, and push, explicitly requested by the user.
+Status: Complete. All five tasks implemented, validated, reviewed, integrated into main, and pushed.
 
 ## Goal and scope
 Update `pi/.pi/agent/AGENTS.md` so an approved plan leads to continuous, sequential execution of small tasks, with every implementation action visibly linked to its task. Keep simplicity and avoiding overengineering central.
@@ -63,11 +63,12 @@ Affected files: `pi/.pi/agent/AGENTS.md` and this worktree's `PLAN.md` only. The
    - Checks: review wording against the request and Git documentation, preserve the existing rules, and run `git diff --check`.
    - Result: added one refresh-before-worktree bullet and three Git workflow bullets. Clarified isolation as before planning/implementation so refreshing main first is not contradictory. Reviewed against the request and installed Git pull/merge documentation. `git diff --check` passed; the main checkout remains clean. No Git synchronization, commits, or merge-request operations performed.
 
-5. In progress — Commit, integrate into main, and push the reviewed changes.
+5. Done — Commit, integrate into main, and push the reviewed changes.
    - Files: `pi/.pi/agent/AGENTS.md`, `PLAN.md`.
    - Dependencies: tasks 1–4 complete; user requested “commit and push”, then merging into main.
    - Outcome: reviewed changes integrated into local `main` and published to `origin/main`.
    - Checks: inspect staged changes, run the commit hook and `git diff --check`, refresh local main from origin, merge updated main into the working branch, review and revalidate, fast-forward local main, push without force, verify remote/local commit equality, and confirm clean worktrees.
+   - Result: committed as `d5911d4`; pre-commit hook and diff checks passed. Refreshed main and merged it into the working branch without conflicts; reviewed the resulting diff. Fast-forwarded main, pushed to origin/main, and verified the remote commit matched. Both worktrees were clean, and the global instruction file matched the reviewed worktree copy. This completion record is published in a follow-up documentation commit.
 
 ## Checks
 - Manually trace: normal task completion; a recoverable failed check; an actual access blocker; transition from `PLAN_1.md` to `PLAN_2.md`; a required scope change.
@@ -83,8 +84,8 @@ Affected files: `pi/.pi/agent/AGENTS.md` and this worktree's `PLAN.md` only. The
 - Scope change: obtain approval before changing the agreed goal, scope, or approach; do not silently update the agreement.
 - Actual Markdown diff reviewed; `git diff --check` passed. Existing validation, security, accessibility, no-new-tests, worktree, and anti-overengineering rules are retained.
 - No tests added or run: this is an instruction-only change, validated by document review and scenario walkthroughs, not live agent sessions.
-- No blockers. Commit, integration into main, and push are authorized and in progress. The live `~/.pi/agent/AGENTS.md` resolves to the main-checkout file and will expose the updated instructions after integration.
-- Activation requires integrating the reviewed change and reloading Pi. Future model compliance remains unverified until observed in fresh sessions; these instructions are guidance, not an enforcement mechanism.
+- No blockers. The changes were committed, fast-forwarded into main, pushed to origin/main, and verified against the remote. The live `~/.pi/agent/AGENTS.md` now exposes the updated main-checkout instructions.
+- Run Pi `/reload` to load the changed instructions into an existing session. Future model compliance remains unverified until observed in fresh sessions; these instructions are guidance, not an enforcement mechanism.
 
 ## Preparation
 - Read the current rules, existing repository plan, and references to `AGENTS.md` / `PLAN.md` in the repository.
