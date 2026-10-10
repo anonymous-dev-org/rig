@@ -29,13 +29,13 @@
 - Before planning, read the current code, project docs, and affected callers.
 - READ THE OFFICIAL DOCS for every tool, library, framework, or software involved, at the versions in use. Those docs are the fucking source of truth for APIs and behavior—not memory or guesses.
 - Search the web before inventing a solution. If someone already solved it, don't do the damn work twice. Verify existing solutions against official docs and current code before reuse.
-- Create `PLAN.md` at the repository root BEFORE implementation.
+- Create `PLAN.md` at the new worktree's repository root BEFORE implementation. NEVER create or update a plan in the main checkout.
 - Agree on the goal, scope, and approach with the user. NO implementation until the user approves the plan.
 - AFTER approval, split the plan into small, numbered tasks with clear outcomes, affected files, dependencies, and checks.
 
 ## Isolate and delegate
 
-- Implement in a separate Git worktree under `<repository-root>/.local/worktrees/`. Verify `.local/` is ignored FIRST.
+- ALWAYS create a new Git worktree under `<repository-root>/.local/worktrees/` BEFORE planning or making changes. Verify `.local/` is ignored FIRST. Keep all planning and implementation in that worktree, NEVER in the main checkout.
 - Give subagents meaningful, bounded tasks: goal, context, owned files, exclusions, expected outcome, and validation steps. No vague handoffs.
 - Run independent tasks in parallel. Finish prerequisites before dependent tasks. Don't parallelize dependencies just to look busy.
 - Give parallel writers separate worktrees and non-overlapping file ownership. NEVER let agents edit the same files concurrently.
