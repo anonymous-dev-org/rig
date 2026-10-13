@@ -1,6 +1,6 @@
 # Plan: Two-stage planning and continuous action execution
 
-Status: Approved by the user. Actions 1–2 done; action 3 pending.
+Status: Complete. All three approved actions implemented and validated on `docs/agents-two-stage-planning`. Not merged or pushed.
 
 ## Goal
 Make planning explicitly separate collaborative brainstorming from a complete, executable breakdown into small actions. Once the user approves the detailed plan, continue through all approved actions without routine permission requests; stop and report only when the work cannot stay on track within the agreement.
@@ -49,7 +49,7 @@ Resolve routine failures and implementation details autonomously when possible w
 - Context/references: this plan's Execute continuously within the agreement behavior; the revised planning section; existing autonomy and escalation safeguards.
 - Definition of done: manual review confirms no routine permission gates, immediate continuation after each action/phase, autonomous recovery from routine failures, and clear stop/report conditions without authorizing scope changes or unsafe continuation. `git diff --check` passes; result is recorded here and committed.
 
-### 3. Pending — Align action terminology in the remaining workflow rules
+### 3. Done — Align action terminology in the remaining workflow rules
 - Operation/target: update planning/execution terminology in `Keep it fucking simple`, `Talk clearly`, `Isolate and delegate`, `Git workflow`, and `Show the work` in `pi/.pi/agent/AGENTS.md`.
 - Goal/scope: use actions consistently for plan units, active-work limits, commits, status tracking, and `action N/M:` reporting; remove any remaining implication that later phases are detailed only after approval.
 - Dependencies: actions 1 and 2.
@@ -70,4 +70,6 @@ Resolve routine failures and implementation details autonomously when possible w
 ## Results
 - User approved the proposed wording, scope, and three-action plan with “Yes”.
 - Action 1: replaced the planning rules with explicit brainstorming/agreement and detailed-action stages. Manual diff review confirmed complete action coverage, goal/scope/targets/dependencies/inputs, context/references, and observable definitions of done. Existing research and worktree rules remain unchanged. `git diff --check` passed. Commit: `3d5a516`; commit hook passed.
-- Action 2: updated execution to continue across actions/phases without permission gates, commit completed actions before proceeding, recover autonomously within the agreement, and stop/report deviations or blockers that require user input. Manual review confirmed unavailable-access, unauthorized-action, unresolved-decision, agreement-change, and unresolved-problem conditions are preserved, along with validation safeguards. `git diff --check` passed. Reporting and remaining terminology alignment are reserved for action 3.
+- Action 2: updated execution to continue across actions/phases without permission gates, commit completed actions before proceeding, recover autonomously within the agreement, and stop/report deviations or blockers that require user input. Manual review confirmed unavailable-access, unauthorized-action, unresolved-decision, agreement-change, and unresolved-problem conditions are preserved, along with validation safeguards. `git diff --check` passed. Commit: `10460a1`; commit hook passed.
+- Action 3: aligned plan-unit terminology in simplicity, communication, delegation/concurrency, Git, and progress rules. Reports now use `action N/M:`. Removed the remaining implication of deferred phase detailing. Full-file review, cumulative diff review, terminology/phase-reference search, and `git diff --check` passed. The only remaining use of “tasks” explicitly rejects broad tasks as planning units; there are no contradictory task-based workflow rules.
+- Final review confirmed the complete approved behavior, preserved safety/validation/research/worktree/delegation safeguards, and changes limited to `AGENTS.md` plus this plan. No new tests or runtime checks: documentation-only change. Future model compliance remains unverified. No blockers. Publishing and merging to main remain outside the approved scope.
