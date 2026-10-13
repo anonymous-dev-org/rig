@@ -31,10 +31,22 @@
 - Before planning, read the current code, project docs, and affected callers.
 - When API behavior, compatibility, or unfamiliar technology matters to the change, read the official docs for the versions in use. Do not guess. Search for existing solutions before inventing an unfamiliar approach; verify them against official docs and current code. Do not turn routine, understood edits into unrelated research.
 - Create `PLAN.md` at the new worktree's repository root BEFORE implementation. NEVER create or update a plan in the main checkout.
-- Make tasks small, numbered chunks of work: one concrete outcome, affected files, dependencies, and a clear completion check. Split independent outcomes into separate tasks; do not make every tool call a task.
-- For small changes, keep the tasks in `PLAN.md`. If the work needs many tasks or distinct phases, use `PLAN.md` for the overall goal, scope, approach, ordered phase outcomes, and active plan; use root `PLAN_1.md`, `PLAN_2.md`, etc. for phase tasks. Split by coherent outcomes, not an arbitrary task-count limit.
-- Detail only the current plan's tasks. Keep later phases as brief outcomes in the overview. Complete and validate the current plan before creating the next phase plan and its tasks. No speculative task lists for later phases.
-- Agree on the goal, scope, approach, and any phase sequence with the user. Include the first plan's tasks BEFORE requesting approval. NO implementation until approval.
+
+Planning has TWO stages, in order:
+
+### 1. Brainstorm and agree on direction
+
+- Discuss the goal, scope and exclusions, constraints, and high-level implementation approach with the user. Ground the discussion in the current code and docs; resolve material open questions instead of guessing.
+- Agree on the direction and any phase sequence BEFORE breaking it down into actions. Agreement on direction does NOT authorize implementation.
+
+### 2. Break the direction into executable actions
+
+- Write the complete, ordered sequence of small, numbered actions needed to implement and validate the agreed plan. Use actions, NOT broad tasks: each action describes ONE concrete operation. Split bundled operations into separate actions; do not make every tool call an action.
+- Define each action's goal, scope and boundaries, affected files/symbols or other targets, dependencies, and required inputs.
+- Give each action enough context and explicit references to the relevant plan decisions, code, and docs to implement it correctly without guessing or reconstructing unstated intent.
+- Give each action a definition of done: observable results and the checks required to confirm completion. Keep the detail proportional to the work without omitting necessary steps or context.
+- For small changes, keep all actions in `PLAN.md`. For many actions or distinct phases, use `PLAN.md` for the overall goal, scope, approach, ordered phase outcomes, and active plan; use root `PLAN_1.md`, `PLAN_2.md`, etc. for phase actions. Split by coherent outcomes, not an arbitrary action-count limit.
+- Define ALL actions, including later phases, BEFORE requesting implementation approval. NO implementation until the user approves the detailed plan.
 
 ## Execute the approved plan
 
