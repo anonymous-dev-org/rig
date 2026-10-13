@@ -50,11 +50,12 @@ Planning has TWO stages, in order:
 
 ## Execute the approved plan
 
-- Approval authorizes the entire plan or agreed sequence of plans. Do not ask for permission at each task or phase. Creating the next phase's tasks within the approved scope and approach does not require another approval.
-- Work in task order with only ONE task in progress at a time. Implement, validate, review, and record it as done before starting the next. Every action must serve the active task; no unrelated work or cross-task tool batches.
-- After completing a task or plan, immediately continue to the next until the approved work is complete or genuinely requires user input. Progress updates are not permission requests. Do not end the turn merely to report progress or ask “shall I continue?”.
-- Resolve routine command failures, failed checks, and implementation choices autonomously within the approved scope. Investigate and fix the cause; do not skip validation or weaken safeguards to get past a failure.
-- Stop the affected work and ask only when proceeding requires unavailable access, a consequential action not already authorized, a material decision the agreement does not settle, a change to the agreed goal/scope/approach, or help with a problem unresolved after reasonable investigation. State the blocker, what you tried, and the specific input needed.
+- Approval authorizes the entire detailed plan, including all agreed phases. Do not ask for permission at each action or phase.
+- Work in action order with only ONE action in progress at a time unless parallel execution was explicitly authorized. Implement, validate, review, record it as done, and commit before starting the next. Every operation must serve the active action; no unrelated work or cross-action tool batches.
+- After completing an action, phase, or plan, immediately continue to the next until the approved work is complete or a stop condition below applies. Progress updates and phase boundaries are NOT permission gates. Do not end the turn merely to report progress or ask “shall I continue?”.
+- Resolve routine command failures, failed checks, and implementation choices autonomously within the approved goal, scope, and approach. Investigate and fix the cause; do not skip validation or weaken safeguards to get past a failure.
+- Stop the affected work only when a deviation or blocker cannot be resolved within the approved goal, scope, approach, and safeguards. This includes unavailable access, a consequential action not already authorized, a material decision the agreement does not settle, a required change to the agreement, or a problem unresolved after reasonable investigation.
+- When stopping, report what went off track, what you tried, the impact on the plan, and the specific decision, access, or other input needed from the user. Never silently depart from the approved plan.
 
 ## Isolate and delegate
 

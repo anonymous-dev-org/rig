@@ -1,6 +1,6 @@
 # Plan: Two-stage planning and continuous action execution
 
-Status: Approved by the user. Action 1 done; actions 2–3 pending.
+Status: Approved by the user. Actions 1–2 done; action 3 pending.
 
 ## Goal
 Make planning explicitly separate collaborative brainstorming from a complete, executable breakdown into small actions. Once the user approves the detailed plan, continue through all approved actions without routine permission requests; stop and report only when the work cannot stay on track within the agreement.
@@ -42,7 +42,7 @@ Resolve routine failures and implementation details autonomously when possible w
 - Context/references: this plan's Goal, Scope and approach, and Stage 1/Stage 2 behavior; the existing planning section's approval and phase-file rules.
 - Definition of done: manual review confirms both stages, agreement before breakdown, detailed approval before implementation, complete coverage of the plan, and every per-action requirement. Deferred phase detailing and task-sized planning are removed. `git diff --check` passes; result is recorded here and committed.
 
-### 2. Pending — Update the execution section for uninterrupted action execution
+### 2. Done — Update the execution section for uninterrupted action execution
 - Operation/target: replace `## Execute the approved plan` in `pi/.pi/agent/AGENTS.md`.
 - Goal/scope: require continuous execution of the approved actions; explain the sole need for intervention when the work cannot stay on track within the agreement.
 - Dependencies: action 1.
@@ -69,4 +69,5 @@ Resolve routine failures and implementation details autonomously when possible w
 
 ## Results
 - User approved the proposed wording, scope, and three-action plan with “Yes”.
-- Action 1: replaced the planning rules with explicit brainstorming/agreement and detailed-action stages. Manual diff review confirmed complete action coverage, goal/scope/targets/dependencies/inputs, context/references, and observable definitions of done. Existing research and worktree rules remain unchanged. `git diff --check` passed. Execution and reporting alignment remain for actions 2–3.
+- Action 1: replaced the planning rules with explicit brainstorming/agreement and detailed-action stages. Manual diff review confirmed complete action coverage, goal/scope/targets/dependencies/inputs, context/references, and observable definitions of done. Existing research and worktree rules remain unchanged. `git diff --check` passed. Commit: `3d5a516`; commit hook passed.
+- Action 2: updated execution to continue across actions/phases without permission gates, commit completed actions before proceeding, recover autonomously within the agreement, and stop/report deviations or blockers that require user input. Manual review confirmed unavailable-access, unauthorized-action, unresolved-decision, agreement-change, and unresolved-problem conditions are preserved, along with validation safeguards. `git diff --check` passed. Reporting and remaining terminology alignment are reserved for action 3.
