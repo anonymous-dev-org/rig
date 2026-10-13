@@ -1,83 +1,87 @@
-# Plan: Two-stage planning and continuous action execution
+# Plan: Clear communication and a three-phase workflow
 
-Status: Complete. Approved rules committed, fast-forwarded into main, and pushed to origin/main. Delivery verified; final documentation record follows.
+Status: Final three-action plan approved by the user. Action 1 done; action 2 next.
 
-## Goal
-Make planning explicitly separate collaborative brainstorming from a complete, executable breakdown into small actions. Once the user approves the detailed plan, continue through all approved actions without routine permission requests; stop and report only when the work cannot stay on track within the agreement.
+## Goal and scope
+Update `pi/.pi/agent/AGENTS.md` with the exact wording below: concise explanations that teach, and a core workflow of brainstorming, breaking the agreement into executable actions, then implementing after approval. Integrate delegation into that workflow and merge worktree setup and Git integration into one concise section.
 
-## Scope and approach
-- Edit only `pi/.pi/agent/AGENTS.md`, plus this plan's status and validation records.
-- Preserve the existing tone, safety/validation rules, worktree isolation, delegation restrictions, and Git workflow.
-- Replace task-sized planning units with numbered actions: each describes one concrete operation, not a broad work package or necessarily one tool call.
-- Retain phase files as an organizational option, but remove deferred detailing: the complete approved scope must be broken down before implementation approval.
-- Use `action N/M:` for future execution reports and align planning/execution bookkeeping terminology throughout the file.
-- No subagent prompt edits, code changes, or new tests. The user subsequently authorized committing, merging into main, and pushing.
+Only this rules file and this plan may change. No code, new tests, subagent prompt changes, delegation, merge, or push. Preserve all unrelated rules. The user's uncommitted changes in the main checkout are outside scope and must remain untouched. Removing the completion-summary sentence from the communication section does not remove validation or reporting obligations elsewhere.
 
-## Agreed behavior to establish
+## Agreed communication replacement
 
-### Stage 1 — Brainstorm and agree on direction
-Discuss the goal, scope and exclusions, constraints, and high-level implementation approach with the user. Ground the discussion in current code/docs, resolve material open questions, and agree on the direction before breaking it down into actions. This stage does not authorize implementation.
+```markdown
+## Talk clearly. Teach the concepts. Have a fucking opinion.
 
-### Stage 2 — Break the agreed direction into actions
-Write the complete ordered list of actions needed to finish and validate the agreed plan. Each action must specify:
-- One concrete operation, its goal, and its scope/boundaries.
-- Affected files, symbols, or other targets, as applicable.
-- Dependencies and required inputs.
-- Enough context and explicit references to the relevant plan decisions, code, and documentation to implement the action as intended without guessing.
-- A definition of done with observable results and the checks required to establish completion.
+- Explain what we’re doing, how it works, and why it matters in plain language.
+- Make substantive explanations small, focused lessons: introduce the core idea, explain what happens underneath, and connect it to the work. Simplify without losing accuracy; define jargon and use examples when helpful.
+- Keep status updates brief. Go deep where it builds understanding; skip repetition and unrelated detail.
+- Give direct recommendations. Explain the reasoning and trade-offs, and state uncertainty honestly.
+- At completion, briefly explain the implemented architecture: the main pieces, their responsibilities, and how they fit together. Highlight sharp edges, limitations, and important failure cases.
+```
 
-Split bundled operations into separate actions. Keep the detail proportional to the work; do not turn every tool invocation into a separate action. Include all actions across any phase files before requesting approval. No implementation until the user approves the detailed plan.
+## Agreed workflow replacement
+Replace both `Plan WITH the user` and `Execute the approved plan` with:
 
-### Execute continuously within the agreement
-Approval authorizes the whole plan. Complete, validate, review, record, and commit each action before continuing to the next, sequentially unless parallel execution was explicitly authorized. Progress reports and phase boundaries are not permission gates.
+```markdown
+## How we work: brainstorm, break down, implement.
 
-Resolve routine failures and implementation details autonomously when possible within the approved goal, scope, approach, and safeguards. If implementation goes off track and cannot be corrected within the agreement, stop the affected work and report the deviation/blocker, what was tried, its impact, and the specific decision or access needed. Preserve existing escalation conditions for unavailable access, unauthorized consequential actions, unresolved material decisions, changes to the agreement, and problems unresolved after reasonable investigation. Never silently depart from the plan or weaken validation.
+### 1. Brainstorm together
+- Read the relevant code, docs, and callers. Verify unfamiliar behavior against official docs for the versions in use.
+- Agree with the user on the goal, scope, constraints, and simplest viable approach. Resolve important unknowns instead of guessing.
+- Agreement on direction allows planning, not implementation.
+
+### 2. Break the agreement into executable actions
+- Write the complete, ordered plan in `PLAN.md` at the isolated worktree’s root, never in the main checkout. Use linked `PLAN_N.md` files only when distinct phases need them.
+- Make each action one concrete operation. State its goal, boundaries, affected files or symbols, dependencies, required context, and observable completion checks. Keep it small enough to implement and verify without guessing.
+- Decide whether subagents would help. Delegation requires authorization from the user or applicable instructions; complexity alone is not permission. Parallel execution requires explicit user approval.
+- For authorized delegation, define bounded assignments: goal, context, owned files, exclusions, expected result, and validation. Finish prerequisites before dependent work; give parallel writers separate worktrees and non-overlapping files.
+- Define all actions, including later phases, before requesting approval. Do not implement until the user approves the detailed plan.
+
+### 3. Implement the approved plan
+- Approval authorizes the whole plan. Execute one action at a time unless parallel work was explicitly approved. Continue through actions and phases without asking for permission again.
+- Finish each action before starting the next: implement, validate, review, update the plan, and commit. Keep results and blockers recorded.
+- When using subagents, the main agent owns decisions, integration, and review. Inspect their changes and validation results; “done” is not proof.
+- Resolve routine problems independently within the agreement. Never skip validation, weaken safeguards, or silently change scope.
+- Stop only when continuing requires a changed agreement, missing access, an unauthorized consequential action, or a problem you cannot resolve after reasonable investigation. Explain what happened, what you tried, its impact, and exactly what is needed to continue.
+```
+
+## Agreed Git/worktree replacement
+Replace `Isolate and delegate` and `Git workflow` with:
+
+```markdown
+## Git and worktree workflow
+
+- Before planning or implementation, pull `origin/main` into local `main`, verify `.local/` is ignored, and create a new worktree under `.local/worktrees/`. Keep all plans and changes there, never in the main checkout.
+- Commit each completed, validated action immediately.
+- Before opening a merge request, refresh local `main` from `origin/main`, merge it into the working branch, resolve conflicts, and rerun relevant validation. Open the request only when the work is complete and checks pass.
+```
 
 ## Actions
 
-### 1. Done — Replace the planning section with the two-stage process
-- Operation/target: replace `## Plan WITH the user` in `pi/.pi/agent/AGENTS.md`.
-- Goal/scope: express the two stages and the complete, small-action breakdown described above; preserve research requirements and worktree-only planning.
-- Dependencies: user agreement on this proposal and approval to implement the detailed plan.
-- Context/references: this plan's Goal, Scope and approach, and Stage 1/Stage 2 behavior; the existing planning section's approval and phase-file rules.
-- Definition of done: manual review confirms both stages, agreement before breakdown, detailed approval before implementation, complete coverage of the plan, and every per-action requirement. Deferred phase detailing and task-sized planning are removed. `git diff --check` passes; result is recorded here and committed.
+### 1/3 — Done: Replace the communication section
+- Operation/target: replace the heading and bullets between `## Talk clearly. Have a fucking opinion.` and `## Plan WITH the user` in `pi/.pi/agent/AGENTS.md` with the exact agreed communication replacement above.
+- Goal/boundaries: establish plain-language lessons and architectural completion summaries; preserve all other sections.
+- Dependencies/inputs: approval of this expanded detailed plan; agreed communication wording above; existing rules reviewed.
+- Done when: diff review confirms the exact replacement, unchanged surrounding content, and absence of the removed completion-summary sentence in the replacement. `git diff --check` passes, results are recorded here, and the action is committed.
 
-### 2. Done — Update the execution section for uninterrupted action execution
-- Operation/target: replace `## Execute the approved plan` in `pi/.pi/agent/AGENTS.md`.
-- Goal/scope: require continuous execution of the approved actions; explain the sole need for intervention when the work cannot stay on track within the agreement.
-- Dependencies: action 1.
-- Context/references: this plan's Execute continuously within the agreement behavior; the revised planning section; existing autonomy and escalation safeguards.
-- Definition of done: manual review confirms no routine permission gates, immediate continuation after each action/phase, autonomous recovery from routine failures, and clear stop/report conditions without authorizing scope changes or unsafe continuation. `git diff --check` passes; result is recorded here and committed.
+### 2/3 — Pending: Replace planning and execution with the three-phase workflow
+- Operation/target: replace the contiguous `Plan WITH the user` and `Execute the approved plan` sections, ending before `Isolate and delegate`, with the exact agreed workflow replacement above.
+- Goal/boundaries: make the three phases explicit and integrate delegation planning and supervision. Preserve communication, isolation, Git, and reporting sections in this action.
+- Dependencies/inputs: action 1 complete; agreed workflow wording above and existing isolation/delegation rules.
+- Done when: diff review confirms exact wording, distinct direction and implementation approvals, complete action planning, authorized delegation/parallelism, bounded assignments, isolated parallel writers, main-agent review, continuous execution, verification, and clear stop conditions. `git diff --check` passes, results are recorded here, and the action is committed. Delegation duplication is intentionally removed in action 3.
 
-### 3. Done — Align action terminology in the remaining workflow rules
-- Operation/target: update planning/execution terminology in `Keep it fucking simple`, `Talk clearly`, `Isolate and delegate`, `Git workflow`, and `Show the work` in `pi/.pi/agent/AGENTS.md`.
-- Goal/scope: use actions consistently for plan units, active-work limits, commits, status tracking, and `action N/M:` reporting; remove any remaining implication that later phases are detailed only after approval.
-- Dependencies: actions 1 and 2.
-- Context/references: this plan's Scope and approach; revised planning/execution sections; existing progress, isolation, and Git rules. Subagent role files are outside scope.
-- Definition of done: full-file manual review and terminology search confirm that no contradictory task-based workflow or deferred action breakdown remains. Unrelated rules and safeguards are preserved. `git diff --check` passes; results/limits are recorded here and the action is committed. Worktree is clean.
-
-### 4. Done — Publish the approved changes to main
-- Operation/targets: refresh local `main`, merge it into the working branch, revalidate, commit the delivery record, fast-forward `main`, and push `origin/main` without force.
-- Goal/scope: publish only the approved rules and plan records.
-- Dependencies: actions 1–3 complete; user explicitly authorized commit, push, and branch integration.
-- Context/references: approved scope above, existing Git workflow, and actions 1–3 validation results.
-- Definition of done: updated main merges without unresolved conflicts, diff checks and commit hook pass, push succeeds, remote/local main match, and both checkouts are clean.
-
-## Validation and limits
-- Documentation-only: review wording against the user's request and the existing safeguards; inspect diffs and terminology; run `git diff --check` for every action.
-- Do not add tests. No application runtime checks are relevant.
-- Future model compliance cannot be proven by a wording review; report it as unverified.
-- Commit changes in this worktree; merge and push are authorized by the user's follow-up request.
-
-## Preparation
-- Read the current `AGENTS.md`, existing repository plan, and planner/worker prompts; checked related references.
-- Verified a clean main checkout and ignored `.local/`.
-- Pulled `origin/main` into local `main` (already current), then created `.local/worktrees/agents-two-stage-planning` on `docs/agents-two-stage-planning` before writing this plan.
+### 3/3 — Pending: Unify Git and worktree rules
+- Operation/target: replace the contiguous `## Isolate and delegate` and `## Git workflow` sections, ending before `## Show the work`, with the exact agreed Git/worktree replacement above. This also removes delegation bullets now covered by the three-phase workflow.
+- Goal/boundaries: give repository isolation, action commits, and safe integration one concise section; preserve unrelated content.
+- Dependencies/inputs: action 2 complete; integrated delegation rules and agreed Git/worktree wording above; existing isolation and Git sections.
+- Done when: full-file and cumulative diff review confirm all agreed wording, no stale section references or redundant delegation block, preserved isolation and integration safeguards, and unchanged content outside the approved sections. `git diff --check` passes. Record results here, commit, verify the worktree is clean, and verify the main checkout's existing edits remain unchanged.
 
 ## Results
-- User approved the proposed wording, scope, and three-action plan with “Yes”.
-- Action 1: replaced the planning rules with explicit brainstorming/agreement and detailed-action stages. Manual diff review confirmed complete action coverage, goal/scope/targets/dependencies/inputs, context/references, and observable definitions of done. Existing research and worktree rules remain unchanged. `git diff --check` passed. Commit: `3d5a516`; commit hook passed.
-- Action 2: updated execution to continue across actions/phases without permission gates, commit completed actions before proceeding, recover autonomously within the agreement, and stop/report deviations or blockers that require user input. Manual review confirmed unavailable-access, unauthorized-action, unresolved-decision, agreement-change, and unresolved-problem conditions are preserved, along with validation safeguards. `git diff --check` passed. Commit: `10460a1`; commit hook passed.
-- Action 3: aligned plan-unit terminology in simplicity, communication, delegation/concurrency, Git, and progress rules. Reports now use `action N/M:`. Removed the remaining implication of deferred phase detailing. Full-file review, cumulative diff review, terminology/phase-reference search, and `git diff --check` passed. The only remaining use of “tasks” explicitly rejects broad tasks as planning units; there are no contradictory task-based workflow rules.
-- Final review confirmed the complete approved behavior, preserved safety/validation/research/worktree/delegation safeguards, and changes limited to `AGENTS.md` plus this plan. No new tests or runtime checks: documentation-only change. Future model compliance remains unverified. No blockers. The user subsequently authorized publishing and merging to main.
-- Action 4: refreshed origin/main (already current), merged main into the working branch (already current), reviewed the full rules diff, and reran whitespace checks. Commit hooks passed. Fast-forwarded main and pushed successfully through `2177be2`; verified live remote/local main equality and clean main/working checkouts. No conflicts, force push, or blockers. This follow-up documentation record is committed in the worktree and published by the same fast-forward process.
+- Action 1: applied the exact approved communication wording. Manual diff review confirmed surrounding sections are unchanged and the removed completion-summary sentence is absent from the replacement. `git diff --check` passed.
+
+## Preparation and validation limits
+- Repository root: the `rig` checkout, one level above the initial `pi/` working directory.
+- Verified `.local/` is ignored and pulled `origin/main` into local `main` (already current).
+- Created `.local/worktrees/agents-clear-explanations` on `docs/agents-clear-explanations` before writing this plan.
+- Read current rules, the prior repository plan, and the expanded worktree target. Main-checkout changes are confined to unrelated simplicity/testing bullets and remain untouched.
+- Documentation-only validation; no runtime tests are needed or added. Wording review cannot establish future agent compliance.

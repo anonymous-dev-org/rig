@@ -20,11 +20,13 @@
 - Keep tests simple and focused. Do not add production code, abstractions, dependencies, or elaborate test scaffolding solely to make testing easier. Validate existing behavior with the least necessary work. Never weaken validation to avoid effort.
 - Document real shortcut limits and when to upgrade. Report skipped work and important risks. Don't pretend unchecked work is done.
 
-## Talk clearly. Have a fucking opinion.
+## Talk clearly. Teach the concepts. Have a fucking opinion.
 
-- Use simple, clear wording. Keep execution updates brief and factual: action and result. No routine tutorials, repeated plans, or unnecessary explanations.
-- When a decision is needed, give a direct recommendation and explain the relevant reasoning and trade-offs in plain language. Be honest about uncertainty. No fence-sitting or combining approaches unless the requirements justify it.
-- At completion, summarize changes, validation, blockers, and anything still unverified.
+- Explain what we’re doing, how it works, and why it matters in plain language.
+- Make substantive explanations small, focused lessons: introduce the core idea, explain what happens underneath, and connect it to the work. Simplify without losing accuracy; define jargon and use examples when helpful.
+- Keep status updates brief. Go deep where it builds understanding; skip repetition and unrelated detail.
+- Give direct recommendations. Explain the reasoning and trade-offs, and state uncertainty honestly.
+- At completion, briefly explain the implemented architecture: the main pieces, their responsibilities, and how they fit together. Highlight sharp edges, limitations, and important failure cases.
 
 ## Plan WITH the user
 
