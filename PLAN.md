@@ -1,11 +1,11 @@
 # Plan: One clear, consistent agent workflow
 
-Status: Complete. Consolidated rules implemented, reviewed, and validated in the isolated worktree. No merge or push.
+Status: Complete. Consolidated rules merged into main and pushed to origin/main. Publication verified; this completion record follows through the same fast-forward and push process.
 
 ## Goal and boundaries
 Revise `pi/.pi/agent/AGENTS.md` into a consistent set of rules with explicit responsibilities, workflow boundaries, and completion criteria. Incorporate the approved behavior from `docs/agents-subagent-default` and `docs/agents-simple-task-exception` without merging their historical plan files or modifying those branches.
 
-Only `pi/.pi/agent/AGENTS.md` and this plan may change. Preserve the current title, compliance section, communication section, and unrelated simplicity rules. Preserve worktree isolation, verification, implementation-plan approval for non-simple work, scope control, and safe Git integration. No code, tests, role-prompt edits, branch cleanup, merge, or push. This is a directly executed, bounded documentation revision; no delegation is needed to apply the supplied wording.
+Only `pi/.pi/agent/AGENTS.md` and this plan may change. Preserve the current title, compliance section, communication section, and unrelated simplicity rules. Preserve worktree isolation, verification, implementation-plan approval for non-simple work, scope control, and safe Git integration. No code, tests, role-prompt edits, or branch cleanup. The user's follow-up authorizes merging into main and pushing to origin/main. This is a directly executed, bounded documentation revision; no delegation is needed to apply the supplied wording.
 
 ## Exact proposed changes
 
@@ -76,7 +76,7 @@ Replace `## Show the work` through the end of the file with:
 - Obtain approval before changing the agreed goal, scope, or approach. Routine updates and moving to the next approved action or phase are not permission gates.
 ```
 
-## Action 1/1 — Done: Apply the consolidated rules revision
+## Action 1/2 — Done: Apply the consolidated rules revision
 - Operation/target: update `pi/.pi/agent/AGENTS.md` using the exact four replacement specifications above as one coherent revision. Use targeted replacements; preserve all unspecified content.
 - Goal: one consistent definition of simple versus planned work, delegation responsibility, dependency-safe concurrency, and completion/reporting requirements.
 - Dependencies/inputs: user approval of this detailed plan; current main file at preparation commit `20135c8`; the two reviewed unmerged branch diffs; exact proposed wording above. No prerequisites remain beyond approval.
@@ -84,11 +84,19 @@ Replace `## Show the work` through the end of the file with:
 - Scenario review: a clear low-risk edit needs no plan or numbering but still uses a worktree, verification, review, and commit; uncertainty switches it to the standard workflow; non-simple implementation requires detailed-plan approval; independent writers may run in parallel with disjoint ownership; dependent work waits for completed prerequisites; a subagent's report alone cannot establish completion; a simpler broader redesign still needs scope approval.
 - Done when: exact-content and manual scenario reviews pass, `git diff --check` passes, results and any limits are recorded here, the action is committed, and the worktree is clean. Confirm main and both unmerged branches were not modified. No runtime tests are relevant or added; documentation review cannot prove future agent compliance.
 
+## Action 2/2 — Done: Merge and publish
+- Operation/targets: refresh local main from origin/main, merge updated main into the working branch, revalidate, fast-forward main, and push without force. Record the verified delivery result in this worktree and publish that record through the same fast-forward process.
+- Goal/boundaries: publish the consolidated rules and plan only. Preserve the existing subagent and simple-task branch refs; no cleanup or unrelated changes.
+- Dependencies/inputs: action 1 complete; user's authorization to merge and push; clean checkouts; approved wording above.
+- Done when: approved wording and whitespace checks pass, publication succeeds, live origin/main matches local main and the working branch, both checkouts are clean, protected branch refs are unchanged, and the completion record is committed.
+
 ## Results
 - Applied the four approved replacements exactly. Full-file and diff review, followed by exact-content comparison, confirmed the title, compliance/communication sections, other simplicity bullets, and merge-request rule remain unchanged.
 - Obsolete delegation authorization, explicit parallel-approval restrictions, sequential-only completion wording, and third-person main-agent wording are absent from the revised rules.
 - Manual scenario review passed: clear low-risk work skips planning/numbering but retains isolation and verification; emerging uncertainty returns to the standard process; non-simple implementation requires detailed-plan approval; independent writers use separate worktrees and file ownership; dependent work waits for completed prerequisites; subagent reports require evidence/review; broader redesign still requires scope approval.
-- `git diff --check` passed. Main's rules file remains unchanged. No code or tests were added; no runtime checks apply. Future agent compliance remains unverified. No blockers.
+- `git diff --check` passed. Main's rules file was unchanged at action 1 completion. No code or tests were added; no runtime checks apply. Future agent compliance remains unverified. No blockers.
+
+- Action 2: user authorized merge and push. Refreshed main and merged it into the working branch (both already current). Rechecked all four approved wording blocks, reviewed the rules diff, and passed whitespace checks. Fast-forwarded main and pushed without force through `aad67df`; verified live origin/main matched local main and main was clean. No conflicts or blockers. The completion record is committed in the worktree and published through the same fast-forward process; no other branches are changed.
 
 ## Preparation
 - Read the current rules, current repository plan, and both unmerged rules diffs. Searched tracked files for the affected workflow headings and conflicting wording; relevant matches were in the target rules file.
