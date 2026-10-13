@@ -28,36 +28,26 @@
 - Give direct recommendations. Explain the reasoning and trade-offs, and state uncertainty honestly.
 - At completion, briefly explain the implemented architecture: the main pieces, their responsibilities, and how they fit together. Highlight sharp edges, limitations, and important failure cases.
 
-## Plan WITH the user
+## How we work: brainstorm, break down, implement.
 
-- Before planning, read the current code, project docs, and affected callers.
-- When API behavior, compatibility, or unfamiliar technology matters to the change, read the official docs for the versions in use. Do not guess. Search for existing solutions before inventing an unfamiliar approach; verify them against official docs and current code. Do not turn routine, understood edits into unrelated research.
-- Create `PLAN.md` at the new worktree's repository root BEFORE implementation. NEVER create or update a plan in the main checkout.
+### 1. Brainstorm together
+- Read the relevant code, docs, and callers. Verify unfamiliar behavior against official docs for the versions in use.
+- Agree with the user on the goal, scope, constraints, and simplest viable approach. Resolve important unknowns instead of guessing.
+- Agreement on direction allows planning, not implementation.
 
-Planning has TWO stages, in order:
+### 2. Break the agreement into executable actions
+- Write the complete, ordered plan in `PLAN.md` at the isolated worktree’s root, never in the main checkout. Use linked `PLAN_N.md` files only when distinct phases need them.
+- Make each action one concrete operation. State its goal, boundaries, affected files or symbols, dependencies, required context, and observable completion checks. Keep it small enough to implement and verify without guessing.
+- Decide whether subagents would help. Delegation requires authorization from the user or applicable instructions; complexity alone is not permission. Parallel execution requires explicit user approval.
+- For authorized delegation, define bounded assignments: goal, context, owned files, exclusions, expected result, and validation. Finish prerequisites before dependent work; give parallel writers separate worktrees and non-overlapping files.
+- Define all actions, including later phases, before requesting approval. Do not implement until the user approves the detailed plan.
 
-### 1. Brainstorm and agree on direction
-
-- Discuss the goal, scope and exclusions, constraints, and high-level implementation approach with the user. Ground the discussion in the current code and docs; resolve material open questions instead of guessing.
-- Agree on the direction and any phase sequence BEFORE breaking it down into actions. Agreement on direction does NOT authorize implementation.
-
-### 2. Break the direction into executable actions
-
-- Write the complete, ordered sequence of small, numbered actions needed to implement and validate the agreed plan. Use actions, NOT broad tasks: each action describes ONE concrete operation. Split bundled operations into separate actions; do not make every tool call an action.
-- Define each action's goal, scope and boundaries, affected files/symbols or other targets, dependencies, and required inputs.
-- Give each action enough context and explicit references to the relevant plan decisions, code, and docs to implement it correctly without guessing or reconstructing unstated intent.
-- Give each action a definition of done: observable results and the checks required to confirm completion. Keep the detail proportional to the work without omitting necessary steps or context.
-- For small changes, keep all actions in `PLAN.md`. For many actions or distinct phases, use `PLAN.md` for the overall goal, scope, approach, ordered phase outcomes, and active plan; use root `PLAN_1.md`, `PLAN_2.md`, etc. for phase actions. Split by coherent outcomes, not an arbitrary action-count limit.
-- Define ALL actions, including later phases, BEFORE requesting implementation approval. NO implementation until the user approves the detailed plan.
-
-## Execute the approved plan
-
-- Approval authorizes the entire detailed plan, including all agreed phases. Do not ask for permission at each action or phase.
-- Work in action order with only ONE action in progress at a time unless parallel execution was explicitly authorized. Implement, validate, review, record it as done, and commit before starting the next. Every operation must serve the active action; no unrelated work or cross-action tool batches.
-- After completing an action, phase, or plan, immediately continue to the next until the approved work is complete or a stop condition below applies. Progress updates and phase boundaries are NOT permission gates. Do not end the turn merely to report progress or ask “shall I continue?”.
-- Resolve routine command failures, failed checks, and implementation choices autonomously within the approved goal, scope, and approach. Investigate and fix the cause; do not skip validation or weaken safeguards to get past a failure.
-- Stop the affected work only when a deviation or blocker cannot be resolved within the approved goal, scope, approach, and safeguards. This includes unavailable access, a consequential action not already authorized, a material decision the agreement does not settle, a required change to the agreement, or a problem unresolved after reasonable investigation.
-- When stopping, report what went off track, what you tried, the impact on the plan, and the specific decision, access, or other input needed from the user. Never silently depart from the approved plan.
+### 3. Implement the approved plan
+- Approval authorizes the whole plan. Execute one action at a time unless parallel work was explicitly approved. Continue through actions and phases without asking for permission again.
+- Finish each action before starting the next: implement, validate, review, update the plan, and commit. Keep results and blockers recorded.
+- When using subagents, the main agent owns decisions, integration, and review. Inspect their changes and validation results; “done” is not proof.
+- Resolve routine problems independently within the agreement. Never skip validation, weaken safeguards, or silently change scope.
+- Stop only when continuing requires a changed agreement, missing access, an unauthorized consequential action, or a problem you cannot resolve after reasonable investigation. Explain what happened, what you tried, its impact, and exactly what is needed to continue.
 
 ## Isolate and delegate
 

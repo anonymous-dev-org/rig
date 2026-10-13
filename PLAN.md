@@ -1,6 +1,6 @@
 # Plan: Clear communication and a three-phase workflow
 
-Status: Final three-action plan approved by the user. Action 1 done; action 2 next.
+Status: Final three-action plan approved by the user. Actions 1–2 done; action 3 next.
 
 ## Goal and scope
 Update `pi/.pi/agent/AGENTS.md` with the exact wording below: concise explanations that teach, and a core workflow of brainstorming, breaking the agreement into executable actions, then implementing after approval. Integrate delegation into that workflow and merge worktree setup and Git integration into one concise section.
@@ -64,7 +64,7 @@ Replace `Isolate and delegate` and `Git workflow` with:
 - Dependencies/inputs: approval of this expanded detailed plan; agreed communication wording above; existing rules reviewed.
 - Done when: diff review confirms the exact replacement, unchanged surrounding content, and absence of the removed completion-summary sentence in the replacement. `git diff --check` passes, results are recorded here, and the action is committed.
 
-### 2/3 — Pending: Replace planning and execution with the three-phase workflow
+### 2/3 — Done: Replace planning and execution with the three-phase workflow
 - Operation/target: replace the contiguous `Plan WITH the user` and `Execute the approved plan` sections, ending before `Isolate and delegate`, with the exact agreed workflow replacement above.
 - Goal/boundaries: make the three phases explicit and integrate delegation planning and supervision. Preserve communication, isolation, Git, and reporting sections in this action.
 - Dependencies/inputs: action 1 complete; agreed workflow wording above and existing isolation/delegation rules.
@@ -78,6 +78,8 @@ Replace `Isolate and delegate` and `Git workflow` with:
 
 ## Results
 - Action 1: applied the exact approved communication wording. Manual diff review confirmed surrounding sections are unchanged and the removed completion-summary sentence is absent from the replacement. `git diff --check` passed.
+
+- Action 2: applied the exact approved three-phase workflow. Manual diff review confirmed direction/implementation approval boundaries, complete action planning, authorization and isolation for delegation, main-agent review, uninterrupted approved execution, validation, and stop conditions. Other sections remain unchanged. `git diff --check` passed. The old delegation block remains only until action 3.
 
 ## Preparation and validation limits
 - Repository root: the `rig` checkout, one level above the initial `pi/` working directory.
