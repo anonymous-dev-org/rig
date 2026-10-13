@@ -1,6 +1,6 @@
 # Plan: Do more with less code
 
-Status: Detailed plan approved; action 1 done, action 2 next.
+Status: Action 1 done; action 2 in progress.
 
 ## Goal and scope
 Replace only `Keep it fucking simple` in `pi/.pi/agent/AGENTS.md` with the exact agreed section below. Code is a liability; seek simpler overall designs before solving a complex local problem. Preserve all other sections. This replacement removes the old section's testing/fixture and shortcut bullets as part of the agreed full replacement.
@@ -26,7 +26,7 @@ Only this rules file and this plan may change. No code, new tests, delegation, o
 - Dependencies/inputs: detailed-plan approval; exact wording above; current rules read and heading references checked.
 - Done when: manual diff review and exact-text comparison confirm the approved replacement and unchanged surrounding content; `git diff --check` passes; results are recorded here and committed in this worktree.
 
-### 2/2 — Pending: Merge and publish
+### 2/2 — In progress: Merge and publish
 - Operation/targets: pull origin/main into local main, merge refreshed main into this branch, revalidate, commit the delivery record, fast-forward main to this branch, and push origin/main without force. Verify publication and record any unresolved blockers.
 - Goal/boundaries: publish only this change and plan records. Preserve the separate subagent branch. Stop if unrelated local changes or upstream conflicts require a material decision.
 - Dependencies/inputs: action 1 complete; user's explicit request to update and push; clean checkouts.
@@ -34,6 +34,8 @@ Only this rules file and this plan may change. No code, new tests, delegation, o
 
 ## Results
 - Action 1: exact approved replacement applied. Manual diff review and exact-content comparison confirmed all surrounding rules are unchanged. `git diff --check` passed. No tests added or required for this documentation-only edit.
+
+- Action 2 validation: main was clean and origin/main already current. Updated main merged into the branch without changes or conflicts. Re-reviewed the rules diff; committed-change whitespace checks passed. Publication follows by fast-forward and non-force push.
 
 ## Preparation and limits
 - Main was clean; verified `.local/` is ignored; pulled origin/main into local main (already current).
