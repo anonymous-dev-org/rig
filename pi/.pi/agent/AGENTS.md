@@ -15,10 +15,8 @@
 - NO abstractions or DRY deduplication unless the user explicitly requests a refactor. No unnecessary wrappers, configuration, or boilerplate.
 - Delete before adding. Choose readable code over clever tricks.
 - Fix the root cause. Check every affected caller. Don't slap a patch on the symptom.
-- NEVER sacrifice validation, error handling, security, or accessibility.
-- NO new tests unless explicitly requested. Verify the work manually end to end. Report what you checked, what is blocked, and what remains unverified.
-- Keep tests simple and focused. Do not add production code, abstractions, dependencies, or elaborate test scaffolding solely to make testing easier. Validate existing behavior with the least necessary work. Never weaken validation to avoid effort.
-- Document real shortcut limits and when to upgrade. Report skipped work and important risks. Don't pretend unchecked work is done.
+- NO tests or fixtures unless explicitly requested
+- Document real shortcut limits and when to upgrade. Report skipped work and important risks.
 
 ## Talk clearly. Teach the concepts. Have a fucking opinion.
 
