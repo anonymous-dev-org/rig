@@ -1,6 +1,6 @@
 # Plan: Two-stage planning and continuous action execution
 
-Status: Complete. All three approved actions implemented and validated on `docs/agents-two-stage-planning`. Not merged or pushed.
+Status: Actions 1–3 complete. Action 4 in progress: user authorized committing, merging into main, and pushing.
 
 ## Goal
 Make planning explicitly separate collaborative brainstorming from a complete, executable breakdown into small actions. Once the user approves the detailed plan, continue through all approved actions without routine permission requests; stop and report only when the work cannot stay on track within the agreement.
@@ -11,7 +11,7 @@ Make planning explicitly separate collaborative brainstorming from a complete, e
 - Replace task-sized planning units with numbered actions: each describes one concrete operation, not a broad work package or necessarily one tool call.
 - Retain phase files as an organizational option, but remove deferred detailing: the complete approved scope must be broken down before implementation approval.
 - Use `action N/M:` for future execution reports and align planning/execution bookkeeping terminology throughout the file.
-- No subagent prompt edits, code changes, new tests, publishing, or merging to main.
+- No subagent prompt edits, code changes, or new tests. The user subsequently authorized committing, merging into main, and pushing.
 
 ## Agreed behavior to establish
 
@@ -56,11 +56,18 @@ Resolve routine failures and implementation details autonomously when possible w
 - Context/references: this plan's Scope and approach; revised planning/execution sections; existing progress, isolation, and Git rules. Subagent role files are outside scope.
 - Definition of done: full-file manual review and terminology search confirm that no contradictory task-based workflow or deferred action breakdown remains. Unrelated rules and safeguards are preserved. `git diff --check` passes; results/limits are recorded here and the action is committed. Worktree is clean.
 
+### 4. In progress — Publish the approved changes to main
+- Operation/targets: refresh local `main`, merge it into the working branch, revalidate, commit the delivery record, fast-forward `main`, and push `origin/main` without force.
+- Goal/scope: publish only the approved rules and plan records.
+- Dependencies: actions 1–3 complete; user explicitly authorized commit, push, and branch integration.
+- Context/references: approved scope above, existing Git workflow, and actions 1–3 validation results.
+- Definition of done: updated main merges without unresolved conflicts, diff checks and commit hook pass, push succeeds, remote/local main match, and both checkouts are clean.
+
 ## Validation and limits
 - Documentation-only: review wording against the user's request and the existing safeguards; inspect diffs and terminology; run `git diff --check` for every action.
 - Do not add tests. No application runtime checks are relevant.
 - Future model compliance cannot be proven by a wording review; report it as unverified.
-- Commit each completed action in this worktree. Merge/push are not included.
+- Commit changes in this worktree; merge and push are authorized by the user's follow-up request.
 
 ## Preparation
 - Read the current `AGENTS.md`, existing repository plan, and planner/worker prompts; checked related references.
@@ -72,4 +79,4 @@ Resolve routine failures and implementation details autonomously when possible w
 - Action 1: replaced the planning rules with explicit brainstorming/agreement and detailed-action stages. Manual diff review confirmed complete action coverage, goal/scope/targets/dependencies/inputs, context/references, and observable definitions of done. Existing research and worktree rules remain unchanged. `git diff --check` passed. Commit: `3d5a516`; commit hook passed.
 - Action 2: updated execution to continue across actions/phases without permission gates, commit completed actions before proceeding, recover autonomously within the agreement, and stop/report deviations or blockers that require user input. Manual review confirmed unavailable-access, unauthorized-action, unresolved-decision, agreement-change, and unresolved-problem conditions are preserved, along with validation safeguards. `git diff --check` passed. Commit: `10460a1`; commit hook passed.
 - Action 3: aligned plan-unit terminology in simplicity, communication, delegation/concurrency, Git, and progress rules. Reports now use `action N/M:`. Removed the remaining implication of deferred phase detailing. Full-file review, cumulative diff review, terminology/phase-reference search, and `git diff --check` passed. The only remaining use of “tasks” explicitly rejects broad tasks as planning units; there are no contradictory task-based workflow rules.
-- Final review confirmed the complete approved behavior, preserved safety/validation/research/worktree/delegation safeguards, and changes limited to `AGENTS.md` plus this plan. No new tests or runtime checks: documentation-only change. Future model compliance remains unverified. No blockers. Publishing and merging to main remain outside the approved scope.
+- Final review confirmed the complete approved behavior, preserved safety/validation/research/worktree/delegation safeguards, and changes limited to `AGENTS.md` plus this plan. No new tests or runtime checks: documentation-only change. Future model compliance remains unverified. No blockers. The user subsequently authorized publishing and merging to main; action 4 tracks delivery.
