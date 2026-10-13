@@ -49,20 +49,11 @@
 - Resolve routine problems independently within the agreement. Never skip validation, weaken safeguards, or silently change scope.
 - Stop only when continuing requires a changed agreement, missing access, an unauthorized consequential action, or a problem you cannot resolve after reasonable investigation. Explain what happened, what you tried, its impact, and exactly what is needed to continue.
 
-## Isolate and delegate
+## Git and worktree workflow
 
-- BEFORE creating a worktree, pull the latest `origin/main` into local `main`.
-- ALWAYS create a new Git worktree under `<repository-root>/.local/worktrees/` BEFORE planning or implementation. Verify `.local/` is ignored FIRST. Keep all planning and implementation in that worktree, NEVER in the main checkout.
-- Give subagents meaningful, bounded assignments: goal, context, owned files, exclusions, expected outcome, and validation steps. No vague handoffs.
-- Sequential execution is the default. Parallel execution requires explicit user authorization; only that authorization permits multiple active actions. Finish prerequisites before dependent work. Do not delegate or parallelize just because an action is complex.
-- Give parallel writers separate worktrees and non-overlapping file ownership. NEVER let agents edit the same files concurrently.
-- The main agent owns decisions, integration, and review. Inspect actual changes and validation results. A subagent saying “done” isn't fucking proof.
-
-## Git workflow
-
-- Commit each completed, validated action or independently committable chunk immediately.
-- Immediately before opening a merge request, pull the latest `origin/main` into local `main`, merge updated `main` into the working branch, resolve conflicts, and rerun relevant validation.
-- Open a merge request ONLY after updated `main` merges successfully, all work is complete, and validation passes.
+- Before planning or implementation, pull `origin/main` into local `main`, verify `.local/` is ignored, and create a new worktree under `.local/worktrees/`. Keep all plans and changes there, never in the main checkout.
+- Commit each completed, validated action immediately.
+- Before opening a merge request, refresh local `main` from `origin/main`, merge it into the working branch, resolve conflicts, and rerun relevant validation. Open the request only when the work is complete and checks pass.
 
 ## Show the work
 
