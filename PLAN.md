@@ -1,11 +1,11 @@
 # Plan: Clear communication and a three-phase workflow
 
-Status: Complete. All three approved actions implemented, reviewed, and validated. Changes committed in the isolated worktree; no merge or push.
+Status: Complete. Approved rules merged into main and pushed to origin/main. User edits restored unchanged and left uncommitted. Final delivery record follows through the same fast-forward and push process.
 
 ## Goal and scope
 Update `pi/.pi/agent/AGENTS.md` with the exact wording below: concise explanations that teach, and a core workflow of brainstorming, breaking the agreement into executable actions, then implementing after approval. Integrate delegation into that workflow and merge worktree setup and Git integration into one concise section.
 
-Only this rules file and this plan may change. No code, new tests, subagent prompt changes, delegation, merge, or push. Preserve all unrelated rules. The user's uncommitted changes in the main checkout are outside scope and must remain untouched. Removing the completion-summary sentence from the communication section does not remove validation or reporting obligations elsewhere.
+Only this rules file and this plan may change. No code, new tests, subagent prompt changes, or delegation. The user's follow-ups authorize merging the completed work into main and pushing to origin/main. Preserve all unrelated rules. The user's uncommitted changes in the main checkout are outside scope and must remain untouched. Removing the completion-summary sentence from the communication section does not remove validation or reporting obligations elsewhere.
 
 ## Agreed communication replacement
 
@@ -58,23 +58,29 @@ Replace `Isolate and delegate` and `Git workflow` with:
 
 ## Actions
 
-### 1/3 — Done: Replace the communication section
+### 1/4 — Done: Replace the communication section
 - Operation/target: replace the heading and bullets between `## Talk clearly. Have a fucking opinion.` and `## Plan WITH the user` in `pi/.pi/agent/AGENTS.md` with the exact agreed communication replacement above.
 - Goal/boundaries: establish plain-language lessons and architectural completion summaries; preserve all other sections.
 - Dependencies/inputs: approval of this expanded detailed plan; agreed communication wording above; existing rules reviewed.
 - Done when: diff review confirms the exact replacement, unchanged surrounding content, and absence of the removed completion-summary sentence in the replacement. `git diff --check` passes, results are recorded here, and the action is committed.
 
-### 2/3 — Done: Replace planning and execution with the three-phase workflow
+### 2/4 — Done: Replace planning and execution with the three-phase workflow
 - Operation/target: replace the contiguous `Plan WITH the user` and `Execute the approved plan` sections, ending before `Isolate and delegate`, with the exact agreed workflow replacement above.
 - Goal/boundaries: make the three phases explicit and integrate delegation planning and supervision. Preserve communication, isolation, Git, and reporting sections in this action.
 - Dependencies/inputs: action 1 complete; agreed workflow wording above and existing isolation/delegation rules.
 - Done when: diff review confirms exact wording, distinct direction and implementation approvals, complete action planning, authorized delegation/parallelism, bounded assignments, isolated parallel writers, main-agent review, continuous execution, verification, and clear stop conditions. `git diff --check` passes, results are recorded here, and the action is committed. Delegation duplication is intentionally removed in action 3.
 
-### 3/3 — Done: Unify Git and worktree rules
+### 3/4 — Done: Unify Git and worktree rules
 - Operation/target: replace the contiguous `## Isolate and delegate` and `## Git workflow` sections, ending before `## Show the work`, with the exact agreed Git/worktree replacement above. This also removes delegation bullets now covered by the three-phase workflow.
 - Goal/boundaries: give repository isolation, action commits, and safe integration one concise section; preserve unrelated content.
 - Dependencies/inputs: action 2 complete; integrated delegation rules and agreed Git/worktree wording above; existing isolation and Git sections.
 - Done when: full-file and cumulative diff review confirm all agreed wording, no stale section references or redundant delegation block, preserved isolation and integration safeguards, and unchanged content outside the approved sections. `git diff --check` passes. Record results here, commit, verify the worktree is clean, and verify the main checkout's existing edits remain unchanged.
+
+### 4/4 — Done: Merge into main and push
+- Operation/targets: preserve the main checkout's uncommitted edits in a temporary stash, pull `origin/main` into local `main`, merge updated `main` into the working branch, validate, and fast-forward local `main` to the completed branch. Restore the saved edits without committing them, then push main to origin without force.
+- Goal/boundaries: deliver the approved rules to main and origin/main; preserve the user's uncommitted changes exactly. Plan updates and commits remain in the isolated worktree.
+- Dependencies/inputs: actions 1–3 complete; explicit user requests to merge and push; clean working branch; captured original user changes.
+- Done when: approved wording and diff checks pass, main contains the completed branch, user edits are restored unchanged, the worktree is clean, the delivery result is recorded and committed, and origin/main matches local main.
 
 ## Results
 - Action 1: applied the exact approved communication wording. Manual diff review confirmed surrounding sections are unchanged and the removed completion-summary sentence is absent from the replacement. `git diff --check` passed.
@@ -83,6 +89,8 @@ Replace `Isolate and delegate` and `Git workflow` with:
 
 - Action 3: applied the exact approved Git/worktree section and removed the relocated delegation block. Full-file and cumulative diff review confirmed preserved isolation/integration safeguards and unchanged content outside the approved sections. Search found no stale headings or old communication wording outside this plan. `git diff --check` passed; the main-checkout file's SHA-256 still matches the pre-implementation value.
 - No blockers remain. No runtime checks were needed for this documentation-only change. Future agent compliance remains unverified. The commit hook initially rejected a machine-specific path in this plan; replacing it with a relative description resolved the failure without bypassing the hook.
+
+- Action 4: user explicitly authorized merge and push. Temporarily stashed only the existing uncommitted rules edits, refreshed main (already current), and merged main into the working branch (already current). Committed-change whitespace checks passed. Fast-forwarded main to `c3b7412` and restored the edits without conflict. Exact-content comparison confirmed the original user-edited prefix plus approved updated sections, with nothing staged. Removed the temporary stash only after verification. Pushed without force and verified live origin/main matched local main. This delivery record is committed in the worktree and published through the same fast-forward process.
 
 ## Preparation and validation limits
 - Repository root: the `rig` checkout, one level above the initial `pi/` working directory.
