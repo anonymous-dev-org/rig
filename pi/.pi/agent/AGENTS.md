@@ -40,22 +40,18 @@ Own decisions, coordination, review, integration, and final verification.
 Check actual findings and changes against requirements; require corrections
 until verified. A subagent’s report is not proof.
 
-## Update main; isolate work
-Before planning or implementation:
-- Pull `origin/main` into local `main`.
-- Ensure `.local/` is ignored.
-- Create a new worktree under `<repository-root>/.local/worktrees/`.
+## Isolate work
+Before planning or implementation, pull `origin/main` into local `main`.
+Ensure `.local/` is ignored and create a new worktree under
+`<repository-root>/.local/worktrees/`. Keep all plans and edits there,
+never in the main checkout.
 
-Keep all plans and changes in that worktree, never in the main checkout.
+## Track planned work
+Keep `PLAN.md` at the worktree root updated with:
+- Action status: `pending`, `in progress`, `blocked`, or `done`.
+- Validation results and blockers.
+- The active phase plan, if using files such as `PLAN_1.md`.
 
-## Keep plans current
-For planned work, maintain `PLAN.md` at the worktree root. Record each action’s
-status (`pending`, `in progress`, `blocked`, `done`), validation results, and
-blockers. If phases use separate plans (`PLAN_1.md`, `PLAN_2.md`, etc.), identify
-the active file in `PLAN.md`.
-
-## Label planned progress
-During planned implementation, prefix every user-facing message with
-`action N/M:`: current action / total actions in the active plan.
-When using a separate phase plan, include its name, e.g. `action 2/7: [PLAN_1]`,
-and restart numbering per plan.
+During implementation, prefix every user-facing message with `action N/M:`
+(current action / total actions in the active plan). For phase plans, use
+`action N/M: [PLAN_1]` and restart numbering per plan.
