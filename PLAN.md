@@ -1,6 +1,6 @@
 # Global pi browser automation and private-config migration
 
-Status: approved; actions 1–2 committed as `b60836d` and `b7fbdec`; action 3 validated/reviewed, ready for commit. Supersedes the project-only plan. No package installation or private-data migration has occurred.
+Status: approved; actions 1–3 committed as `b60836d`, `b7fbdec`, and `d3c56cb`; action 4 done, validated and independently reviewed; delivery evidence recorded in this commit. Supersedes the project-only plan. Private migration is active. Browser testing fetched npm packages into external scratch/cache; no browser/system installation occurred.
 
 ## Agreement
 
@@ -67,7 +67,7 @@ Checks: synthetic-HOME integration tests exercise Pi preparation and cleanup/Sto
 
 Action 3 evidence: parent reran 43 tests, shell syntax checks, public-template parsing, and diff check successfully. Review findings fixed: empty migrated legacy directories no longer block normal sync; shared nonmutating validation covers both recovery states before publication; completed receipts correctly validate later ordinary home recovery. Regression tests cover migrated MAIN, malformed MCP recovery/path inputs without settings/state mutation, successful preparation/cleanup/Stow, and explicit retries preserving later edits. Final focused independent review: OK, no remaining findings. No activation or private configuration changes. Included in this action's commit.
 
-### 4. Activate private migration and test browser automation — pending
+### 4. Activate private migration and test browser automation — done
 
 Goal: safely activate the narrow home-config sync on this machine and prove browser backend operation.
 
@@ -80,6 +80,10 @@ Operation: recheck metadata and detect concurrent changes; run only the worktree
 Then load global MCP configuration through installed pi code without connecting unrelated servers, and connect only Playwright. Use runtime-discovered schemas to navigate to https://example.com, follow More information, verify destination, capture and visually inspect a screenshot at an external temporary path, and close client/browser. A disposable MCP SDK client outside rig is acceptable when the current session cannot reload tools. Check `isError` results. Use an available browser; browser/system installation, authentication, or unrelated runtime changes require stopping and reporting. No account actions.
 
 Checks: migration/privacy checks and rerun pass; expected global server resolves independent of cwd; browser init/navigation/click/screenshot and cleanup pass; no private tracked/runtime artifacts. Record exact backend version, commands, bounded non-private evidence, screenshot location, reviewer result, and remaining limitations; commit reviewed evidence. Distinguish configuration/backend validation from end-to-end interactive pi testing if the latter was not exercised. Provide `/reload` or restart instructions.
+
+Action 4 activation evidence: ran the narrow worktree `syncAll` with explicit main-checkout migration source. Internal comparisons passed for expected settings merge and MCP fill-missing results without exposing private values. Both effective home files are ordinary 0600 files; legacy settings and legacy state files are removed (empty legacy directory remains); external migration receipt is complete; normal rerun preserves effective bytes; lock cleaned up. Installed pi loader resolves global Playwright from both rig root and rig/pi without connecting other servers. Post-activation parent rerun: all 43 tests, shell syntax, and diff checks pass. Main tracked checkout remains clean. Browser backend test passed; interactive pi reload has not been exercised. Do not run old main sync scripts before integration.
+
+Action 4 browser evidence: exact command `npx -y @playwright/mcp@latest --isolated --headless`; cached package `@playwright/mcp` 0.0.83; MCP-reported Playwright 1.64.0-alpha-1790635538000. Disposable external SDK client discovered live schemas and successfully navigated example.com, snapped, clicked the observed “Learn more” link (approved equivalent of planned “More information”), and verified `https://www.iana.org/help/example-domains`, title “Example Domains”, and expected documentation-domain content. Final navigation/snapshots/click/evaluate/screenshot/close all had no `isError`. Initial failed attempts (changed label; live click schema requires `target`, not `ref`) were corrected without changing safeguards. Screenshot `destination.png` (1280 × 910) and reports remain in external temporary evidence directory `rig-browser-backend-ZlIZdv` under the system temporary root. Parent read final report and visually confirmed screenshot depicts the expected IANA page. Browser, SDK client, and transport closed; launched server PID no longer exists and worker found no test MCP/browser process remaining. SDK/npm cache fetching only; no browser/system installation, personal-server connection, authentication, private-value output, or website account action. Independent delivery/privacy review found one stale status sentence, now corrected. Final independent evidence review: OK, no critical findings or warnings; reviewer also visually confirmed the screenshot. Backend and installed-loader verification do not establish interactive pi tool registration: use `/reload` or restart pi to load global MCP.
 
 ## Delivery and limitations
 
