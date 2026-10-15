@@ -1,104 +1,94 @@
-# Plan: One clear, consistent agent workflow
+# Global pi browser automation and private-config migration
 
-Status: Complete. Consolidated rules merged into main and pushed to origin/main. Publication verified; this completion record follows through the same fast-forward and push process.
+Status: approved; actions 1–3 committed as `b60836d`, `b7fbdec`, and `d3c56cb`; action 4 done, validated and independently reviewed; delivery evidence recorded in this commit. Supersedes the project-only plan. Private migration is active. Browser testing fetched npm packages into external scratch/cache; no browser/system installation occurred.
 
-## Goal and boundaries
-Revise `pi/.pi/agent/AGENTS.md` into a consistent set of rules with explicit responsibilities, workflow boundaries, and completion criteria. Incorporate the approved behavior from `docs/agents-subagent-default` and `docs/agents-simple-task-exception` without merging their historical plan files or modifying those branches.
+## Agreement
 
-Only `pi/.pi/agent/AGENTS.md` and this plan may change. Preserve the current title, compliance section, communication section, and unrelated simplicity rules. Preserve worktree isolation, verification, implementation-plan approval for non-simple work, scope control, and safe Git integration. No code, tests, role-prompt edits, or branch cleanup. The user's follow-up authorizes merging into main and pushing to origin/main. This is a directly executed, bounded documentation revision; no delegation is needed to apply the supplied wording.
+Rig tracks credential-free defaults and shared pi resources. Effective pi settings, MCP servers/credentials, sync recovery records, and migration backups live only outside rig under the user's home configuration/state directories. Add globally available Playwright MCP using an isolated headless browser. Preserve existing personal configuration and overrides. Scope covers pi settings and MCP, not unrelated packages such as lazysql.
 
-## Exact proposed changes
+Worktree: `.local/worktrees/browser-automation` relative to the main rig checkout.
+Branch: `setup/browser-automation`; baseline `5d01806`; main refreshed from origin/main before worktree creation; `.local/` verified ignored.
 
-### Simplicity: replace only the big-picture bullet
-Replace the bullet beginning `Look at the big picture before solving the problem as presented.` with:
+## Verified inputs and decisions
 
-```markdown
-- Do not accept complexity as a requirement. Question the assumptions, identify the core issue, and look for a simpler overall approach before adding code.
-```
+- Installed pi 1.2.0 supports MCP natively; no adapter/package change to settings defaults is required. Global configuration is `~/.pi/agent/mcp.json`, independent of session cwd. Sources: https://pi.dev/docs/latest/mcp and installed `dist/extensions/mcp/config.js`.
+- Current metadata only (private contents not inspected): home settings is a relative symlink to the main checkout's ignored `pi/.pi/agent/settings.json`; legacy `.local/pi-settings/` contains `baseline.json`; home MCP is an ordinary file.
+- Existing `pi/sync-settings.mjs` has reusable three-way `merge()` and transaction recovery, but its current ownership model moves private files into rig. Refactor that engine rather than adding a second transaction engine.
+- Home destinations: ordinary `~/.pi/agent/settings.json` and `~/.pi/agent/mcp.json`. Private state/backups: `~/.local/state/rig/pi/`, with separate settings/MCP state and migration records. Nothing private is staged inside any rig worktree.
+- Preserve settings' existing first-adoption policy when history is absent. MCP first adoption recursively fills only missing defaults, retaining existing values. `merge({}, local, defaults)` alone does NOT add missing nested servers reliably; test this explicitly. Subsequent sync uses historical three-way merge, preserving deliberate deletions and treating arrays atomically.
+- Playwright baseline: server `playwright`, command `npx`, args `-y`, `@playwright/mcp@latest`, `--isolated`, `--headless`. Source: https://github.com/microsoft/playwright-mcp. Latest follows upstream setup but is not a reproducible pin. Package fetching/cache is allowed during the approved smoke test. Profile isolation is not an OS/network sandbox.
+- Do not read private config into tool output, logs, subagent prompts, or tracked test fixtures. Tests use synthetic temporary homes/checkouts. No broad init/update execution, unrelated stowing, Git-history rewrite, merge, push, or merge request is authorized here.
 
-The surrounding less-code, decomposition, scope, and correctness rules remain unchanged. Simpler design does not authorize broader scope.
+## Ordered actions
 
-### Replace the entire core workflow section
-Replace `## How we work: brainstorm, break down, implement.` through the content before `## Git and worktree workflow` with:
+### 1. Refactor synchronization to ordinary home files — done
 
-```markdown
-## How we work: brainstorm, break down, implement.
+Goal: establish one shared, safe home-file sync engine without changing settings merge semantics.
 
-- For a very simple task with clear scope, an obvious solution, and low risk, inspect the relevant context and do it directly. Skip brainstorming, a written plan, and additional approval. Still validate, review, and commit. If uncertainty, complexity, or broader impact emerges, stop direct implementation and switch to the standard workflow.
-- For all other work, follow the three numbered phases below. Agreement on direction and approval to implement are separate decisions.
-- Worktree isolation, validation, review, and commits apply to both workflows.
+Dependencies: approval of this complete revised plan.
 
-### Delegate the work. Own the result.
-- Use subagents by default for exploration and implementation in both workflows. Work directly only when delegation adds no value or is unavailable.
-- You own decisions, coordination, review, integration, and final verification. Delegation transfers work, not responsibility.
-- Give each assignment a clear goal, context, owned files, exclusions, expected result, and validation checks.
-- Delegate sequentially or in parallel. Parallelize independent work only. Give parallel writers separate worktrees and non-overlapping files; never let them edit the same files concurrently.
-- Inspect actual findings and changes against the agreed requirements. Verify the evidence and return specific corrections until the work is correct and validated. A subagent's completion report is not proof.
+Files: `pi/sync-settings.mjs`, `pi/sync-settings.test.mjs`, `PLAN.md`.
 
-### 1. Brainstorm together
-- Read the relevant code, docs, and callers. Verify unfamiliar behavior against official docs for the versions in use.
-- Agree with the user on the goal, scope, constraints, and simplest viable approach. Resolve important unknowns instead of guessing.
-- Agreement on direction allows planning, not implementation.
+Inputs: existing merge/recovery implementation and tests; destination/state policy above.
 
-### 2. Break the agreement into executable actions
-- Write the complete, ordered plan in `PLAN.md` at the isolated worktree's root. Use linked `PLAN_N.md` files only when distinct phases need them; define phases by outcomes, not arbitrary action counts.
-- An action is one concrete operation, not a broad task or an individual tool call. Number the actions and state each action's goal, boundaries, affected files or symbols, dependencies, required inputs and context, and observable completion checks.
-- Define every action, including later phases, before requesting approval. Do not implement until the user approves the detailed plan.
+Operation: parameterize the existing transaction engine for a public baseline, ordinary effective file, and external state directory. Retain settings exports/semantics where useful; no generic framework or duplicated engine. Add recursive fill-missing defaults for explicit MCP adoption. Use atomic publication and private modes (files 0600, newly created private directories 0700), validate paths/recovery records before mutation, reject unexpected symlinks and outputs resolving into source/legacy checkouts, and keep temporaries on the appropriate filesystem. Add a fail-closed exclusive lock for rig sync invocations; never steal a stale lock automatically. Detect source/destination edits before publication rather than overwriting them. Settings and MCP are separate recoverable transactions, not a claimed two-file atomic transaction.
 
-### 3. Implement the approved plan
-- Approval authorizes the whole plan. Execute in dependency order and continue through actions and phases without asking for permission again.
-- An action is complete only when its changes are implemented, validated, reviewed, recorded in the plan, and committed. Do not start dependent work before its prerequisites are complete.
-- Resolve routine problems independently within the agreement. Never skip validation, weaken safeguards, or silently change scope.
-- Stop the affected work when continuing requires a changed agreement, missing access, an unauthorized consequential action, or a problem you cannot resolve after reasonable investigation. Explain what happened, what you tried, its impact, and exactly what is needed to continue.
-```
+Checks: synthetic tests cover unchanged existing merge cases, ordinary-file ownership, first adoption with nested personal MCP servers and missing Playwright, collisions/overrides, subsequent updates and deliberate deletions, special JSON keys, idempotence, interruption before/after publication, later user edits during recovery, invalid input/content-free errors, permissions, redirected paths/symlinks, and lock contention. Existing tests pass or are adapted explicitly to the new ownership contract. Parent verification, independent read-only review, diff checks, recorded evidence, and commit required before action 2. Do not run new code against actual home yet.
 
-### Git: clarify location and commit timing
-Keep the section and integration rule. Replace its first two bullets with:
+Action 1 evidence: initial review findings were fixed with immutable preparing/ready recovery intent, captured-input guards, stable recovery ancestors, and state-directory trust checks. Parent reran all 20 synthetic tests successfully; `git diff --check` passed. Independent re-review: OK with notes, no remaining P1/P2 findings. Tests inject filesystem publication/fsync failures and concurrent edits; they do not prove physical power-loss guarantees or atomic compare-and-swap against arbitrary editors. Additional ready-journal/post-rename and same-byte replacement cases are optional follow-up coverage. No real private configuration accessed or changed. Included in this action's commit.
 
-```markdown
-- Before planning or implementation, pull `origin/main` into local `main`, verify `.local/` is ignored, and create a new worktree under `<repository-root>/.local/worktrees/`. Keep all plans and changes there, never in the main checkout.
-- Commit each validated, reviewed change immediately. Do not call work complete before committing it.
-```
+### 2. Implement resumable legacy settings migration — done
 
-This applies to simple changes as well as planned actions and avoids defining a change as complete before its required commit.
+Goal: move existing private settings and recovery state out of the main checkout without losing configuration or historical merge state.
 
-### Replace the reporting section
-Replace `## Show the work` through the end of the file with:
+Dependencies: action 1 reviewed and committed.
 
-```markdown
-## Show the work
+Files: `pi/sync-settings.mjs`, `pi/sync-settings.test.mjs`, `PLAN.md`.
 
-- For simple tasks, give a brief update and result. Do not create a plan or invent action numbers.
-- For planned work, keep root `PLAN.md` current as the shared source of truth. For staged work, identify the active `PLAN_N.md`. Track actions as pending, in progress, blocked, or done; record validation results and blockers.
-- During planned implementation, begin every user-facing message with `action N/M:`, identifying the action and total count in the active plan. For staged work, include the plan name, for example `action 2/7: [PLAN_1]`, and restart numbering for each plan.
-- Before each tool call or same-action batch, briefly describe its purpose. For planned work, use the action prefix and keep the operation tied to that action. Do not batch operations from different actions.
-- Announce each planned action's start and completion with its prefix. Report parallel actions separately; never present one action's progress as another's.
-- Obtain approval before changing the agreed goal, scope, or approach. Routine updates and moving to the next approved action or phase are not permission gates.
-```
+Inputs: explicit legacy checkout path via `--migrate-from <main-checkout>`; only expected legacy files/settings transaction records are eligible.
 
-## Action 1/2 — Done: Apply the consolidated rules revision
-- Operation/target: update `pi/.pi/agent/AGENTS.md` using the exact four replacement specifications above as one coherent revision. Use targeted replacements; preserve all unspecified content.
-- Goal: one consistent definition of simple versus planned work, delegation responsibility, dependency-safe concurrency, and completion/reporting requirements.
-- Dependencies/inputs: user approval of this detailed plan; current main file at preparation commit `20135c8`; the two reviewed unmerged branch diffs; exact proposed wording above. No prerequisites remain beyond approval.
-- Validation: review the complete diff and compare every replaced block with this plan. Confirm unchanged title, compliance/communication sections, other simplicity bullets, and the merge-request integration rule. Search for obsolete delegation/parallel approval restrictions and sequential-only wording.
-- Scenario review: a clear low-risk edit needs no plan or numbering but still uses a worktree, verification, review, and commit; uncertainty switches it to the standard workflow; non-simple implementation requires detailed-plan approval; independent writers may run in parallel with disjoint ownership; dependent work waits for completed prerequisites; a subagent's report alone cannot establish completion; a simpler broader redesign still needs scope approval.
-- Done when: exact-content and manual scenario reviews pass, `git diff --check` passes, results and any limits are recorded here, the action is committed, and the worktree is clean. Confirm main and both unmerged branches were not modified. No runtime tests are relevant or added; documentation review cannot prove future agent compliance.
+Operation: stage verified copies under the external private state root, never in the worktree. Accept an existing home settings symlink only when it resolves exactly to the explicitly supplied legacy settings file. Reject differing ordinary copies, unexpected links, conflicting external state, and malformed recovery records. Preserve all recognized legacy recovery inputs; recover pending transactions against external copies with the same engine after validating/translating their recorded paths. Publish ordinary home settings and state safely; durable phase records distinguish committed publication from unfinished staging and preserve later user edits on retry. Remove only individually validated legacy private files/state after verified external publication, retaining a private external recovery snapshot/receipt. No recursive deletion of unvalidated directories. Existing unusual MCP symlinks/copies fail with migration guidance rather than being silently imported.
 
-## Action 2/2 — Done: Merge and publish
-- Operation/targets: refresh local main from origin/main, merge updated main into the working branch, revalidate, fast-forward main, and push without force. Record the verified delivery result in this worktree and publish that record through the same fast-forward process.
-- Goal/boundaries: publish the consolidated rules and plan only. Preserve the existing subagent and simple-task branch refs; no cleanup or unrelated changes.
-- Dependencies/inputs: action 1 complete; user's authorization to merge and push; clean checkouts; approved wording above.
-- Done when: approved wording and whitespace checks pass, publication succeeds, live origin/main matches local main and the working branch, both checkouts are clean, protected branch refs are unchanged, and the completion record is committed.
+Checks: synthetic tests for current relative-symlink migration, ordinary-file conflicts, baseline retention/deletion semantics, legacy pending/prepared recovery, interruption at migration boundaries, retries after later home edits, unexpected files/paths, permissions, cleanup only after verification, and private sentinel values remaining outside simulated checkout. Review, full focused test suite, evidence, and commit before action 3. No actual-home migration yet.
 
-## Results
-- Applied the four approved replacements exactly. Full-file and diff review, followed by exact-content comparison, confirmed the title, compliance/communication sections, other simplicity bullets, and merge-request rule remain unchanged.
-- Obsolete delegation authorization, explicit parallel-approval restrictions, sequential-only completion wording, and third-person main-agent wording are absent from the revised rules.
-- Manual scenario review passed: clear low-risk work skips planning/numbering but retains isolation and verification; emerging uncertainty returns to the standard process; non-simple implementation requires detailed-plan approval; independent writers use separate worktrees and file ownership; dependent work waits for completed prerequisites; subagent reports require evidence/review; broader redesign still requires scope approval.
-- `git diff --check` passed. Main's rules file was unchanged at action 1 completion. No code or tests were added; no runtime checks apply. Future agent compliance remains unverified. No blockers.
+Action 2 evidence: parent reran all 33 synthetic tests and `git diff --check` successfully. Independent review found one partial-cleanup retry issue for legacy non-fresh pending transactions; fixed with phase-aware validation and a prepared/consumed regression preserving later home edits. Focused re-review: OK, no remaining findings. Migration retains verified external snapshots, translates legacy recovery through the shared engine, and performs identity-checked individual cleanup. No actual-home migration/private-config access occurred. Included in this action's commit.
 
-- Action 2: user authorized merge and push. Refreshed main and merged it into the working branch (both already current). Rechecked all four approved wording blocks, reviewed the rules diff, and passed whitespace checks. Fast-forwarded main and pushed without force through `aad67df`; verified live origin/main matched local main and main was clean. No conflicts or blockers. The completion record is committed in the worktree and published through the same fast-forward process; no other branches are changed.
+### 3. Wire credential-free global MCP defaults into rig — done
 
-## Preparation
-- Read the current rules, current repository plan, and both unmerged rules diffs. Searched tracked files for the affected workflow headings and conflicting wording; relevant matches were in the target rules file.
-- Main was clean, `.local/` was ignored, and origin/main was pulled into main (already current).
-- Created `.local/worktrees/agents-clarity` on `docs/agents-clarity` before writing this plan.
+Goal: make normal rig sync apply both public baselines without Stow taking ownership of private files.
+
+Dependencies: action 2 reviewed and committed.
+
+Files: new `pi/.pi/agent/mcp.example.json`; `.gitignore`; `pi/.stow-local-ignore`; `init.sh`; `update.sh`; `pi/sync-settings.mjs`; `pi/sync-settings.test.mjs`; new `pi/README.md`; `PLAN.md`. Keep `settings.example.json` unchanged unless a directly verified correction is required within this agreement.
+
+Operation: add the public Playwright baseline and allowlist it in Git. Narrow sync entrypoint processes settings and MCP under the shared lock, prevalidating both before changes. Integrate it with existing Pi preparation. Protect live settings/MCP paths from BOTH pre-Stow cleanup loops before destructive logic, and exclude private config, templates, README, and sync tooling from Stow. Keep other shared pi resources and packages unchanged. Document global availability, local overrides, env-variable references for keys, reload/restart, recovery/stale-lock procedure, npm caching, isolated-browser limitations, and the requirement not to run old main-checkout sync scripts after migration.
+
+Checks: synthetic-HOME integration tests exercise Pi preparation and cleanup/Stow exclusions without executing npm-global installs, brew, git pull, or unrelated scripts. Verify existing home settings/MCP files survive even with stale ignored checkout copies, helpers/templates are not linked, and no effective config/state is produced in a checkout. Run `node --test pi/sync-settings.test.mjs`, `bash -n init.sh update.sh`, JSON parsing, diff/secret-output checks, independent review, and commit before action 4.
+
+Action 3 evidence: parent reran 43 tests, shell syntax checks, public-template parsing, and diff check successfully. Review findings fixed: empty migrated legacy directories no longer block normal sync; shared nonmutating validation covers both recovery states before publication; completed receipts correctly validate later ordinary home recovery. Regression tests cover migrated MAIN, malformed MCP recovery/path inputs without settings/state mutation, successful preparation/cleanup/Stow, and explicit retries preserving later edits. Final focused independent review: OK, no remaining findings. No activation or private configuration changes. Included in this action's commit.
+
+### 4. Activate private migration and test browser automation — done
+
+Goal: safely activate the narrow home-config sync on this machine and prove browser backend operation.
+
+Dependencies: actions 1–3 reviewed, validated, and committed. Actual private migration is specifically authorized only by approval of this plan.
+
+Files: private home settings/MCP/state and validated legacy ignored private files as described above; tracked changes limited to `PLAN.md` and usage corrections in `pi/README.md` if required.
+
+Operation: recheck metadata and detect concurrent changes; run only the worktree's narrow entrypoint with explicit main-checkout migration source, not init/update/Stow. This is the sole exception to keeping changes inside the worktree: it migrates/removes the explicitly identified ignored private data in the main checkout and updates user-home configuration. Preserve unrelated personal servers/values without printing them. Verify ordinary file types, private modes, external state/receipt, verified legacy cleanup, and idempotent rerun using metadata/comparisons only. If unexpected copies, conflicts, concurrent writers, or unavailable access appear, stop affected activation and report without weakening safeguards.
+
+Then load global MCP configuration through installed pi code without connecting unrelated servers, and connect only Playwright. Use runtime-discovered schemas to navigate to https://example.com, follow More information, verify destination, capture and visually inspect a screenshot at an external temporary path, and close client/browser. A disposable MCP SDK client outside rig is acceptable when the current session cannot reload tools. Check `isError` results. Use an available browser; browser/system installation, authentication, or unrelated runtime changes require stopping and reporting. No account actions.
+
+Checks: migration/privacy checks and rerun pass; expected global server resolves independent of cwd; browser init/navigation/click/screenshot and cleanup pass; no private tracked/runtime artifacts. Record exact backend version, commands, bounded non-private evidence, screenshot location, reviewer result, and remaining limitations; commit reviewed evidence. Distinguish configuration/backend validation from end-to-end interactive pi testing if the latter was not exercised. Provide `/reload` or restart instructions.
+
+Action 4 activation evidence: ran the narrow worktree `syncAll` with explicit main-checkout migration source. Internal comparisons passed for expected settings merge and MCP fill-missing results without exposing private values. Both effective home files are ordinary 0600 files; legacy settings and legacy state files are removed (empty legacy directory remains); external migration receipt is complete; normal rerun preserves effective bytes; lock cleaned up. Installed pi loader resolves global Playwright from both rig root and rig/pi without connecting other servers. Post-activation parent rerun: all 43 tests, shell syntax, and diff checks pass. Main tracked checkout remains clean. Browser backend test passed; interactive pi reload has not been exercised. Do not run old main sync scripts before integration.
+
+Action 4 browser evidence: exact command `npx -y @playwright/mcp@latest --isolated --headless`; cached package `@playwright/mcp` 0.0.83; MCP-reported Playwright 1.64.0-alpha-1790635538000. Disposable external SDK client discovered live schemas and successfully navigated example.com, snapped, clicked the observed “Learn more” link (approved equivalent of planned “More information”), and verified `https://www.iana.org/help/example-domains`, title “Example Domains”, and expected documentation-domain content. Final navigation/snapshots/click/evaluate/screenshot/close all had no `isError`. Initial failed attempts (changed label; live click schema requires `target`, not `ref`) were corrected without changing safeguards. Screenshot `destination.png` (1280 × 910) and reports remain in external temporary evidence directory `rig-browser-backend-ZlIZdv` under the system temporary root. Parent read final report and visually confirmed screenshot depicts the expected IANA page. Browser, SDK client, and transport closed; launched server PID no longer exists and worker found no test MCP/browser process remaining. SDK/npm cache fetching only; no browser/system installation, personal-server connection, authentication, private-value output, or website account action. Independent delivery/privacy review found one stale status sentence, now corrected. Final independent evidence review: OK, no critical findings or warnings; reviewer also visually confirmed the screenshot. Backend and installed-loader verification do not establish interactive pi tool registration: use `/reload` or restart pi to load global MCP.
+
+## Delivery and limitations
+
+- Every action includes tests, independent review, parent verification, plan updates, and its own commit before dependent work starts.
+- Report branch/commits and activation status. Tracked changes remain on the isolated branch; do not merge/push automatically.
+- After activation, old main-checkout init/update/sync code must NOT run until these tracked changes are integrated; it can recreate private checkout files. Use the new narrow worktree entrypoint meanwhile.
+- Migration does not guarantee secure erasure, removal from backups/snapshots, or cleansing old Git history. Scope does not audit arbitrary historical secrets or migrate unrelated rig packages.
+- Locks serialize rig syncs, not arbitrary editors or pi writes; changed-file detection fails closed. Recovery backups contain private data and remain only under the private external state root.
