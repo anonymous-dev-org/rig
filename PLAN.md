@@ -1,94 +1,19 @@
-# Global pi browser automation and private-config migration
+# Bun installation migration
 
-Status: approved; actions 1–3 committed as `b60836d`, `b7fbdec`, and `d3c56cb`; action 4 done, validated and independently reviewed; delivery evidence recorded in this commit. Supersedes the project-only plan. Private migration is active. Browser testing fetched npm packages into external scratch/cache; no browser/system installation occurred.
+Goal: use Bun for repository-managed JavaScript installs and migrate existing npm-global applications to Bun, retaining Node for Pi.
 
-## Agreement
+Definition of done: install/update scripts use Bun; Playwright launcher uses bunx; existing npm-global applications are installed with Bun and removed from npm; executable resolution and CLI startup verified manually. Keep npm tooling itself and Pi's npm: registry identifiers. Preserve unrelated working changes. No automated tests.
 
-Rig tracks credential-free defaults and shared pi resources. Effective pi settings, MCP servers/credentials, sync recovery records, and migration backups live only outside rig under the user's home configuration/state directories. Add globally available Playwright MCP using an isolated headless browser. Preserve existing personal configuration and overrides. Scope covers pi settings and MCP, not unrelated packages such as lazysql.
+1. done — Pulled origin/main into main (already current), confirmed .local ignored, created chore/bun-install worktree. Preserved existing main-checkout change to pi/.pi/agent/AGENTS.md.
+2. done — Changed install/update commands to bun add --global --ignore-scripts, Playwright default/docs to bunx, Pi npmCommand to ["bun"], shell PATH to include Bun binaries. Updated existing Playwright expectation only; no tests added or run. Verified installed Pi 1.3.0 source supports Bun-specific package installation.
+3. done — Installed Pi 1.3.0, Claude ACP 0.91.0 (previously 0.31.0), Northflank 0.13.0 (previously 0.11.0) globally with Bun. Removed all three npm-global copies; npm itself remains. Preserved managed Pi launcher as ~/.pi/agent/bin/pi.before-bun and replaced launcher with Bun-install symlink. Existing local pi symlink continues to resolve correctly. Added local-bin links for Bun/bunx and migrated application commands so current PATH works before shell configuration integration. Old managed release files are retained, not active.
 
-Worktree: `.local/worktrees/browser-automation` relative to the main rig checkout.
-Branch: `setup/browser-automation`; baseline `5d01806`; main refreshed from origin/main before worktree creation; `.local/` verified ignored.
+Validation: Pi --version and --help passed, pi list reports configured packages, Northflank --version passed, Claude ACP --help exited successfully without output. bunx @playwright/mcp@latest --help passed. Ran narrow worktree pi/sync-settings.mjs successfully and checked only nonsecret keys: live npmCommand=["bun"], Playwright command=bunx with expected args. pi update --extensions successfully invoked Bun and updated unpinned extension packages (pi-subagents 0.78.0, pi-web-access 0.41.0); pinned pi-fast remains configured at 0.3.0. npm list -g shows npm only; bun pm ls -g shows all three apps. Shell syntax checks and git diff --check passed. No automated tests or authenticated cloud/browser operations run. Dependency lifecycle scripts remained blocked (google/genai no-op preinstall, protobufjs postinstall).
 
-## Verified inputs and decisions
+Delivery: user authorized publishing a pull request and merging into main; PR #3 is open and reports mergeable with no required checks. Repository changes are prepared in this isolated worktree for that delivery. Live application and Pi settings migration is applied. Restart Pi to load the new binary/extensions/MCP configuration. Full interactive/authenticated application workflows were not exercised; CLI smoke checks and actual package reconciliation passed. No blockers.
 
-- Installed pi 1.2.0 supports MCP natively; no adapter/package change to settings defaults is required. Global configuration is `~/.pi/agent/mcp.json`, independent of session cwd. Sources: https://pi.dev/docs/latest/mcp and installed `dist/extensions/mcp/config.js`.
-- Current metadata only (private contents not inspected): home settings is a relative symlink to the main checkout's ignored `pi/.pi/agent/settings.json`; legacy `.local/pi-settings/` contains `baseline.json`; home MCP is an ordinary file.
-- Existing `pi/sync-settings.mjs` has reusable three-way `merge()` and transaction recovery, but its current ownership model moves private files into rig. Refactor that engine rather than adding a second transaction engine.
-- Home destinations: ordinary `~/.pi/agent/settings.json` and `~/.pi/agent/mcp.json`. Private state/backups: `~/.local/state/rig/pi/`, with separate settings/MCP state and migration records. Nothing private is staged inside any rig worktree.
-- Preserve settings' existing first-adoption policy when history is absent. MCP first adoption recursively fills only missing defaults, retaining existing values. `merge({}, local, defaults)` alone does NOT add missing nested servers reliably; test this explicitly. Subsequent sync uses historical three-way merge, preserving deliberate deletions and treating arrays atomically.
-- Playwright baseline: server `playwright`, command `npx`, args `-y`, `@playwright/mcp@latest`, `--isolated`, `--headless`. Source: https://github.com/microsoft/playwright-mcp. Latest follows upstream setup but is not a reproducible pin. Package fetching/cache is allowed during the approved smoke test. Profile isolation is not an OS/network sandbox.
-- Do not read private config into tool output, logs, subagent prompts, or tracked test fixtures. Tests use synthetic temporary homes/checkouts. No broad init/update execution, unrelated stowing, Git-history rewrite, merge, push, or merge request is authorized here.
-
-## Ordered actions
-
-### 1. Refactor synchronization to ordinary home files — done
-
-Goal: establish one shared, safe home-file sync engine without changing settings merge semantics.
-
-Dependencies: approval of this complete revised plan.
-
-Files: `pi/sync-settings.mjs`, `pi/sync-settings.test.mjs`, `PLAN.md`.
-
-Inputs: existing merge/recovery implementation and tests; destination/state policy above.
-
-Operation: parameterize the existing transaction engine for a public baseline, ordinary effective file, and external state directory. Retain settings exports/semantics where useful; no generic framework or duplicated engine. Add recursive fill-missing defaults for explicit MCP adoption. Use atomic publication and private modes (files 0600, newly created private directories 0700), validate paths/recovery records before mutation, reject unexpected symlinks and outputs resolving into source/legacy checkouts, and keep temporaries on the appropriate filesystem. Add a fail-closed exclusive lock for rig sync invocations; never steal a stale lock automatically. Detect source/destination edits before publication rather than overwriting them. Settings and MCP are separate recoverable transactions, not a claimed two-file atomic transaction.
-
-Checks: synthetic tests cover unchanged existing merge cases, ordinary-file ownership, first adoption with nested personal MCP servers and missing Playwright, collisions/overrides, subsequent updates and deliberate deletions, special JSON keys, idempotence, interruption before/after publication, later user edits during recovery, invalid input/content-free errors, permissions, redirected paths/symlinks, and lock contention. Existing tests pass or are adapted explicitly to the new ownership contract. Parent verification, independent read-only review, diff checks, recorded evidence, and commit required before action 2. Do not run new code against actual home yet.
-
-Action 1 evidence: initial review findings were fixed with immutable preparing/ready recovery intent, captured-input guards, stable recovery ancestors, and state-directory trust checks. Parent reran all 20 synthetic tests successfully; `git diff --check` passed. Independent re-review: OK with notes, no remaining P1/P2 findings. Tests inject filesystem publication/fsync failures and concurrent edits; they do not prove physical power-loss guarantees or atomic compare-and-swap against arbitrary editors. Additional ready-journal/post-rename and same-byte replacement cases are optional follow-up coverage. No real private configuration accessed or changed. Included in this action's commit.
-
-### 2. Implement resumable legacy settings migration — done
-
-Goal: move existing private settings and recovery state out of the main checkout without losing configuration or historical merge state.
-
-Dependencies: action 1 reviewed and committed.
-
-Files: `pi/sync-settings.mjs`, `pi/sync-settings.test.mjs`, `PLAN.md`.
-
-Inputs: explicit legacy checkout path via `--migrate-from <main-checkout>`; only expected legacy files/settings transaction records are eligible.
-
-Operation: stage verified copies under the external private state root, never in the worktree. Accept an existing home settings symlink only when it resolves exactly to the explicitly supplied legacy settings file. Reject differing ordinary copies, unexpected links, conflicting external state, and malformed recovery records. Preserve all recognized legacy recovery inputs; recover pending transactions against external copies with the same engine after validating/translating their recorded paths. Publish ordinary home settings and state safely; durable phase records distinguish committed publication from unfinished staging and preserve later user edits on retry. Remove only individually validated legacy private files/state after verified external publication, retaining a private external recovery snapshot/receipt. No recursive deletion of unvalidated directories. Existing unusual MCP symlinks/copies fail with migration guidance rather than being silently imported.
-
-Checks: synthetic tests for current relative-symlink migration, ordinary-file conflicts, baseline retention/deletion semantics, legacy pending/prepared recovery, interruption at migration boundaries, retries after later home edits, unexpected files/paths, permissions, cleanup only after verification, and private sentinel values remaining outside simulated checkout. Review, full focused test suite, evidence, and commit before action 3. No actual-home migration yet.
-
-Action 2 evidence: parent reran all 33 synthetic tests and `git diff --check` successfully. Independent review found one partial-cleanup retry issue for legacy non-fresh pending transactions; fixed with phase-aware validation and a prepared/consumed regression preserving later home edits. Focused re-review: OK, no remaining findings. Migration retains verified external snapshots, translates legacy recovery through the shared engine, and performs identity-checked individual cleanup. No actual-home migration/private-config access occurred. Included in this action's commit.
-
-### 3. Wire credential-free global MCP defaults into rig — done
-
-Goal: make normal rig sync apply both public baselines without Stow taking ownership of private files.
-
-Dependencies: action 2 reviewed and committed.
-
-Files: new `pi/.pi/agent/mcp.example.json`; `.gitignore`; `pi/.stow-local-ignore`; `init.sh`; `update.sh`; `pi/sync-settings.mjs`; `pi/sync-settings.test.mjs`; new `pi/README.md`; `PLAN.md`. Keep `settings.example.json` unchanged unless a directly verified correction is required within this agreement.
-
-Operation: add the public Playwright baseline and allowlist it in Git. Narrow sync entrypoint processes settings and MCP under the shared lock, prevalidating both before changes. Integrate it with existing Pi preparation. Protect live settings/MCP paths from BOTH pre-Stow cleanup loops before destructive logic, and exclude private config, templates, README, and sync tooling from Stow. Keep other shared pi resources and packages unchanged. Document global availability, local overrides, env-variable references for keys, reload/restart, recovery/stale-lock procedure, npm caching, isolated-browser limitations, and the requirement not to run old main-checkout sync scripts after migration.
-
-Checks: synthetic-HOME integration tests exercise Pi preparation and cleanup/Stow exclusions without executing npm-global installs, brew, git pull, or unrelated scripts. Verify existing home settings/MCP files survive even with stale ignored checkout copies, helpers/templates are not linked, and no effective config/state is produced in a checkout. Run `node --test pi/sync-settings.test.mjs`, `bash -n init.sh update.sh`, JSON parsing, diff/secret-output checks, independent review, and commit before action 4.
-
-Action 3 evidence: parent reran 43 tests, shell syntax checks, public-template parsing, and diff check successfully. Review findings fixed: empty migrated legacy directories no longer block normal sync; shared nonmutating validation covers both recovery states before publication; completed receipts correctly validate later ordinary home recovery. Regression tests cover migrated MAIN, malformed MCP recovery/path inputs without settings/state mutation, successful preparation/cleanup/Stow, and explicit retries preserving later edits. Final focused independent review: OK, no remaining findings. No activation or private configuration changes. Included in this action's commit.
-
-### 4. Activate private migration and test browser automation — done
-
-Goal: safely activate the narrow home-config sync on this machine and prove browser backend operation.
-
-Dependencies: actions 1–3 reviewed, validated, and committed. Actual private migration is specifically authorized only by approval of this plan.
-
-Files: private home settings/MCP/state and validated legacy ignored private files as described above; tracked changes limited to `PLAN.md` and usage corrections in `pi/README.md` if required.
-
-Operation: recheck metadata and detect concurrent changes; run only the worktree's narrow entrypoint with explicit main-checkout migration source, not init/update/Stow. This is the sole exception to keeping changes inside the worktree: it migrates/removes the explicitly identified ignored private data in the main checkout and updates user-home configuration. Preserve unrelated personal servers/values without printing them. Verify ordinary file types, private modes, external state/receipt, verified legacy cleanup, and idempotent rerun using metadata/comparisons only. If unexpected copies, conflicts, concurrent writers, or unavailable access appear, stop affected activation and report without weakening safeguards.
-
-Then load global MCP configuration through installed pi code without connecting unrelated servers, and connect only Playwright. Use runtime-discovered schemas to navigate to https://example.com, follow More information, verify destination, capture and visually inspect a screenshot at an external temporary path, and close client/browser. A disposable MCP SDK client outside rig is acceptable when the current session cannot reload tools. Check `isError` results. Use an available browser; browser/system installation, authentication, or unrelated runtime changes require stopping and reporting. No account actions.
-
-Checks: migration/privacy checks and rerun pass; expected global server resolves independent of cwd; browser init/navigation/click/screenshot and cleanup pass; no private tracked/runtime artifacts. Record exact backend version, commands, bounded non-private evidence, screenshot location, reviewer result, and remaining limitations; commit reviewed evidence. Distinguish configuration/backend validation from end-to-end interactive pi testing if the latter was not exercised. Provide `/reload` or restart instructions.
-
-Action 4 activation evidence: ran the narrow worktree `syncAll` with explicit main-checkout migration source. Internal comparisons passed for expected settings merge and MCP fill-missing results without exposing private values. Both effective home files are ordinary 0600 files; legacy settings and legacy state files are removed (empty legacy directory remains); external migration receipt is complete; normal rerun preserves effective bytes; lock cleaned up. Installed pi loader resolves global Playwright from both rig root and rig/pi without connecting other servers. Post-activation parent rerun: all 43 tests, shell syntax, and diff checks pass. Main tracked checkout remains clean. Browser backend test passed; interactive pi reload has not been exercised. Do not run old main sync scripts before integration.
-
-Action 4 browser evidence: exact command `npx -y @playwright/mcp@latest --isolated --headless`; cached package `@playwright/mcp` 0.0.83; MCP-reported Playwright 1.64.0-alpha-1790635538000. Disposable external SDK client discovered live schemas and successfully navigated example.com, snapped, clicked the observed “Learn more” link (approved equivalent of planned “More information”), and verified `https://www.iana.org/help/example-domains`, title “Example Domains”, and expected documentation-domain content. Final navigation/snapshots/click/evaluate/screenshot/close all had no `isError`. Initial failed attempts (changed label; live click schema requires `target`, not `ref`) were corrected without changing safeguards. Screenshot `destination.png` (1280 × 910) and reports remain in external temporary evidence directory `rig-browser-backend-ZlIZdv` under the system temporary root. Parent read final report and visually confirmed screenshot depicts the expected IANA page. Browser, SDK client, and transport closed; launched server PID no longer exists and worker found no test MCP/browser process remaining. SDK/npm cache fetching only; no browser/system installation, personal-server connection, authentication, private-value output, or website account action. Independent delivery/privacy review found one stale status sentence, now corrected. Final independent evidence review: OK, no critical findings or warnings; reviewer also visually confirmed the screenshot. Backend and installed-loader verification do not establish interactive pi tool registration: use `/reload` or restart pi to load global MCP.
-
-## Delivery and limitations
-
-- Every action includes tests, independent review, parent verification, plan updates, and its own commit before dependent work starts.
-- Report branch/commits and activation status. Tracked changes remain on the isolated branch; do not merge/push automatically.
-- After activation, old main-checkout init/update/sync code must NOT run until these tracked changes are integrated; it can recreate private checkout files. Use the new narrow worktree entrypoint meanwhile.
-- Migration does not guarantee secure erasure, removal from backups/snapshots, or cleansing old Git history. Scope does not audit arbitrary historical secrets or migrate unrelated rig packages.
-- Locks serialize rig syncs, not arbitrary editors or pi writes; changed-file detection fails closed. Recovery backups contain private data and remain only under the private external state root.
+## Explicit Mac reinstall follow-up
+Goal: force-reinstall the migrated JavaScript applications and Pi dependency tree with Bun on this Mac; verify active commands and complete requested PR delivery.
+1. done — bun add --global --force --ignore-scripts reinstalled Pi 1.3.0, Claude ACP 0.91.0, Northflank 0.13.0 (265 packages).
+2. done — bun install --cwd ~/.pi/agent/npm --force --ignore-scripts --omit=peer reinstalled all 240 dependency packages, including all five existing direct dependencies; no settings declarations or package pins changed. Verified Pi version/list, Northflank version, Claude ACP help exit, and cached Playwright MCP 0.0.83 via bunx. npm global listing contains npm tooling only.
+3. in progress — Commit reinstall evidence, merge PR #3, and fast-forward local main. Definition of done: PR merged, local main matches remote, worktrees clean, and active applications resolve to Bun installs. Node/npm tooling and inactive managed Pi releases remain intentionally retained. No automated tests or authenticated cloud operations performed.

@@ -384,7 +384,7 @@ test('CLI bootstraps both ordinary home configs and repeats independently of cwd
   const {repo,home,run} = cliFixture(t);
   assert.equal(run().status,0); assert.equal(run().status,0);
   const mcp = JSON.parse(fs.readFileSync(path.join(home,'.pi/agent/mcp.json')));
-  assert.deepEqual(mcp.mcpServers.playwright,{command:'npx',args:['-y','@playwright/mcp@latest','--isolated','--headless']});
+  assert.deepEqual(mcp.mcpServers.playwright,{command:'bunx',args:['@playwright/mcp@latest','--isolated','--headless']});
   for (const name of ['settings','mcp']) {
     assert.ok(fs.lstatSync(path.join(home,`.pi/agent/${name}.json`)).isFile());
     assert.equal(fs.existsSync(path.join(repo,`pi/.pi/agent/${name}.json`)),false);

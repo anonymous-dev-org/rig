@@ -1,5 +1,6 @@
 {
   "theme": "rig",
+  "npmCommand": ["bun"],
   "defaultProvider": "openai",
   "defaultModel": "gpt-6.1-sol",
   "defaultThinkingLevel": "low",

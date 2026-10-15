@@ -96,8 +96,8 @@ if [[ "${1:-}" != "--after-pull" ]]; then
   exec "$SCRIPT_DIR/update.sh" --after-pull
 fi
 
-# Install or update Pi with its official npm package.
-npm install -g --ignore-scripts @earendil-works/pi-coding-agent
+# Install or update Pi with Bun, without dependency lifecycle scripts.
+bun add --global --ignore-scripts @earendil-works/pi-coding-agent
 
 # Re-stow all packages (stow is idempotent, safe to re-run)
 PACKAGES=(neovim zsh aerospace kitty git pi lazysql)
