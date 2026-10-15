@@ -27,14 +27,14 @@ required to run Pi.
 The global `playwright` server runs exactly:
 
 ```sh
-bunx @playwright/mcp@latest --isolated --headless
+bunx @playwright/mcp@latest --isolated
 ```
 
 It is available independently of session cwd. Use `/reload` or restart Pi after
 configuration changes. bunx may download the package and uses Bun's cache;
 `@latest` follows upstream and is not a reproducible version pin. A browser must
-already be available; this sync does not install packages or browsers. An isolated
-profile avoids persistent browser profile state; it is **not** an OS/network
+already be available; this sync does not install packages or browsers. The browser opens visibly so you can sign in manually. Its isolated
+profile does not preserve login sessions after closing; it is **not** an OS/network
 security sandbox. Do not expose untrusted pages to privileged secrets casually.
 
 ## Explicit legacy migration
