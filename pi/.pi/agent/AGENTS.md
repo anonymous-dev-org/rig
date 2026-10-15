@@ -13,6 +13,14 @@
 For very simple tasks with a clear goal and obvious solution, skip the written
 plan and breakdown. Still define the expected outcome and verify the result.
 
+## Keep actions small and concrete
+An action is one implementation step with one clear result—not a phase or a
+broad task. Keep actions at the same level of detail and focused on one concern.
+Split work that can be completed separately. Touch multiple files only when
+needed for the same result.
+
+Example: “reject an empty password,” not “implement authentication.”
+
 ## Implement core first
 For new features, build the smallest working core first. Add the remaining
 behavior in small increments. Implement, debug, and iterate.
