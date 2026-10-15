@@ -2,7 +2,7 @@
   "mcpServers": {
     "playwright": {
       "command": "bunx",
-      "args": ["@playwright/mcp@latest", "--isolated", "--headless"]
+      "args": ["@playwright/mcp@latest", "--isolated"]
     }
   }
 }
