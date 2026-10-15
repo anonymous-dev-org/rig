@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { sync, merge } from './sync-settings.mjs';
+import { sync, merge, migrateSettings } from './sync-settings.mjs';
 function fixture(t) {
   const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'pi-sync-')));
   t.after(() => fs.rmSync(dir, {recursive:true, force:true}));
@@ -211,6 +211,156 @@ test('generated paths and lock reject ancestor collisions', t => {
     {settings:path.join(path.dirname(o.state),'.rig-sync.lock','child')}
   ]) assert.throws(() => run(overrides),/collision/);
   assert.equal(fs.existsSync(o.settings),false);
+});
+
+function migrationFixture(t) {
+  const f = fixture(t), root = path.dirname(f.opts.state);
+  const legacy = path.join(root,'checkout'), sourceRoot = path.join(root,'worktree');
+  const old = path.join(legacy,'pi/.pi/agent/settings.json'), oldState = path.join(legacy,'.local/pi-settings');
+  fs.mkdirSync(path.dirname(old),{recursive:true}); fs.mkdirSync(oldState,{recursive:true}); fs.mkdirSync(sourceRoot);
+  f.put(f.opts.baseline,{a:2,b:2}); f.put(old,{a:1,b:9}); f.put(path.join(oldState,'baseline.json'),{a:1,b:1});
+  fs.symlinkSync(path.relative(path.dirname(f.opts.settings),old),f.opts.settings);
+  return {...f, old, oldState, legacy, sourceRoot, migrate: extra => migrateSettings({...f.opts,migrateFrom:legacy,sourceRoot,...extra})};
+}
+test('relative legacy link migrates history and private snapshot with verified individual cleanup', t => {
+  const f = migrationFixture(t); f.put(f.old,{a:1,b:9,private:'SYNTHETIC_PRIVATE_SENTINEL'});
+  const sentinel = path.join(f.legacy,'unrelated'); fs.writeFileSync(sentinel,'keep');
+  f.migrate();
+  assert.equal(fs.lstatSync(f.opts.settings).isFile(),true);
+  assert.deepEqual(f.get(f.opts.settings),{a:2,b:9,private:'SYNTHETIC_PRIVATE_SENTINEL'});
+  assert.equal(fs.existsSync(f.old),false); assert.equal(fs.readdirSync(f.oldState).length,0);
+  assert.equal(fs.readFileSync(sentinel,'utf8'),'keep');
+  assert.equal(f.get(f.opts.state+'.migration/receipt.json').phase,'complete');
+  assert.equal(fs.statSync(f.opts.state+'.migration').mode & 0o777,0o700);
+  for (const file of [f.opts.settings,f.opts.state+'/baseline.json',f.opts.state+'.migration/receipt.json',f.opts.state+'.migration/effective.json']) assert.equal(fs.statSync(file).mode & 0o777,0o600);
+  f.put(f.opts.settings,{edited:3}); f.migrate(); assert.deepEqual(f.get(f.opts.settings),{edited:3});
+});
+test('migration preserves deliberate historical deletions', t => {
+  const f = migrationFixture(t); f.put(f.old,{b:9}); f.migrate();
+  assert.deepEqual(f.get(f.opts.settings),{b:9});
+  sync({...f.opts,sourceRoot:f.sourceRoot,legacyRoot:f.legacy}); assert.deepEqual(f.get(f.opts.settings),{b:9});
+});
+test('migration ordinary differing copies and unexpected paths fail before private writes', t => {
+  const f = migrationFixture(t); fs.unlinkSync(f.opts.settings); f.put(f.opts.settings,{different:1});
+  assert.throws(f.migrate,/Differing/); assert.equal(fs.existsSync(f.opts.state+'.migration'),false);
+  f.put(f.opts.settings,{a:1,b:9}); fs.writeFileSync(path.join(f.oldState,'surprise'),'sentinel');
+  assert.throws(f.migrate,/Unexpected legacy/); assert.equal(fs.existsSync(f.opts.state),false);
+  fs.unlinkSync(path.join(f.oldState,'surprise')); fs.unlinkSync(f.opts.settings); fs.symlinkSync(f.opts.baseline,f.opts.settings);
+  assert.throws(f.migrate,/Unexpected migration symlink/);
+});
+test('migration retries all durable boundaries and preserves post-publication edits', t => {
+  for (const boundary of ['migration-snapshot','migration-staged','before-effective','after-effective','migration-before-publication','migration-after-publication','migration-before-cleanup','migration-cleanup-file']) {
+    const f = migrationFixture(t); let fired = false;
+    assert.throws(() => f.migrate({interrupt:phase => {if (!fired && phase === boundary) {fired=true; throw Error('injected');}}}),/injected/);
+    assert.equal(fired,true,boundary);
+    const published = ['migration-after-publication','migration-before-cleanup','migration-cleanup-file'].includes(boundary);
+    if (published) f.put(f.opts.settings,{later:7});
+    f.migrate();
+    assert.deepEqual(f.get(f.opts.settings),published ? {later:7} : {a:2,b:9});
+    assert.equal(fs.existsSync(f.old),false);
+  }
+});
+test('legacy pending prepared and consumed cases reuse engine and retain all recovery bytes', t => {
+  for (const prepared of [true,false]) {
+    const f = migrationFixture(t);
+    const journal = {before:{a:1,b:9},after:{a:3,b:9},baseline:{a:3,b:1},fresh:false,effectiveTemp:path.join(f.oldState,'effective.json')};
+    f.put(path.join(f.oldState,'pending.json'),journal);
+    if (prepared) f.put(journal.effectiveTemp,journal.after);
+    else f.put(f.old,{a:8,b:9});
+    f.migrate(); assert.deepEqual(f.get(f.opts.settings),{a:prepared ? 2 : 8,b:9});
+    const receipt = f.get(f.opts.state+'.migration/receipt.json');
+    assert.deepEqual(JSON.parse(Buffer.from(receipt.inputs[2].data,'base64')),journal);
+    assert.equal(receipt.inputs[3] !== null,prepared);
+  }
+});
+test('pending legacy transactions retry partial cleanup without overwriting later home edits', t => {
+  for (const prepared of [true,false]) {
+    const f = migrationFixture(t);
+    const journal = {before:{a:1,b:9},after:{a:3,b:9},baseline:{a:3,b:1},fresh:false,effectiveTemp:path.join(f.oldState,'effective.json')};
+    f.put(path.join(f.oldState,'pending.json'),journal);
+    if (prepared) f.put(journal.effectiveTemp,journal.after);
+    let interrupted = false;
+    assert.throws(() => f.migrate({interrupt:phase => {
+      if (!interrupted && phase === 'migration-cleanup-file') {interrupted = true; throw Error('cleanup interrupted');}
+    }}),/cleanup interrupted/);
+    assert.equal(fs.existsSync(f.old),false);
+    assert.equal(fs.existsSync(path.join(f.oldState,'pending.json')),true);
+    f.put(f.opts.settings,{later:7});
+    f.migrate();
+    assert.deepEqual(f.get(f.opts.settings),{later:7});
+    assert.equal(fs.readdirSync(f.oldState).length,0);
+    assert.equal(f.get(f.opts.state+'.migration/receipt.json').phase,'complete');
+  }
+});
+test('legacy redirected recovery path, external outputs in checkouts, and permissions fail closed', t => {
+  const f = migrationFixture(t);
+  f.put(path.join(f.oldState,'pending.json'),{before:{},after:{},baseline:{},fresh:false,effectiveTemp:f.opts.baseline});
+  assert.throws(f.migrate,/Invalid legacy recovery/); assert.equal(fs.existsSync(f.opts.state),false);
+  fs.unlinkSync(path.join(f.oldState,'pending.json'));
+  assert.throws(() => f.migrate({state:path.join(f.legacy,'state')}),/source checkout/);
+  fs.mkdirSync(f.opts.state+'.migration'); fs.chmodSync(f.opts.state+'.migration',0o777);
+  assert.throws(f.migrate,/Untrusted/);
+});
+test('migration rejects concurrent home/source edits without cleanup and shares the sync lock', t => {
+  const f = migrationFixture(t);
+  assert.throws(() => f.migrate({interrupt:phase => {if (phase === 'migration-before-publication') f.put(f.old,{changed:1});}}),/Concurrent/);
+  assert.equal(fs.existsSync(f.old),true); assert.equal(fs.lstatSync(f.opts.settings).isSymbolicLink(),true);
+  const g = migrationFixture(t);
+  assert.throws(() => g.migrate({interrupt:phase => {if (phase === 'migration-staged') {assert.throws(() => sync({...g.opts,settings:path.join(path.dirname(g.opts.settings),'other')}),/locked/); throw Error('stop');}}}),/stop/);
+  g.migrate();
+});
+
+test('fresh prepared legacy transaction recovers a dangling expected home link', t => {
+  const f = migrationFixture(t); fs.unlinkSync(f.old); fs.unlinkSync(path.join(f.oldState,'baseline.json'));
+  const after = {a:1,b:1};
+  f.put(path.join(f.oldState,'effective.json'),after);
+  f.put(path.join(f.oldState,'pending.json'),{before:after,after,baseline:after,fresh:true,effectiveTemp:path.join(f.oldState,'effective.json')});
+  f.migrate(); assert.deepEqual(f.get(f.opts.settings),{a:2,b:2});
+});
+test('migration retains orphan legacy effective input without treating it as committed intent', t => {
+  const f = migrationFixture(t); f.put(path.join(f.oldState,'effective.json'),{uncommitted:'sentinel'});
+  f.migrate(); assert.deepEqual(f.get(f.opts.settings),{a:2,b:9});
+  const receipt = f.get(f.opts.state+'.migration/receipt.json');
+  assert.deepEqual(JSON.parse(Buffer.from(receipt.inputs[3].data,'base64')),{uncommitted:'sentinel'});
+});
+test('migration rejects malformed receipt, external conflicts, and home edits before publication', t => {
+  const f = migrationFixture(t);
+  assert.throws(() => f.migrate({interrupt:phase => {if(phase==='migration-staged') throw Error('stop');}}),/stop/);
+  const receipt = f.opts.state+'.migration/receipt.json', saved = f.get(receipt);
+  f.put(receipt,{...saved,inputs:[]}); assert.throws(f.migrate,/Invalid migration receipt/);
+  f.put(receipt,saved); fs.unlinkSync(f.opts.settings); f.put(f.opts.settings,{edited:1});
+  assert.throws(f.migrate,/Concurrent home/); assert.equal(fs.existsSync(f.old),true);
+  const g = migrationFixture(t); fs.mkdirSync(g.opts.state); g.put(path.join(g.opts.state,'baseline.json'),{});
+  assert.throws(g.migrate,/Conflicting external state/); assert.equal(fs.existsSync(g.old),true);
+});
+test('migration filesystem failures before receipt and after home rename remain retryable', t => {
+  for (const boundary of ['receipt','home','history']) {
+    const f = migrationFixture(t), rename = fs.renameSync; let fired = false;
+    fs.renameSync = (from,to) => {
+      if (!fired && ((boundary === 'receipt' && to.endsWith('/receipt.json')) ||
+          (boundary === 'home' && to === f.opts.settings) ||
+          (boundary === 'history' && to === path.join(f.opts.state,'baseline.json')))) {
+        fired = true;
+        if (boundary !== 'receipt') rename(from,to);
+        throw Error('injected migration IO');
+      }
+      return rename(from,to);
+    };
+    try {assert.throws(f.migrate,/injected migration IO/);} finally {fs.renameSync = rename;}
+    assert.equal(fired,true);
+    if (boundary === 'home') f.put(f.opts.settings,{later:1});
+    f.migrate(); assert.deepEqual(f.get(f.opts.settings),boundary === 'home' ? {later:1} : {a:2,b:9});
+  }
+});
+test('migration same-byte source replacement fails identity checks and never cleans replacement', t => {
+  const f = migrationFixture(t);
+  assert.throws(() => f.migrate({interrupt:phase => {
+    if (phase === 'migration-before-cleanup') {
+      const bytes = fs.readFileSync(f.old), sibling = f.old+'.replacement';
+      fs.writeFileSync(sibling,bytes); fs.renameSync(sibling,f.old);
+    }
+  }}),/Concurrent/);
+  assert.equal(fs.existsSync(f.old),true);
 });
 
 test('settings first adoption retains original local bytes', t => {

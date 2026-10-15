@@ -79,7 +79,8 @@ function secureDirectory(dir) {
   if (st && (!st.isDirectory() || st.uid !== process.getuid() || (st.mode & 0o022)))
     throw new Error('Untrusted state directory');
 }
-export function sync({ baseline, settings, state, sourceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'), legacyRoot, adoption = 'preserve', interrupt, home }) {
+const heldLocks = new Set();
+export function sync({ baseline, settings, state, lockToken, sourceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'), legacyRoot, adoption = 'preserve', interrupt, home }) {
   if (home && path.resolve(home) !== path.resolve(settings)) throw new Error('Legacy migration is not available; use an ordinary home destination');
   if (!['preserve', 'fill-missing'].includes(adoption)) throw new Error('Invalid adoption policy');
   baseline = path.resolve(baseline); settings = path.resolve(settings); state = path.resolve(state);
@@ -116,7 +117,10 @@ export function sync({ baseline, settings, state, sourceRoot = path.resolve(path
   for (const file of [baseline, settings, history, pending, effectiveTemp]) snapshot(file);
   fs.mkdirSync(path.dirname(state), {recursive:true, mode:0o700});
   let lockFd;
-  try { lockFd = fs.openSync(lock, 'wx', 0o600); } catch { throw new Error('Rig sync locked; inspect and remove stale lock manually'); }
+  const borrowed = heldLocks.has(lockToken) && lockToken.lock === lock;
+  if (!borrowed) {
+    try { lockFd = fs.openSync(lock, 'wx', 0o600); } catch { throw new Error('Rig sync locked; inspect and remove stale lock manually'); }
+  }
   try {
     fs.mkdirSync(state, {recursive:true, mode:0o700});
     secureDirectory(path.dirname(state)); secureDirectory(state);
@@ -165,9 +169,156 @@ export function sync({ baseline, settings, state, sourceRoot = path.resolve(path
       if (journal !== missing) continue;
       return;
     }
-  } finally { fs.closeSync(lockFd); fs.unlinkSync(lock); }
+  } finally { if (!borrowed) { fs.closeSync(lockFd); fs.unlinkSync(lock); } }
+}
+// Explicit migration only. The receipt retains every input byte and identity; the
+// existing sync engine owns all merging/recovery in the external workspace.
+export function migrateSettings({ baseline, settings, state, migrateFrom, sourceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'), interrupt }) {
+  if (!migrateFrom) throw new Error('Explicit migration source required');
+  [baseline, settings, state, migrateFrom, sourceRoot] = [baseline, settings, state, migrateFrom, sourceRoot].map(x => path.resolve(x));
+  const oldSettings = path.join(migrateFrom, 'pi/.pi/agent/settings.json');
+  const oldState = path.join(migrateFrom, '.local/pi-settings');
+  const sources = [oldSettings, ...['baseline.json', 'pending.json', 'effective.json'].map(x => path.join(oldState, x))];
+  const migration = state + '.migration';
+  const receiptFile = path.join(migration, 'receipt.json');
+  const workspace = path.join(migration, 'effective.json');
+  const prepared = settings + '.rig-migration-prepared';
+  const lock = path.join(path.dirname(state), '.rig-sync.lock');
+  const outputPaths = [settings, state, migration, prepared, lock];
+  const encode = s => s && {...s, data:s.data.toString('base64')};
+  const decode = s => s && {...s, data:Buffer.from(s.data, 'base64')};
+  const homeSnapshot = () => {
+    const st = fileStatus(settings);
+    if (!st?.isSymbolicLink()) return {kind:'file', value:encode(snapshot(settings))};
+    if (path.resolve(path.dirname(settings), fs.readlinkSync(settings)) !== oldSettings) throw new Error('Unexpected migration symlink');
+    return {kind:'link', target:fs.readlinkSync(settings), ino:st.ino, dev:st.dev, mtime:st.mtimeMs};
+  };
+  const validatePaths = () => {
+    for (const file of [baseline, migrateFrom, sourceRoot, ...sources, state, migration, prepared, lock]) safePath(file);
+    safePath(path.dirname(settings));
+    for (const file of outputPaths) for (const root of [sourceRoot, migrateFrom])
+      if (within(file, root)) throw new Error('Private output inside source checkout');
+    for (let i=0; i<outputPaths.length; i++) for (let j=i+1; j<outputPaths.length; j++)
+      if (within(outputPaths[i], outputPaths[j]) || within(outputPaths[j], outputPaths[i])) throw new Error('Path collision');
+    for (const file of outputPaths) if (within(baseline,file) || within(file,baseline)) throw new Error('Path collision');
+    for (const file of sources) if (within(baseline,file) || within(file,baseline)) throw new Error('Path collision');
+    secureDirectory(path.dirname(state)); secureDirectory(state); secureDirectory(migration);
+    for (const file of sources) if (fileStatus(file) && fileStatus(file).uid !== process.getuid()) throw new Error('Untrusted legacy owner');
+    if (fileStatus(state)) for (const name of fs.readdirSync(state))
+      if (!['baseline.json','pending.json'].includes(name)) throw new Error('Unexpected external state file');
+    if (fileStatus(oldState)) {
+      if (!fileStatus(oldState).isDirectory()) throw new Error('Invalid legacy state');
+      for (const name of fs.readdirSync(oldState)) if (!['baseline.json','pending.json','effective.json'].includes(name)) throw new Error('Unexpected legacy state file');
+    }
+    if (fileStatus(migration)) for (const name of fs.readdirSync(migration))
+      if (!['receipt.json','effective.json','effective.json.rig-prepared'].includes(name)) throw new Error('Unexpected migration file');
+    for (const file of [receiptFile, workspace, workspace+'.rig-prepared', path.join(state,'baseline.json'), path.join(state,'pending.json')]) safePath(file);
+  };
+  validatePaths();
+  const nextGuard = snapshot(baseline); readJsonObject(baseline, nextGuard);
+  if (!nextGuard) throw new Error('Missing baseline');
+  let receipt = readJsonObject(receiptFile, snapshot(receiptFile));
+  const sourceGuards = sources.map(file => snapshot(file));
+  const values = sourceGuards.map((s,i) => readJsonObject(sources[i],s));
+  const [local, previous, journal, effective] = values;
+  if (journal !== missing && (!isJsonObject(journal.before) || !isJsonObject(journal.after) || !isJsonObject(journal.baseline) ||
+      typeof journal.fresh !== 'boolean' || journal.effectiveTemp !== sources[3] || Object.keys(journal).some(k => !['before','after','baseline','fresh','effectiveTemp'].includes(k))))
+    throw new Error('Invalid legacy recovery record');
+  if ((receipt === missing || !['published','complete'].includes(receipt.phase)) &&
+      journal !== missing && local === missing && (effective === missing || !journal.fresh)) throw new Error('Missing legacy recovery destination');
+  const homeBefore = homeSnapshot();
+  if (receipt === missing) {
+    if (fileStatus(state) || (fileStatus(migration) && fs.readdirSync(migration).length) || fileStatus(prepared)) throw new Error('Conflicting external state');
+    if (homeBefore.kind === 'file' && homeBefore.value && sourceGuards[0] && !decode(homeBefore.value).data.equals(sourceGuards[0].data)) throw new Error('Differing ordinary settings copies');
+    if (homeBefore.kind === 'link' && !sourceGuards[0] && !(journal !== missing && journal.fresh && effective !== missing)) throw new Error('Missing legacy settings');
+    receipt = {version:1, phase:'initial', source:migrateFrom, settings, state, baseline, inputs:sourceGuards.map(encode), home:homeBefore};
+  } else {
+    if (receipt.version !== 1 || !['initial','staged','publishing','published','complete'].includes(receipt.phase) || receipt.source !== migrateFrom || receipt.settings !== settings || receipt.state !== state || receipt.baseline !== baseline || !Array.isArray(receipt.inputs) || receipt.inputs.length !== 4 || !isJsonObject(receipt.home)) throw new Error('Invalid migration receipt');
+    for (const s of receipt.inputs) if (s !== null && (!isJsonObject(s) || typeof s.data !== 'string' || !['ino','dev','mtime','mode'].every(k => typeof s[k] === 'number'))) throw new Error('Invalid migration snapshot');
+  }
+  const checkSources = (allowRemoved = false) => {
+    validatePaths();
+    sources.forEach((file,i) => { if (!(allowRemoved && !fileStatus(file))) unchanged(file,decode(receipt.inputs[i])); });
+  };
+  if (!['published','complete'].includes(receipt.phase)) checkSources();
+  if (['initial','staged'].includes(receipt.phase) && !equal(homeSnapshot(),receipt.home)) throw new Error('Concurrent home edit detected');
+  fs.mkdirSync(path.dirname(state), {recursive:true,mode:0o700});
+  let fd;
+  try {fd = fs.openSync(lock,'wx',0o600);} catch {throw new Error('Rig sync locked; inspect and remove stale lock manually');}
+  const token = {lock}; heldLocks.add(token);
+  try {
+    validatePaths(); unchanged(baseline,nextGuard);
+    fs.mkdirSync(migration,{mode:0o700,recursive:true});
+    const save = phase => {receipt = {...receipt,phase}; writeJsonAtomic(receiptFile,receipt);};
+    const stop = phase => {if (interrupt) interrupt(phase);};
+    if (receipt.phase === 'initial') {
+      checkSources();
+      if (!equal(homeSnapshot(),receipt.home)) throw new Error('Concurrent home edit detected');
+      save('initial'); stop('migration-snapshot');
+      fs.mkdirSync(state,{mode:0o700,recursive:true});
+      // Initial materialization is idempotent, but never replaces differing data.
+      const seed = (file, value, bytes) => {
+        const before = snapshot(file);
+        const data = bytes ?? Buffer.from(JSON.stringify(value,null,2)+'\n');
+        if (before && !before.data.equals(data)) throw new Error('Conflicting migration staging data');
+        if (!before) writeJsonAtomic(file,value,data);
+      };
+      const initial = local !== missing ? sourceGuards[0].data : homeBefore.kind === 'file' && homeBefore.value ? decode(homeBefore.value).data : null;
+      if (initial) seed(workspace,null,initial);
+      else if (fileStatus(workspace)) throw new Error('Conflicting migration workspace');
+      if ((journal === missing || effective === missing) && fileStatus(path.join(state,'pending.json'))) throw new Error('Conflicting migration journal');
+      if (journal === missing && previous === missing && fileStatus(path.join(state,'baseline.json'))) throw new Error('Conflicting migration history');
+      if (journal !== missing && effective === missing) seed(path.join(state,'baseline.json'),journal.baseline);
+      else if (previous !== missing) seed(path.join(state,'baseline.json'),previous,sourceGuards[1].data);
+      if (journal !== missing) {
+        if (effective !== missing) {
+          seed(workspace+'.rig-prepared',effective,sourceGuards[3].data);
+          seed(path.join(state,'pending.json'),{...journal,version:1,phase:'ready',effectiveTemp:workspace+'.rig-prepared',destination:workspace});
+        }
+        // Without effective.json the legacy publication was committed; the
+        // seeded journal baseline advances history without reapplying intent.
+      }
+      save('staged'); stop('migration-staged');
+    }
+    if (receipt.phase === 'staged') {
+      checkSources();
+      sync({baseline,settings:workspace,state,sourceRoot,legacyRoot:migrateFrom,lockToken:token,interrupt});
+      checkSources();
+      if (!equal(homeSnapshot(),receipt.home)) throw new Error('Concurrent home edit detected');
+      receipt.result = snapshot(workspace).data.toString('base64');
+      const bytes = Buffer.from(receipt.result,'base64');
+      if (fileStatus(prepared) && !snapshot(prepared).data.equals(bytes)) throw new Error('Conflicting migration publication');
+      writeJsonAtomic(prepared,null,bytes);
+      save('publishing'); stop('migration-before-publication');
+    }
+    if (receipt.phase === 'publishing') {
+      if (typeof receipt.result !== 'string' || !snapshot(workspace)?.data.equals(Buffer.from(receipt.result,'base64'))) throw new Error('Invalid migration result');
+      if (fileStatus(prepared)) {
+        checkSources();
+        if (!equal(homeSnapshot(),receipt.home) || !snapshot(prepared).data.equals(Buffer.from(receipt.result,'base64'))) throw new Error('Concurrent migration publication edit');
+        fs.mkdirSync(path.dirname(settings),{recursive:true,mode:0o700});
+        fs.renameSync(prepared,settings); syncDirectory(path.dirname(settings));
+        stop('migration-after-publication');
+      } else if (!fileStatus(settings)?.isFile()) throw new Error('Missing migration publication');
+      save('published');
+    }
+    if (receipt.phase === 'published') {
+      // Receipt + consumed sibling is durable proof of publication. Later home
+      // edits are never overwritten; external workspace remains the snapshot.
+      if (typeof receipt.result !== 'string' || !fileStatus(settings)?.isFile() || !snapshot(workspace)?.data.equals(Buffer.from(receipt.result,'base64'))) throw new Error('Missing external migration publication');
+      checkSources(true); stop('migration-before-cleanup'); checkSources(true);
+      sources.forEach((file,i) => {
+        if (fileStatus(file)) {unchanged(file,decode(receipt.inputs[i])); fs.unlinkSync(file); syncDirectory(path.dirname(file)); stop('migration-cleanup-file');}
+      });
+      save('complete');
+    }
+    if (receipt.phase === 'complete') checkSources(true);
+  } finally {heldLocks.delete(token); fs.closeSync(fd); fs.unlinkSync(lock);}
 }
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  console.error('Home-file sync API only: CLI disabled until explicit legacy migration and global wiring are available.');
-  process.exitCode = 1;
+  try {
+    if (process.argv.length !== 4 || process.argv[2] !== '--migrate-from' || !process.env.HOME) throw new Error('Usage: node pi/sync-settings.mjs --migrate-from <main-checkout>');
+    const here = path.dirname(fileURLToPath(import.meta.url));
+    migrateSettings({baseline:path.join(here,'.pi/agent/settings.example.json'),settings:path.join(process.env.HOME,'.pi/agent/settings.json'),state:path.join(process.env.HOME,'.local/state/rig/pi/settings'),migrateFrom:process.argv[3]});
+  } catch (e) {console.error(e.code ? `Settings migration failed (${e.code})` : e.message); process.exitCode = 1;}
 }

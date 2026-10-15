@@ -1,6 +1,6 @@
 # Global pi browser automation and private-config migration
 
-Status: approved; action 1 validated and reviewed, ready for commit. Supersedes the project-only plan. No package installation or private-data migration has occurred.
+Status: approved; action 1 committed as `b60836d`; action 2 validated and reviewed, ready for commit. Supersedes the project-only plan. No package installation or private-data migration has occurred.
 
 ## Agreement
 
@@ -37,7 +37,7 @@ Checks: synthetic tests cover unchanged existing merge cases, ordinary-file owne
 
 Action 1 evidence: initial review findings were fixed with immutable preparing/ready recovery intent, captured-input guards, stable recovery ancestors, and state-directory trust checks. Parent reran all 20 synthetic tests successfully; `git diff --check` passed. Independent re-review: OK with notes, no remaining P1/P2 findings. Tests inject filesystem publication/fsync failures and concurrent edits; they do not prove physical power-loss guarantees or atomic compare-and-swap against arbitrary editors. Additional ready-journal/post-rename and same-byte replacement cases are optional follow-up coverage. No real private configuration accessed or changed. Included in this action's commit.
 
-### 2. Implement resumable legacy settings migration — pending
+### 2. Implement resumable legacy settings migration — done
 
 Goal: move existing private settings and recovery state out of the main checkout without losing configuration or historical merge state.
 
@@ -50,6 +50,8 @@ Inputs: explicit legacy checkout path via `--migrate-from <main-checkout>`; only
 Operation: stage verified copies under the external private state root, never in the worktree. Accept an existing home settings symlink only when it resolves exactly to the explicitly supplied legacy settings file. Reject differing ordinary copies, unexpected links, conflicting external state, and malformed recovery records. Preserve all recognized legacy recovery inputs; recover pending transactions against external copies with the same engine after validating/translating their recorded paths. Publish ordinary home settings and state safely; durable phase records distinguish committed publication from unfinished staging and preserve later user edits on retry. Remove only individually validated legacy private files/state after verified external publication, retaining a private external recovery snapshot/receipt. No recursive deletion of unvalidated directories. Existing unusual MCP symlinks/copies fail with migration guidance rather than being silently imported.
 
 Checks: synthetic tests for current relative-symlink migration, ordinary-file conflicts, baseline retention/deletion semantics, legacy pending/prepared recovery, interruption at migration boundaries, retries after later home edits, unexpected files/paths, permissions, cleanup only after verification, and private sentinel values remaining outside simulated checkout. Review, full focused test suite, evidence, and commit before action 3. No actual-home migration yet.
+
+Action 2 evidence: parent reran all 33 synthetic tests and `git diff --check` successfully. Independent review found one partial-cleanup retry issue for legacy non-fresh pending transactions; fixed with phase-aware validation and a prepared/consumed regression preserving later home edits. Focused re-review: OK, no remaining findings. Migration retains verified external snapshots, translates legacy recovery through the shared engine, and performs identity-checked individual cleanup. No actual-home migration/private-config access occurred. Included in this action's commit.
 
 ### 3. Wire credential-free global MCP defaults into rig — pending
 
