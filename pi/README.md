@@ -20,14 +20,18 @@ templates, for personal changes. Keep secrets out of rig; use Pi's environment
 variable references (for example `${SERVICE_API_KEY}` in server `env` values),
 and supply those variables in Pi's environment rather than committing credentials.
 
+Pi package installs use Bun through `"npmCommand": ["bun"]`. The `npm:`
+package prefixes identify registry sources and remain unchanged. Node.js is still
+required to run Pi.
+
 The global `playwright` server runs exactly:
 
 ```sh
-npx -y @playwright/mcp@latest --isolated --headless
+bunx @playwright/mcp@latest --isolated --headless
 ```
 
 It is available independently of session cwd. Use `/reload` or restart Pi after
-configuration changes. npx may download the package and uses npm's cache;
+configuration changes. bunx may download the package and uses Bun's cache;
 `@latest` follows upstream and is not a reproducible version pin. A browser must
 already be available; this sync does not install packages or browsers. An isolated
 profile avoids persistent browser profile state; it is **not** an OS/network

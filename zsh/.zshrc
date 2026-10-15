@@ -5,7 +5,8 @@ export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 export EDITOR="code --wait"
 export VISUAL="$EDITOR"
-export PATH="$HOME/.local/bin:$PATH"
+export BUN_INSTALL="${BUN_INSTALL:-$HOME/.bun}"
+export PATH="$BUN_INSTALL/bin:$HOME/.local/bin:$PATH"
 
 if command -v brew >/dev/null 2>&1; then
   export HOMEBREW_PREFIX="${HOMEBREW_PREFIX:-$(brew --prefix 2>/dev/null)}"

@@ -17,5 +17,5 @@ fi
 # Install everything from Brewfile
 brew bundle --file="$SCRIPT_DIR/Brewfile"
 
-# Install Pi with its official npm package.
-npm install -g --ignore-scripts @earendil-works/pi-coding-agent
+# Install Pi with Bun, without dependency lifecycle scripts.
+bun add --global --ignore-scripts @earendil-works/pi-coding-agent
