@@ -6,11 +6,19 @@
    approach in `PLAN.md`.
 2. Divide: split the plan into small, ordered actions. Each action must
    advance the goal and state its expected result and completion check.
-3. Implement: execute actions in dependency order. Verify each action,
-   then check the overall outcome against the plan’s definition of done.
+3. Implement: execute actions in dependency order. Check the finished solution
+   against the plan’s definition of done.
 
 For very simple tasks, skip the plan and breakdown. Still define the
 expected outcome and verify the result.
+
+## Implement core first
+For new features, build the smallest working core first. Add the remaining
+behavior in small increments. Implement, debug, and iterate.
+
+Do not add or run automated tests or create fixtures. Test only the finished
+solution, manually and end to end, against the user’s goal and definition of done.
+Fix failures and repeat until it passes.
 
 ## Keep it simple
 Write direct, explicit code. No new abstractions, DRY-driven refactoring,
