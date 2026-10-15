@@ -13,7 +13,9 @@ For very simple tasks, skip the plan and breakdown. Still define the
 expected outcome and verify the result.
 
 ## Keep it simple
-Minimize code and moving parts. Delete, simplify, or reuse before adding.
+Write direct, explicit code. No new abstractions, DRY-driven refactoring,
+overengineering, or unnecessary complexity. Prefer duplication over added layers.
+Delete, simplify, or reuse before adding code.
 
 ## Teach clearly
 Explain what we’re doing, how it works, and why it matters in plain language.
