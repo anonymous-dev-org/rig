@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { sync, merge, migrateSettings } from './sync-settings.mjs';
 function fixture(t) {
   const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'pi-sync-')));
@@ -367,4 +368,169 @@ test('settings first adoption retains original local bytes', t => {
   const {opts:o,put,run} = fixture(t); put(o.baseline,{new:1});
   const bytes = '{ "local": 9 }\n'; fs.writeFileSync(o.settings,bytes); run();
   assert.equal(fs.readFileSync(o.settings,'utf8'),bytes);
+});
+
+function cliFixture(t) {
+  const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'pi-cli-')));
+  t.after(() => fs.rmSync(dir,{recursive:true,force:true}));
+  const repo = path.join(dir,'repo'), home = path.join(dir,'home');
+  fs.mkdirSync(path.join(repo,'pi/.pi/agent'),{recursive:true}); fs.mkdirSync(home);
+  for (const file of ['sync-settings.mjs','.pi/agent/settings.example.json','.pi/agent/mcp.example.json'])
+    fs.copyFileSync(new URL(file,import.meta.url),path.join(repo,'pi',file));
+  const run = (...args) => spawnSync(process.execPath,[path.join(repo,'pi/sync-settings.mjs'),...args],{cwd:dir,env:{...process.env,HOME:home},encoding:'utf8'});
+  return {repo,home,run};
+}
+test('CLI bootstraps both ordinary home configs and repeats independently of cwd', t => {
+  const {repo,home,run} = cliFixture(t);
+  assert.equal(run().status,0); assert.equal(run().status,0);
+  const mcp = JSON.parse(fs.readFileSync(path.join(home,'.pi/agent/mcp.json')));
+  assert.deepEqual(mcp.mcpServers.playwright,{command:'npx',args:['-y','@playwright/mcp@latest','--isolated','--headless']});
+  for (const name of ['settings','mcp']) {
+    assert.ok(fs.lstatSync(path.join(home,`.pi/agent/${name}.json`)).isFile());
+    assert.equal(fs.existsSync(path.join(repo,`pi/.pi/agent/${name}.json`)),false);
+  }
+  assert.equal(fs.existsSync(path.join(repo,'.local')),false);
+});
+test('CLI explicit migration and MCP bootstrap share one lock and retain external state', t => {
+  const {repo,home,run} = cliFixture(t);
+  const main = path.join(path.dirname(repo),'main');
+  fs.mkdirSync(path.join(main,'pi/.pi/agent'),{recursive:true});
+  fs.mkdirSync(path.join(home,'.pi/agent'),{recursive:true});
+  const old = path.join(main,'pi/.pi/agent/settings.json');
+  fs.writeFileSync(old,'{"personal":true}');
+  fs.mkdirSync(path.join(main,'.local/pi-settings'),{recursive:true});
+  fs.writeFileSync(path.join(main,'.local/pi-settings/baseline.json'),'{}');
+  for (const file of ['sync-settings.mjs','.pi/agent/settings.example.json','.pi/agent/mcp.example.json'])
+    fs.copyFileSync(path.join(repo,'pi',file),path.join(main,'pi',file));
+  fs.symlinkSync(path.relative(path.join(home,'.pi/agent'),old),path.join(home,'.pi/agent/settings.json'));
+  const result = run('--migrate-from',main); assert.equal(result.status,0,result.stderr);
+  assert.equal(fs.existsSync(old),false);
+  assert.ok(fs.lstatSync(path.join(home,'.pi/agent/settings.json')).isFile());
+  assert.equal(JSON.parse(fs.readFileSync(path.join(home,'.pi/agent/settings.json'))).personal,true);
+  assert.equal(run('--migrate-from',main).status,0);
+  const mainRun = spawnSync(process.execPath,[path.join(main,'pi/sync-settings.mjs')],{env:{...process.env,HOME:home},encoding:'utf8'});
+  assert.equal(mainRun.status,0,mainRun.stderr);
+  assert.equal(run().status,0);
+  assert.equal(fs.existsSync(path.join(repo,'.local')),false);
+});
+test('completed migration receipts allow ordinary home transaction recovery on explicit retry', t => {
+  for (const boundary of ['before-effective','after-effective']) {
+    const {repo,home,run} = cliFixture(t);
+    const main = path.join(path.dirname(repo),'main');
+    fs.mkdirSync(path.join(main,'pi/.pi/agent'),{recursive:true});
+    fs.mkdirSync(path.join(home,'.pi/agent'),{recursive:true});
+    const old = path.join(main,'pi/.pi/agent/settings.json');
+    const settings = path.join(home,'.pi/agent/settings.json');
+    fs.writeFileSync(old,'{"personal":true}');
+    fs.symlinkSync(path.relative(path.dirname(settings),old),settings);
+    assert.equal(run('--migrate-from',main).status,0);
+    const baseline = path.join(repo,'pi/.pi/agent/settings.example.json');
+    const defaults = JSON.parse(fs.readFileSync(baseline)); defaults.recoveryRegression = true;
+    fs.writeFileSync(baseline,JSON.stringify(defaults));
+    assert.throws(() => sync({baseline,settings,state:path.join(home,'.local/state/rig/pi/settings'),sourceRoot:repo,legacyRoot:main,
+      interrupt:phase => {if (phase === boundary) throw Error('ordinary transaction interrupted');}}),/ordinary transaction interrupted/);
+    const current = JSON.parse(fs.readFileSync(settings)); current.laterEdit = true;
+    fs.writeFileSync(settings,JSON.stringify(current));
+    const result = run('--migrate-from',main);
+    assert.equal(result.status,0,result.stderr);
+    const recovered = JSON.parse(fs.readFileSync(settings));
+    assert.equal(recovered.recoveryRegression,true); assert.equal(recovered.laterEdit,true);
+    assert.equal(fs.existsSync(path.join(home,'.local/state/rig/pi/settings/pending.json')),false);
+  }
+});
+test('CLI prevalidates MCP before settings mutation and honors shared lock', t => {
+  const {home,run} = cliFixture(t);
+  fs.mkdirSync(path.join(home,'.pi/agent'),{recursive:true});
+  const settings = path.join(home,'.pi/agent/settings.json');
+  fs.writeFileSync(settings,'{"private":true}');
+  fs.writeFileSync(path.join(home,'.pi/agent/mcp.json'),'invalid-private-value');
+  const result = run(); assert.equal(result.status,1); assert.match(result.stderr,/Invalid JSON/);
+  assert.ok(!result.stderr.includes('invalid-private-value'));
+  assert.equal(fs.readFileSync(settings,'utf8'),'{"private":true}');
+  fs.writeFileSync(path.join(home,'.pi/agent/mcp.json'),'{}');
+  fs.writeFileSync(path.join(home,'.local/state/rig/pi/.rig-sync.lock'),'');
+  assert.match(run().stderr,/locked/);
+  assert.equal(fs.readFileSync(settings,'utf8'),'{"private":true}');
+});
+for (const invalid of ['pending','history','state-link','orphan']) {
+  test(`CLI rejects MCP ${invalid} before settings or settings-state publication, including migration`, t => {
+    for (const migration of [false,true]) {
+      const {repo,home,run} = cliFixture(t);
+      fs.mkdirSync(path.join(home,'.pi/agent'),{recursive:true});
+      const settings = path.join(home,'.pi/agent/settings.json');
+      const root = path.join(home,'.local/state/rig/pi');
+      fs.mkdirSync(root,{recursive:true,mode:0o700});
+      let main;
+      if (migration) {
+        main = path.join(path.dirname(repo),'main');
+        fs.mkdirSync(path.join(main,'pi/.pi/agent'),{recursive:true});
+        const old = path.join(main,'pi/.pi/agent/settings.json');
+        fs.writeFileSync(old,'{"private":true}');
+        fs.symlinkSync(old,settings);
+      } else fs.writeFileSync(settings,'{"private":true}');
+      const state = path.join(root,'settings');
+      if (!migration) {
+        fs.mkdirSync(state,{mode:0o700});
+        fs.writeFileSync(path.join(state,'baseline.json'),'{}');
+      }
+      const before = fs.readFileSync(settings);
+      const beforeHistory = !migration && fs.readFileSync(path.join(state,'baseline.json'));
+      const mcpState = path.join(root,'mcp');
+      if (invalid === 'state-link') fs.symlinkSync(state,mcpState);
+      else {
+        fs.mkdirSync(mcpState,{mode:0o700});
+        if (invalid === 'orphan') fs.writeFileSync(path.join(home,'.pi/agent/mcp.json.rig-prepared'),'{}');
+        else fs.writeFileSync(path.join(mcpState,invalid === 'history' ? 'baseline.json' : 'pending.json'),'invalid');
+      }
+      const result = migration ? run('--migrate-from',main) : run();
+      assert.equal(result.status,1,result.stderr);
+      assert.deepEqual(fs.readFileSync(settings),before);
+      if (migration) {
+        assert.ok(fs.lstatSync(settings).isSymbolicLink());
+        assert.equal(fs.existsSync(state),false);
+        assert.equal(fs.existsSync(state+'.migration'),false);
+      } else {
+        assert.deepEqual(fs.readdirSync(state),['baseline.json']);
+        assert.deepEqual(fs.readFileSync(path.join(state,'baseline.json')),beforeHistory);
+      }
+    }
+  });
+}
+test('CLI rejects ignored effective checkout copies with guidance', t => {
+  const {repo,run} = cliFixture(t);
+  const stale = path.join(repo,'pi/.pi/agent/mcp.json'); fs.writeFileSync(stale,'{}');
+  assert.match(run().stderr,/Unexpected checkout mcp.json/); fs.unlinkSync(stale);
+  fs.writeFileSync(path.join(repo,'pi/.pi/agent/settings.json'),'{}');
+  assert.match(run().stderr,/--migrate-from/);
+});
+test('both script cleanup loops protect ordinary private configs and Stow excludes tooling', t => {
+  for (const script of ['init.sh','update.sh']) {
+    const {repo,home,run} = cliFixture(t);
+    assert.equal(run().status,0);
+    for (const name of ['settings','mcp']) fs.writeFileSync(path.join(repo,`pi/.pi/agent/${name}.json`),'{}');
+    for (const file of ['.stow-local-ignore','README.md','sync-settings.test.mjs'])
+      fs.copyFileSync(new URL(file,import.meta.url),path.join(repo,'pi',file));
+    const text = fs.readFileSync(new URL(`../${script}`,import.meta.url),'utf8');
+    // Execute only the exact Pi preparation function and cleanup loop, never
+    // broad init/update, git, npm, brew or unrelated package operations.
+    const preparation = text.match(/prepare_package_config\(\) \{[\s\S]*?\n\}/)[0];
+    const loop = text.match(/    while IFS=[\s\S]*?done < <\(find[^\n]+/)[0];
+    const before = ['settings','mcp'].map(n=>fs.readFileSync(path.join(home,`.pi/agent/${n}.json`),'utf8'));
+    let result = spawnSync('bash',['-c',`${preparation}\nprepare_package_config pi`],{env:{...process.env,HOME:home,SCRIPT_DIR:repo},encoding:'utf8'});
+    assert.equal(result.status,1); assert.match(result.stderr,/Unexpected checkout mcp.json/);
+    result = spawnSync('bash',['-c',`pkg=pi\n${loop}`],{env:{...process.env,HOME:home,SCRIPT_DIR:repo},encoding:'utf8'});
+    assert.equal(result.status,0,result.stderr);
+    assert.deepEqual(['settings','mcp'].map(n=>fs.readFileSync(path.join(home,`.pi/agent/${n}.json`),'utf8')),before);
+    result = spawnSync('stow',['--restow','--no-folding','-d',repo,'-t',home,'pi'],{encoding:'utf8'});
+    assert.equal(result.status,0,result.stderr);
+    for (const file of ['README.md','sync-settings.mjs','sync-settings.test.mjs','.pi/agent/settings.example.json','.pi/agent/mcp.example.json'])
+      assert.equal(fs.existsSync(path.join(home,file)),false,file);
+    assert.deepEqual(['settings','mcp'].map(n=>fs.readFileSync(path.join(home,`.pi/agent/${n}.json`),'utf8')),before);
+    assert.equal(fs.existsSync(path.join(repo,'.local')),false);
+    // Successful preparation, cleanup and Stow in the same extracted sequence.
+    for (const name of ['settings','mcp']) fs.unlinkSync(path.join(repo,`pi/.pi/agent/${name}.json`));
+    result = spawnSync('bash',['-c',`${preparation}\nprepare_package_config pi && {\npkg=pi\n${loop}\n} && stow --restow --no-folding -d "$SCRIPT_DIR" -t "$HOME" pi`],{env:{...process.env,HOME:home,SCRIPT_DIR:repo},encoding:'utf8'});
+    assert.equal(result.status,0,result.stderr);
+    assert.deepEqual(['settings','mcp'].map(n=>fs.readFileSync(path.join(home,`.pi/agent/${n}.json`),'utf8')),before);
+  }
 });

@@ -13,6 +13,7 @@ lazysql/Library/Application Support/lazysql/config.toml
 !/pi/.pi/agent/
 /pi/.pi/agent/*
 !/pi/.pi/agent/settings.example.json
+!/pi/.pi/agent/mcp.example.json
 !/pi/.pi/agent/AGENTS.md
 !/pi/.pi/agent/agents/
 !/pi/.pi/agent/extensions/

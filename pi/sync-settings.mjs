@@ -80,7 +80,7 @@ function secureDirectory(dir) {
     throw new Error('Untrusted state directory');
 }
 const heldLocks = new Set();
-export function sync({ baseline, settings, state, lockToken, sourceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'), legacyRoot, adoption = 'preserve', interrupt, home }) {
+function validateSync({ baseline, settings, state, sourceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'), legacyRoot, adoption = 'preserve', home }, migrationSource) {
   if (home && path.resolve(home) !== path.resolve(settings)) throw new Error('Legacy migration is not available; use an ordinary home destination');
   if (!['preserve', 'fill-missing'].includes(adoption)) throw new Error('Invalid adoption policy');
   baseline = path.resolve(baseline); settings = path.resolve(settings); state = path.resolve(state);
@@ -89,7 +89,13 @@ export function sync({ baseline, settings, state, lockToken, sourceRoot = path.r
   const effectiveTemp = settings + '.rig-prepared';
   const lock = path.join(path.dirname(state), '.rig-sync.lock');
   const paths = [baseline, settings, state, history, pending, effectiveTemp, lock];
-  for (const file of paths) safePath(file);
+  const migrationLink = migrationSource && fileStatus(settings)?.isSymbolicLink();
+  if (migrationLink) {
+    safePath(path.dirname(settings));
+    if (path.resolve(path.dirname(settings), fs.readlinkSync(settings)) !== path.join(path.resolve(migrationSource), 'pi/.pi/agent/settings.json'))
+      throw new Error('Unexpected migration symlink');
+  }
+  for (const file of paths) if (!(migrationLink && file === settings)) safePath(file);
   for (const root of [sourceRoot, legacyRoot].filter(Boolean).map(x => path.resolve(x))) {
     safePath(root);
     for (const file of [settings, state, lock, effectiveTemp]) if (within(file, root)) throw new Error('Private output inside source checkout');
@@ -101,7 +107,11 @@ export function sync({ baseline, settings, state, lockToken, sourceRoot = path.r
   secureDirectory(path.dirname(state)); secureDirectory(state);
   // Validate JSON and recovery before creating even a lock or directory.
   const validate = () => {
-    const guards = [baseline, settings, history, pending, effectiveTemp].map(file => [file, snapshot(file)]);
+    const guards = [baseline, settings, history, pending, effectiveTemp].map(file => {
+      const input = migrationLink && file === settings ? path.join(path.resolve(migrationSource), 'pi/.pi/agent/settings.json') : file;
+      safePath(input);
+      return [file, snapshot(input)];
+    });
     const read = file => readJsonObject(file, guards.find(([name]) => name === file)[1]);
     const next = read(baseline);
     if (next === missing) throw new Error('Missing baseline');
@@ -114,7 +124,11 @@ export function sync({ baseline, settings, state, lockToken, sourceRoot = path.r
     return {next, local, previous, journal, prepared, guards};
   };
   validate();
-  for (const file of [baseline, settings, history, pending, effectiveTemp]) snapshot(file);
+  return {baseline, settings, state, history, pending, effectiveTemp, lock, paths, validate};
+}
+export function sync(options) {
+  const {lockToken, adoption = 'preserve', interrupt} = options;
+  const {baseline, settings, state, history, pending, effectiveTemp, lock, paths, validate} = validateSync(options);
   fs.mkdirSync(path.dirname(state), {recursive:true, mode:0o700});
   let lockFd;
   const borrowed = heldLocks.has(lockToken) && lockToken.lock === lock;
@@ -173,7 +187,7 @@ export function sync({ baseline, settings, state, lockToken, sourceRoot = path.r
 }
 // Explicit migration only. The receipt retains every input byte and identity; the
 // existing sync engine owns all merging/recovery in the external workspace.
-export function migrateSettings({ baseline, settings, state, migrateFrom, sourceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'), interrupt }) {
+export function migrateSettings({ baseline, settings, state, migrateFrom, lockToken, sourceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'), interrupt }) {
   if (!migrateFrom) throw new Error('Explicit migration source required');
   [baseline, settings, state, migrateFrom, sourceRoot] = [baseline, settings, state, migrateFrom, sourceRoot].map(x => path.resolve(x));
   const oldSettings = path.join(migrateFrom, 'pi/.pi/agent/settings.json');
@@ -244,8 +258,11 @@ export function migrateSettings({ baseline, settings, state, migrateFrom, source
   if (['initial','staged'].includes(receipt.phase) && !equal(homeSnapshot(),receipt.home)) throw new Error('Concurrent home edit detected');
   fs.mkdirSync(path.dirname(state), {recursive:true,mode:0o700});
   let fd;
-  try {fd = fs.openSync(lock,'wx',0o600);} catch {throw new Error('Rig sync locked; inspect and remove stale lock manually');}
-  const token = {lock}; heldLocks.add(token);
+  const borrowed = heldLocks.has(lockToken) && lockToken.lock === lock;
+  if (!borrowed) {
+    try {fd = fs.openSync(lock,'wx',0o600);} catch {throw new Error('Rig sync locked; inspect and remove stale lock manually');}
+  }
+  const token = borrowed ? lockToken : {lock}; heldLocks.add(token);
   try {
     validatePaths(); unchanged(baseline,nextGuard);
     fs.mkdirSync(migration,{mode:0o700,recursive:true});
@@ -313,12 +330,72 @@ export function migrateSettings({ baseline, settings, state, migrateFrom, source
       save('complete');
     }
     if (receipt.phase === 'complete') checkSources(true);
+  } finally {if (!borrowed) {heldLocks.delete(token); fs.closeSync(fd); fs.unlinkSync(lock);}}
+}
+// The narrow CLI owns one lock across validation, migration cleanup and both
+// independent recoverable transactions. No private inputs are imported implicitly.
+export function syncAll({home, sourceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'), migrateFrom}) {
+  if (!home) throw new Error('HOME is required');
+  home = path.resolve(home); sourceRoot = path.resolve(sourceRoot);
+  if (migrateFrom) migrateFrom = path.resolve(migrateFrom);
+  const root = path.join(home,'.local/state/rig/pi');
+  const lock = path.join(root,'.rig-sync.lock');
+  for (const file of [root, lock]) safePath(file);
+  for (const checkout of [sourceRoot,migrateFrom].filter(Boolean)) {
+    safePath(checkout);
+    if (within(root,checkout)) throw new Error('Private output inside source checkout');
+    if (fileStatus(path.join(checkout,'pi/.pi/agent/mcp.json')))
+      throw new Error('Unexpected checkout mcp.json; preserve it outside rig and reconcile manually before syncing');
+    const legacyState = path.join(checkout,'.local/pi-settings');
+    safePath(legacyState);
+    const legacyStatus = fileStatus(legacyState);
+    const emptyLegacy = legacyStatus?.isDirectory() && fs.readdirSync(legacyState).length === 0;
+    if ((!migrateFrom || checkout !== migrateFrom) &&
+        (fileStatus(path.join(checkout,'pi/.pi/agent/settings.json')) || (legacyStatus && !emptyLegacy)))
+      throw new Error('Legacy settings found; use --migrate-from <explicit-main-checkout> (see pi/README.md)');
+  }
+  secureDirectory(root);
+  fs.mkdirSync(root,{recursive:true,mode:0o700});
+  let fd;
+  try {fd = fs.openSync(lock,'wx',0o600);} catch {throw new Error('Rig sync locked; inspect and remove stale lock manually');}
+  const token = {lock}; heldLocks.add(token);
+  try {
+    const configs = ['settings','mcp'].map(name => ({
+      baseline:path.join(sourceRoot,`pi/.pi/agent/${name}.example.json`),
+      settings:path.join(home,`.pi/agent/${name}.json`), state:path.join(root,name),
+      sourceRoot, legacyRoot:migrateFrom, lockToken:token,
+      adoption:name === 'mcp' ? 'fill-missing' : 'preserve'
+    }));
+    // Reuse the engine's nonmutating validation for every input, including
+    // recovery and path trust, before migration or either publication.
+    configs.forEach((config, i) => {
+      // A resumed migration's engine journal belongs to its external workspace,
+      // not the home destination. migrateSettings validates its receipt and home
+      // publication inputs before mutating; still preflight that engine state.
+      const migration = config.state + '.migration';
+      const receiptFile = path.join(migration,'receipt.json');
+      if (i === 0 && migrateFrom && fileStatus(receiptFile)) {
+        safePath(receiptFile); secureDirectory(migration);
+        const receipt = readJsonObject(receiptFile,snapshot(receiptFile));
+        if (receipt.version !== 1 || !['initial','staged','publishing','published','complete'].includes(receipt.phase) ||
+            receipt.source !== migrateFrom || receipt.settings !== config.settings || receipt.state !== config.state || receipt.baseline !== config.baseline)
+          throw new Error('Invalid migration receipt');
+        if (receipt.phase === 'complete') validateSync(config);
+        else {
+          safePath(config.settings + '.rig-prepared');
+          if (snapshot(config.settings + '.rig-prepared')) throw new Error('Orphan recovery file');
+          validateSync({...config, settings:path.join(migration,'effective.json')});
+        }
+      } else validateSync(config, i === 0 ? migrateFrom : undefined);
+    });
+    if (migrateFrom) migrateSettings({...configs[0],migrateFrom});
+    for (const config of configs) sync(config);
   } finally {heldLocks.delete(token); fs.closeSync(fd); fs.unlinkSync(lock);}
 }
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
-    if (process.argv.length !== 4 || process.argv[2] !== '--migrate-from' || !process.env.HOME) throw new Error('Usage: node pi/sync-settings.mjs --migrate-from <main-checkout>');
-    const here = path.dirname(fileURLToPath(import.meta.url));
-    migrateSettings({baseline:path.join(here,'.pi/agent/settings.example.json'),settings:path.join(process.env.HOME,'.pi/agent/settings.json'),state:path.join(process.env.HOME,'.local/state/rig/pi/settings'),migrateFrom:process.argv[3]});
-  } catch (e) {console.error(e.code ? `Settings migration failed (${e.code})` : e.message); process.exitCode = 1;}
+    if (process.argv.length !== 2 && !(process.argv.length === 4 && process.argv[2] === '--migrate-from'))
+      throw new Error('Usage: node pi/sync-settings.mjs [--migrate-from <main-checkout>]');
+    syncAll({home:process.env.HOME,migrateFrom:process.argv[3]});
+  } catch (e) {console.error(e.code ? `Pi sync failed (${e.code})` : e.message); process.exitCode = 1;}
 }

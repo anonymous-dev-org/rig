@@ -1,6 +1,6 @@
 # Global pi browser automation and private-config migration
 
-Status: approved; action 1 committed as `b60836d`; action 2 validated and reviewed, ready for commit. Supersedes the project-only plan. No package installation or private-data migration has occurred.
+Status: approved; actions 1–2 committed as `b60836d` and `b7fbdec`; action 3 validated/reviewed, ready for commit. Supersedes the project-only plan. No package installation or private-data migration has occurred.
 
 ## Agreement
 
@@ -53,7 +53,7 @@ Checks: synthetic tests for current relative-symlink migration, ordinary-file co
 
 Action 2 evidence: parent reran all 33 synthetic tests and `git diff --check` successfully. Independent review found one partial-cleanup retry issue for legacy non-fresh pending transactions; fixed with phase-aware validation and a prepared/consumed regression preserving later home edits. Focused re-review: OK, no remaining findings. Migration retains verified external snapshots, translates legacy recovery through the shared engine, and performs identity-checked individual cleanup. No actual-home migration/private-config access occurred. Included in this action's commit.
 
-### 3. Wire credential-free global MCP defaults into rig — pending
+### 3. Wire credential-free global MCP defaults into rig — done
 
 Goal: make normal rig sync apply both public baselines without Stow taking ownership of private files.
 
@@ -64,6 +64,8 @@ Files: new `pi/.pi/agent/mcp.example.json`; `.gitignore`; `pi/.stow-local-ignore
 Operation: add the public Playwright baseline and allowlist it in Git. Narrow sync entrypoint processes settings and MCP under the shared lock, prevalidating both before changes. Integrate it with existing Pi preparation. Protect live settings/MCP paths from BOTH pre-Stow cleanup loops before destructive logic, and exclude private config, templates, README, and sync tooling from Stow. Keep other shared pi resources and packages unchanged. Document global availability, local overrides, env-variable references for keys, reload/restart, recovery/stale-lock procedure, npm caching, isolated-browser limitations, and the requirement not to run old main-checkout sync scripts after migration.
 
 Checks: synthetic-HOME integration tests exercise Pi preparation and cleanup/Stow exclusions without executing npm-global installs, brew, git pull, or unrelated scripts. Verify existing home settings/MCP files survive even with stale ignored checkout copies, helpers/templates are not linked, and no effective config/state is produced in a checkout. Run `node --test pi/sync-settings.test.mjs`, `bash -n init.sh update.sh`, JSON parsing, diff/secret-output checks, independent review, and commit before action 4.
+
+Action 3 evidence: parent reran 43 tests, shell syntax checks, public-template parsing, and diff check successfully. Review findings fixed: empty migrated legacy directories no longer block normal sync; shared nonmutating validation covers both recovery states before publication; completed receipts correctly validate later ordinary home recovery. Regression tests cover migrated MAIN, malformed MCP recovery/path inputs without settings/state mutation, successful preparation/cleanup/Stow, and explicit retries preserving later edits. Final focused independent review: OK, no remaining findings. No activation or private configuration changes. Included in this action's commit.
 
 ### 4. Activate private migration and test browser automation — pending
 
