@@ -1,58 +1,84 @@
-# Rig project-local browser automation
+# Global pi browser automation and private-config migration
 
-Status: awaiting detailed-plan approval. No MCP configuration or installation performed.
+Status: awaiting approval of this revised detailed plan. Supersedes the project-only plan. No implementation, package installation, or private-data migration has occurred.
 
 ## Agreement
 
-Add browser automation to rig using pi's built-in MCP integration and Microsoft's Playwright MCP server. Keep global pi settings, Stow-managed `pi/.pi/agent/`, existing browser profiles, and other projects unchanged. Use an isolated, headless browser; no account login or consequential website actions.
+Rig tracks credential-free defaults and shared pi resources. Effective pi settings, MCP servers/credentials, sync recovery records, and migration backups live only outside rig under the user's home configuration/state directories. Add globally available Playwright MCP using an isolated headless browser. Preserve existing personal configuration and overrides. Scope covers pi settings and MCP, not unrelated packages such as lazysql.
 
-Worktree: `.local/worktrees/browser-automation` (relative to the main rig checkout)
-Branch: `setup/browser-automation`
-Baseline: `5d01806`; local main refreshed from origin/main; `.local/` verified ignored.
+Worktree: `.local/worktrees/browser-automation` relative to the main rig checkout.
+Branch: `setup/browser-automation`; baseline `5d01806`; main refreshed from origin/main before worktree creation; `.local/` verified ignored.
 
-## Verified context and constraints
+## Verified inputs and decisions
 
-- Installed pi 1.2.0 loads project MCP configuration from `<session cwd>/.pi/mcp.json` only after project trust. It does not search ancestors. Evidence: installed `dist/extensions/mcp/config.js`, `loadMcpConfig`, lines 105–116.
-- Start pi from the rig repository root (or this worktree root). A session started in `rig/pi`, including the current session, will not load root configuration merely by changing a shell subprocess directory or reloading.
-- Official pi docs: https://pi.dev/docs/latest/mcp
-- Official backend docs: https://github.com/microsoft/playwright-mcp
-- Playwright `--isolated` keeps profile state in memory and discards it on close; `--headless` avoids a visible browser. This is profile isolation, not an OS/network security sandbox.
-- `npx -y @playwright/mcp@latest` may fetch/cache executable third-party packages. Latest follows upstream setup but is not a reproducible version pin.
-- No custom extension, global server registration, package manifest, or persistent browser profile is needed. Default pi MCP exposure is codemode.
+- Installed pi 1.2.0 supports MCP natively; no adapter/package change to settings defaults is required. Global configuration is `~/.pi/agent/mcp.json`, independent of session cwd. Sources: https://pi.dev/docs/latest/mcp and installed `dist/extensions/mcp/config.js`.
+- Current metadata only (private contents not inspected): home settings is a relative symlink to the main checkout's ignored `pi/.pi/agent/settings.json`; legacy `.local/pi-settings/` contains `baseline.json`; home MCP is an ordinary file.
+- Existing `pi/sync-settings.mjs` has reusable three-way `merge()` and transaction recovery, but its current ownership model moves private files into rig. Refactor that engine rather than adding a second transaction engine.
+- Home destinations: ordinary `~/.pi/agent/settings.json` and `~/.pi/agent/mcp.json`. Private state/backups: `~/.local/state/rig/pi/`, with separate settings/MCP state and migration records. Nothing private is staged inside any rig worktree.
+- Preserve settings' existing first-adoption policy when history is absent. MCP first adoption recursively fills only missing defaults, retaining existing values. `merge({}, local, defaults)` alone does NOT add missing nested servers reliably; test this explicitly. Subsequent sync uses historical three-way merge, preserving deliberate deletions and treating arrays atomically.
+- Playwright baseline: server `playwright`, command `npx`, args `-y`, `@playwright/mcp@latest`, `--isolated`, `--headless`. Source: https://github.com/microsoft/playwright-mcp. Latest follows upstream setup but is not a reproducible pin. Package fetching/cache is allowed during the approved smoke test. Profile isolation is not an OS/network sandbox.
+- Do not read private config into tool output, logs, subagent prompts, or tracked test fixtures. Tests use synthetic temporary homes/checkouts. No broad init/update execution, unrelated stowing, Git-history rewrite, merge, push, or merge request is authorized here.
 
 ## Ordered actions
 
-### 1. Add project configuration and usage instructions — pending
+### 1. Refactor synchronization to ordinary home files — pending
 
-Goal: provide the smallest rig-local integration and explain its scope.
+Goal: establish one shared, safe home-file sync engine without changing settings merge semantics.
 
-Dependencies: user approval of this complete plan.
+Dependencies: approval of this complete revised plan.
 
-Inputs/context: verified discovery behavior and official server flags above; existing dotfile/Stow layout.
+Files: `pi/sync-settings.mjs`, `pi/sync-settings.test.mjs`, `PLAN.md`.
 
-Owned files:
-- Root `.pi/mcp.json` (new).
-- Root `.pi/README.md` (new, concise usage and safety instructions).
-- Root `PLAN.md` (status/evidence only).
+Inputs: existing merge/recovery implementation and tests; destination/state policy above.
 
-Operation: register server `playwright` with `command: "npx"` and `args: ["-y", "@playwright/mcp@latest", "--isolated", "--headless"]`. Document root-directory startup, project trust, `/mcp`, `/reload` limitations, codemode discovery, isolated sessions, npm download/cache behavior, and disabling/removing the project entry. Do not edit global settings, init/update scripts, Stow-managed files, or add duplicate subdirectory config.
+Operation: parameterize the existing transaction engine for a public baseline, ordinary effective file, and external state directory. Retain settings exports/semantics where useful; no generic framework or duplicated engine. Add recursive fill-missing defaults for explicit MCP adoption. Use atomic publication and private modes (files 0600, newly created private directories 0700), validate paths/recovery records before mutation, reject unexpected symlinks and outputs resolving into source/legacy checkouts, and keep temporaries on the appropriate filesystem. Add a fail-closed exclusive lock for rig sync invocations; never steal a stale lock automatically. Detect source/destination edits before publication rather than overwriting them. Settings and MCP are separate recoverable transactions, not a claimed two-file atomic transaction.
 
-Completion checks: JSON parses; installed pi configuration loader resolves this server as project-scoped from worktree root and does not resolve it from the `pi/` subdirectory (without connecting unrelated global servers); diff contains only approved files; independent read-only review and parent verification pass. Record results here and commit the reviewed change before action 2.
+Checks: synthetic tests cover unchanged existing merge cases, ordinary-file ownership, first adoption with nested personal MCP servers and missing Playwright, collisions/overrides, subsequent updates and deliberate deletions, special JSON keys, idempotence, interruption before/after publication, later user edits during recovery, invalid input/content-free errors, permissions, redirected paths/symlinks, and lock contention. Existing tests pass or are adapted explicitly to the new ownership contract. Parent verification, independent read-only review, diff checks, recorded evidence, and commit required before action 2. Do not run new code against actual home yet.
 
-### 2. Smoke-test the configured browser server — pending
+### 2. Implement resumable legacy settings migration — pending
 
-Goal: prove actual navigation, link interaction, and screenshot capture using the configured server command.
+Goal: move existing private settings and recovery state out of the main checkout without losing configuration or historical merge state.
 
-Dependencies: action 1 committed.
+Dependencies: action 1 reviewed and committed.
 
-Inputs/context: committed config; installed Node/npm and browser availability; runtime-discovered MCP tool schemas.
+Files: `pi/sync-settings.mjs`, `pi/sync-settings.test.mjs`, `PLAN.md`.
 
-Owned files: `PLAN.md` for validation evidence; `.pi/README.md` only if a verified setup correction is necessary within this agreement. Temporary validation scripts, packages, screenshots, and logs remain outside tracked repository files.
+Inputs: explicit legacy checkout path via `--migrate-from <main-checkout>`; only expected legacy files/settings transaction records are eligible.
 
-Operation: validate project configuration discovery using installed pi code, then connect only the configured Playwright server using a disposable MCP SDK client in a temporary directory if this session cannot expose its tools. Permit npm package download/cache as needed. Inspect actual schemas, navigate to https://example.com, follow its More information link, verify destination content, capture a screenshot to an absolute temporary path, and close browser/client in cleanup. Check MCP `isError` results, not just process exit codes. Use an already available browser; if browser/system installation, authentication, disabled MCP support, or other access changes are needed, stop and report rather than altering global settings. Do not run `pi mcp list` against all personal servers merely to test this one.
+Operation: stage verified copies under the external private state root, never in the worktree. Accept an existing home settings symlink only when it resolves exactly to the explicitly supplied legacy settings file. Reject differing ordinary copies, unexpected links, conflicting external state, and malformed recovery records. Preserve all recognized legacy recovery inputs; recover pending transactions against external copies with the same engine after validating/translating their recorded paths. Publish ordinary home settings and state safely; durable phase records distinguish committed publication from unfinished staging and preserve later user edits on retry. Remove only individually validated legacy private files/state after verified external publication, retaining a private external recovery snapshot/receipt. No recursive deletion of unvalidated directories. Existing unusual MCP symlinks/copies fail with migration guidance rather than being silently imported.
 
-Completion checks: project scoping verified; MCP initialization and tool listing succeed; navigate/click/destination checks pass; screenshot exists and is visually inspected; browser/client cleanup completes; no new tracked runtime artifacts or global settings changes. Independent read-only review and parent evidence review pass. Record exact command/version, test outcomes, artifact location, limitations, and any blocker here; commit the reviewed evidence. If a fresh trusted root pi session has not been tested, explicitly distinguish verified config discovery/backend operation from end-to-end interactive pi integration.
+Checks: synthetic tests for current relative-symlink migration, ordinary-file conflicts, baseline retention/deletion semantics, legacy pending/prepared recovery, interruption at migration boundaries, retries after later home edits, unexpected files/paths, permissions, cleanup only after verification, and private sentinel values remaining outside simulated checkout. Review, full focused test suite, evidence, and commit before action 3. No actual-home migration yet.
 
-## Delivery boundary
+### 3. Wire credential-free global MCP defaults into rig — pending
 
-Report branch, commits, validation, limitations, and the exact startup command. Do not merge, push, open a merge request, or modify the main checkout in this plan. The feature remains on the isolated branch until separately integrated.
+Goal: make normal rig sync apply both public baselines without Stow taking ownership of private files.
+
+Dependencies: action 2 reviewed and committed.
+
+Files: new `pi/.pi/agent/mcp.example.json`; `.gitignore`; `pi/.stow-local-ignore`; `init.sh`; `update.sh`; `pi/sync-settings.mjs`; `pi/sync-settings.test.mjs`; new `pi/README.md`; `PLAN.md`. Keep `settings.example.json` unchanged unless a directly verified correction is required within this agreement.
+
+Operation: add the public Playwright baseline and allowlist it in Git. Narrow sync entrypoint processes settings and MCP under the shared lock, prevalidating both before changes. Integrate it with existing Pi preparation. Protect live settings/MCP paths from BOTH pre-Stow cleanup loops before destructive logic, and exclude private config, templates, README, and sync tooling from Stow. Keep other shared pi resources and packages unchanged. Document global availability, local overrides, env-variable references for keys, reload/restart, recovery/stale-lock procedure, npm caching, isolated-browser limitations, and the requirement not to run old main-checkout sync scripts after migration.
+
+Checks: synthetic-HOME integration tests exercise Pi preparation and cleanup/Stow exclusions without executing npm-global installs, brew, git pull, or unrelated scripts. Verify existing home settings/MCP files survive even with stale ignored checkout copies, helpers/templates are not linked, and no effective config/state is produced in a checkout. Run `node --test pi/sync-settings.test.mjs`, `bash -n init.sh update.sh`, JSON parsing, diff/secret-output checks, independent review, and commit before action 4.
+
+### 4. Activate private migration and test browser automation — pending
+
+Goal: safely activate the narrow home-config sync on this machine and prove browser backend operation.
+
+Dependencies: actions 1–3 reviewed, validated, and committed. Actual private migration is specifically authorized only by approval of this plan.
+
+Files: private home settings/MCP/state and validated legacy ignored private files as described above; tracked changes limited to `PLAN.md` and usage corrections in `pi/README.md` if required.
+
+Operation: recheck metadata and detect concurrent changes; run only the worktree's narrow entrypoint with explicit main-checkout migration source, not init/update/Stow. This is the sole exception to keeping changes inside the worktree: it migrates/removes the explicitly identified ignored private data in the main checkout and updates user-home configuration. Preserve unrelated personal servers/values without printing them. Verify ordinary file types, private modes, external state/receipt, verified legacy cleanup, and idempotent rerun using metadata/comparisons only. If unexpected copies, conflicts, concurrent writers, or unavailable access appear, stop affected activation and report without weakening safeguards.
+
+Then load global MCP configuration through installed pi code without connecting unrelated servers, and connect only Playwright. Use runtime-discovered schemas to navigate to https://example.com, follow More information, verify destination, capture and visually inspect a screenshot at an external temporary path, and close client/browser. A disposable MCP SDK client outside rig is acceptable when the current session cannot reload tools. Check `isError` results. Use an available browser; browser/system installation, authentication, or unrelated runtime changes require stopping and reporting. No account actions.
+
+Checks: migration/privacy checks and rerun pass; expected global server resolves independent of cwd; browser init/navigation/click/screenshot and cleanup pass; no private tracked/runtime artifacts. Record exact backend version, commands, bounded non-private evidence, screenshot location, reviewer result, and remaining limitations; commit reviewed evidence. Distinguish configuration/backend validation from end-to-end interactive pi testing if the latter was not exercised. Provide `/reload` or restart instructions.
+
+## Delivery and limitations
+
+- Every action includes tests, independent review, parent verification, plan updates, and its own commit before dependent work starts.
+- Report branch/commits and activation status. Tracked changes remain on the isolated branch; do not merge/push automatically.
+- After activation, old main-checkout init/update/sync code must NOT run until these tracked changes are integrated; it can recreate private checkout files. Use the new narrow worktree entrypoint meanwhile.
+- Migration does not guarantee secure erasure, removal from backups/snapshots, or cleansing old Git history. Scope does not audit arbitrary historical secrets or migrate unrelated rig packages.
+- Locks serialize rig syncs, not arbitrary editors or pi writes; changed-file detection fails closed. Recovery backups contain private data and remain only under the private external state root.
