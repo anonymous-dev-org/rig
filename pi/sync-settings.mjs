@@ -22,82 +22,152 @@ export function merge(previous, local, next) {
 function fileStatus(file) {
   try { return fs.lstatSync(file); } catch (e) { if (e.code === 'ENOENT') return null; throw e; }
 }
-function readJsonObject(file) {
-  const s = fileStatus(file);
-  if (!s) return missing;
-  if (!s.isFile() || s.isSymbolicLink()) throw new Error(`Expected ordinary file: ${file}`);
+function readJsonObject(file, captured) {
+  if (!captured) return missing;
   let value;
-  try { value = JSON.parse(fs.readFileSync(file, 'utf8')); } catch { throw new Error(`Invalid JSON: ${file}`); }
+  try { value = JSON.parse(captured.data.toString('utf8')); } catch { throw new Error(`Invalid JSON: ${file}`); }
   if (!isJsonObject(value)) throw new Error(`Expected JSON object: ${file}`);
   return value;
 }
-function writeJsonAtomic(file, value) {
-  fs.mkdirSync(path.dirname(file), { recursive: true, mode: 0o700 });
-  const temp = `${file}.${process.pid}.tmp`;
+// All private publications use a sibling temporary: rename never crosses filesystems.
+function writeJsonAtomic(file, value, bytes) {
+  const temp = `${file}.${process.pid}.${Math.random().toString(16).slice(2)}.tmp`;
   const fd = fs.openSync(temp, 'wx', 0o600);
-  try { fs.writeFileSync(fd, JSON.stringify(value, null, 2) + '\n'); fs.fsyncSync(fd); }
-  finally { fs.closeSync(fd); }
-  fs.renameSync(temp, file);
+  try {
+    try {
+      fs.writeFileSync(fd, bytes ?? (JSON.stringify(value, null, 2) + '\n')); fs.fsyncSync(fd);
+    } finally { fs.closeSync(fd); }
+    fs.renameSync(temp, file); syncDirectory(path.dirname(file));
+  } finally { if (fileStatus(temp)) fs.unlinkSync(temp); }
 }
-export function sync({ baseline, settings, home, state, interrupt } ) {
+function syncDirectory(dir) {
+  const fd = fs.openSync(dir, 'r');
+  try { fs.fsyncSync(fd); } finally { fs.closeSync(fd); }
+}
+export function fillMissing(local, defaults) {
+  if (!isJsonObject(local) || !isJsonObject(defaults)) return local;
+  const result = {};
+  for (const key of new Set([...Object.keys(local), ...Object.keys(defaults)])) {
+    const value = !Object.hasOwn(local, key) ? defaults[key]
+      : Object.hasOwn(defaults, key) ? fillMissing(local[key], defaults[key]) : local[key];
+    Object.defineProperty(result, key, {value, enumerable:true, writable:true, configurable:true});
+  }
+  return result;
+}
+const within = (file, root) => file === root || file.startsWith(root + path.sep);
+function safePath(file) {
+  let cursor = path.resolve(file);
+  while (true) {
+    const st = fileStatus(cursor);
+    if (st?.isSymbolicLink()) throw new Error('Unexpected symlink');
+    if (cursor !== path.resolve(file) && st && !st.isDirectory()) throw new Error('Invalid path ancestor');
+    const parent = path.dirname(cursor); if (parent === cursor) break; cursor = parent;
+  }
+}
+function snapshot(file) {
+  const st = fileStatus(file);
+  if (!st) return null;
+  if (!st.isFile() || st.nlink !== 1) throw new Error('Expected ordinary file without aliases');
+  return {data:fs.readFileSync(file), ino:st.ino, dev:st.dev, mtime:st.mtimeMs, mode:st.mode};
+}
+function unchanged(file, before) {
+  const after = snapshot(file);
+  if (!equal(before, after)) throw new Error('Concurrent file edit detected');
+}
+function secureDirectory(dir) {
+  const st = fileStatus(dir);
+  if (st && (!st.isDirectory() || st.uid !== process.getuid() || (st.mode & 0o022)))
+    throw new Error('Untrusted state directory');
+}
+export function sync({ baseline, settings, state, sourceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'), legacyRoot, adoption = 'preserve', interrupt, home }) {
+  if (home && path.resolve(home) !== path.resolve(settings)) throw new Error('Legacy migration is not available; use an ordinary home destination');
+  if (!['preserve', 'fill-missing'].includes(adoption)) throw new Error('Invalid adoption policy');
+  baseline = path.resolve(baseline); settings = path.resolve(settings); state = path.resolve(state);
   const history = path.join(state, 'baseline.json');
   const pending = path.join(state, 'pending.json');
-  const effectiveTemp = path.join(state, 'effective.json');
-  // Validate all inputs before changing anything; never include parser diagnostics.
-  const next = readJsonObject(baseline);
-  if (next === missing) throw new Error(`Missing baseline: ${baseline}`);
-  let local = readJsonObject(settings);
-  const previous = readJsonObject(history);
-  const journal = readJsonObject(pending);
-  if (journal !== missing && (!isJsonObject(journal.before) || !isJsonObject(journal.after) || !isJsonObject(journal.baseline) ||
-      typeof journal.fresh !== 'boolean' || journal.effectiveTemp !== effectiveTemp))
-    throw new Error(`Invalid recovery record: ${pending}`);
-  const prepared = readJsonObject(effectiveTemp);
-  const hs = fileStatus(home);
-  let migrated = missing;
-  if (hs?.isSymbolicLink()) {
-    if (path.resolve(path.dirname(home), fs.readlinkSync(home)) !== path.resolve(settings))
-      throw new Error(`Unexpected symlink: ${home}`);
-  } else if (hs) {
-    migrated = readJsonObject(home);
-    if (local !== missing && !fs.readFileSync(home).equals(fs.readFileSync(settings)))
-      throw new Error(`Config conflict: ${home} differs from ${settings}`);
+  const effectiveTemp = settings + '.rig-prepared';
+  const lock = path.join(path.dirname(state), '.rig-sync.lock');
+  const paths = [baseline, settings, state, history, pending, effectiveTemp, lock];
+  for (const file of paths) safePath(file);
+  for (const root of [sourceRoot, legacyRoot].filter(Boolean).map(x => path.resolve(x))) {
+    safePath(root);
+    for (const file of [settings, state, lock, effectiveTemp]) if (within(file, root)) throw new Error('Private output inside source checkout');
   }
-  if (migrated !== missing) {
-    if (local === missing) { writeJsonAtomic(settings, migrated); local = migrated; }
-    fs.unlinkSync(home);
+  for (let i = 0; i < paths.length; i++) for (let j = i + 1; j < paths.length; j++) {
+    if ((paths[i] === state && [history, pending].includes(paths[j]))) continue;
+    if (within(paths[i], paths[j]) || within(paths[j], paths[i])) throw new Error('Path collision');
   }
-  if (journal !== missing) {
-    if (prepared !== missing) {
-      if (local === missing && !journal.fresh) throw new Error(`Missing recovery settings: ${settings}`);
-      const recovered = local === missing ? journal.after : merge(journal.before, local, journal.after);
-      // Until rename consumes this file, retries still know settings were not committed.
-      writeJsonAtomic(effectiveTemp, recovered);
-      if (interrupt) interrupt('before-effective');
-      fs.renameSync(effectiveTemp, settings);
-      if (interrupt) interrupt('after-effective');
-    } else if (local === missing) {
-      throw new Error(`Missing recovery settings: ${settings}`);
-    }
-    // A consumed temp proves completion; current settings may contain later edits.
-    writeJsonAtomic(history, journal.baseline);
-    fs.unlinkSync(pending);
-    return sync({ baseline, settings, home, state, interrupt });
-  }
-  const effective = local === missing ? next : previous === missing ? local : merge(previous, local, next);
-  writeJsonAtomic(effectiveTemp, effective);
-  writeJsonAtomic(pending, { before: local === missing ? effective : local, after: effective, baseline: next, fresh: local === missing, effectiveTemp });
-  if (interrupt) interrupt('before-effective');
-  fs.renameSync(effectiveTemp, settings);
-  if (interrupt) interrupt('after-effective');
-  writeJsonAtomic(history, next);
-  if (fileStatus(pending)) fs.unlinkSync(pending);
-  fs.chmodSync(settings, 0o600);
-}
-const here = path.dirname(fileURLToPath(import.meta.url));
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  secureDirectory(path.dirname(state)); secureDirectory(state);
+  // Validate JSON and recovery before creating even a lock or directory.
+  const validate = () => {
+    const guards = [baseline, settings, history, pending, effectiveTemp].map(file => [file, snapshot(file)]);
+    const read = file => readJsonObject(file, guards.find(([name]) => name === file)[1]);
+    const next = read(baseline);
+    if (next === missing) throw new Error('Missing baseline');
+    const local = read(settings), previous = read(history), journal = read(pending);
+    const prepared = read(effectiveTemp);
+    if (journal !== missing && (journal.version !== 1 || !isJsonObject(journal.before) || !isJsonObject(journal.after) ||
+        !isJsonObject(journal.baseline) || typeof journal.fresh !== 'boolean' || !['preparing', 'ready'].includes(journal.phase) || journal.effectiveTemp !== effectiveTemp || journal.destination !== settings))
+      throw new Error('Invalid recovery record');
+    if (prepared !== missing && journal === missing) throw new Error('Orphan recovery file');
+    return {next, local, previous, journal, prepared, guards};
+  };
+  validate();
+  for (const file of [baseline, settings, history, pending, effectiveTemp]) snapshot(file);
+  fs.mkdirSync(path.dirname(state), {recursive:true, mode:0o700});
+  let lockFd;
+  try { lockFd = fs.openSync(lock, 'wx', 0o600); } catch { throw new Error('Rig sync locked; inspect and remove stale lock manually'); }
   try {
-    if (process.argv.length !== 2) throw new Error('Usage: node pi/sync-settings.mjs');
-    sync({ baseline: path.join(here, '.pi/agent/settings.example.json'), settings: path.join(here, '.pi/agent/settings.json'), home: path.join(process.env.HOME, '.pi/agent/settings.json'), state: path.join(here, '../.local/pi-settings') });
-  } catch (e) { console.error(e.code ? `Settings sync failed (${e.code})` : e.message); process.exitCode = 1; }
+    fs.mkdirSync(state, {recursive:true, mode:0o700});
+    secureDirectory(path.dirname(state)); secureDirectory(state);
+    fs.mkdirSync(path.dirname(settings), {recursive:true, mode:0o700});
+    // One engine: recovery advances the historical baseline, then normal sync resumes.
+    for (;;) {
+      for (const file of paths) safePath(file);
+      secureDirectory(path.dirname(state)); secureDirectory(state);
+      const {next, local, previous, journal, prepared, guards} = validate();
+      const check = () => { for (const file of paths) safePath(file); for (const [file, before] of guards) unchanged(file, before); };
+      if (journal !== missing && journal.phase === 'ready' && prepared === missing) {
+        if (local === missing) throw new Error('Missing committed recovery destination');
+        check(); writeJsonAtomic(history, journal.baseline); fs.unlinkSync(pending); continue;
+      }
+      const effective = journal !== missing
+        ? local === missing ? (journal.fresh ? journal.after : (() => {throw new Error('Missing recovery destination');})()) : merge(journal.before, local, journal.after)
+        : local === missing ? next : previous === missing ? (adoption === 'fill-missing' ? fillMissing(local, next) : local) : merge(previous, local, next);
+      const record = journal !== missing ? journal : {
+        version:1, phase:'preparing', before:local === missing ? effective : local, after:effective, baseline:next,
+        fresh:local === missing, effectiveTemp, destination:settings
+      };
+      check();
+      // Publish immutable merge intent first. Preparing + absent sibling is retryable;
+      // ready + consumed sibling is committed. Never rebase the intent on recovery.
+      if (journal === missing) writeJsonAtomic(pending, record);
+      writeJsonAtomic(effectiveTemp, effective, local !== missing && equal(local, effective)
+        ? guards.find(([file]) => file === settings)[1].data : undefined);
+      if (record.phase !== 'ready') writeJsonAtomic(pending, {...record, phase:'ready'});
+      const commitGuards = guards.map(([file, before]) =>
+        [file, [pending, effectiveTemp].includes(file) ? snapshot(file) : before]);
+      if (interrupt) interrupt('before-effective');
+      for (const file of paths) safePath(file);
+      for (const [file, before] of commitGuards) unchanged(file, before);
+      fs.renameSync(effectiveTemp, settings);
+      syncDirectory(path.dirname(settings));
+      if (interrupt) interrupt('after-effective');
+      // Consumption of the prepared sibling is the commit marker. Recovery never
+      // reapplies a committed result over edits made after that publication.
+      // Destination may legitimately change after commit; the other inputs must not.
+      for (const file of paths) safePath(file);
+      for (const [file, before] of commitGuards) {
+        if (file !== settings && file !== effectiveTemp) unchanged(file, before);
+      }
+      writeJsonAtomic(history, record.baseline); fs.unlinkSync(pending);
+      syncDirectory(state);
+      if (journal !== missing) continue;
+      return;
+    }
+  } finally { fs.closeSync(lockFd); fs.unlinkSync(lock); }
+}
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  console.error('Home-file sync API only: CLI disabled until explicit legacy migration and global wiring are available.');
+  process.exitCode = 1;
 }

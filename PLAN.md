@@ -1,6 +1,6 @@
 # Global pi browser automation and private-config migration
 
-Status: awaiting approval of this revised detailed plan. Supersedes the project-only plan. No implementation, package installation, or private-data migration has occurred.
+Status: approved; action 1 validated and reviewed, ready for commit. Supersedes the project-only plan. No package installation or private-data migration has occurred.
 
 ## Agreement
 
@@ -21,7 +21,7 @@ Branch: `setup/browser-automation`; baseline `5d01806`; main refreshed from orig
 
 ## Ordered actions
 
-### 1. Refactor synchronization to ordinary home files — pending
+### 1. Refactor synchronization to ordinary home files — done
 
 Goal: establish one shared, safe home-file sync engine without changing settings merge semantics.
 
@@ -34,6 +34,8 @@ Inputs: existing merge/recovery implementation and tests; destination/state poli
 Operation: parameterize the existing transaction engine for a public baseline, ordinary effective file, and external state directory. Retain settings exports/semantics where useful; no generic framework or duplicated engine. Add recursive fill-missing defaults for explicit MCP adoption. Use atomic publication and private modes (files 0600, newly created private directories 0700), validate paths/recovery records before mutation, reject unexpected symlinks and outputs resolving into source/legacy checkouts, and keep temporaries on the appropriate filesystem. Add a fail-closed exclusive lock for rig sync invocations; never steal a stale lock automatically. Detect source/destination edits before publication rather than overwriting them. Settings and MCP are separate recoverable transactions, not a claimed two-file atomic transaction.
 
 Checks: synthetic tests cover unchanged existing merge cases, ordinary-file ownership, first adoption with nested personal MCP servers and missing Playwright, collisions/overrides, subsequent updates and deliberate deletions, special JSON keys, idempotence, interruption before/after publication, later user edits during recovery, invalid input/content-free errors, permissions, redirected paths/symlinks, and lock contention. Existing tests pass or are adapted explicitly to the new ownership contract. Parent verification, independent read-only review, diff checks, recorded evidence, and commit required before action 2. Do not run new code against actual home yet.
+
+Action 1 evidence: initial review findings were fixed with immutable preparing/ready recovery intent, captured-input guards, stable recovery ancestors, and state-directory trust checks. Parent reran all 20 synthetic tests successfully; `git diff --check` passed. Independent re-review: OK with notes, no remaining P1/P2 findings. Tests inject filesystem publication/fsync failures and concurrent edits; they do not prove physical power-loss guarantees or atomic compare-and-swap against arbitrary editors. Additional ready-journal/post-rename and same-byte replacement cases are optional follow-up coverage. No real private configuration accessed or changed. Included in this action's commit.
 
 ### 2. Implement resumable legacy settings migration — pending
 
