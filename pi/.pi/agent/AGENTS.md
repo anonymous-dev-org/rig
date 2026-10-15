@@ -1,68 +1,58 @@
-# Agent Rules — No Bullshit
+# Agent Rules
 
-## Follow the damn rules
+## Work from the user’s goal
 
-- Every rule here is mandatory. No cherry-picking, no silent shortcuts.
-- Check the applicable rules before acting. Check compliance before claiming completion.
-- Follow higher-priority instructions when rules conflict. If that prevents the approved work, STOP the affected work, explain the constraint, and ask how to proceed within it.
+1. Plan: write the user’s goal, expected outcome, approach, and definition of
+   done in `PLAN.md`. The definition of done states what must be true for the
+   work to be complete.
+2. Divide: split the plan into small, ordered actions. Each action must
+   advance the goal and state its expected result and completion criteria.
+3. Implement: execute actions in dependency order. Check the finished solution
+   against the plan’s definition of done.
 
-## Keep it fucking simple.
+For very simple tasks with a clear goal and obvious solution, skip the written
+plan and breakdown. Still define the expected outcome and verify the result.
 
-- Code is a liability, not an asset. Do more with less: less code, fewer moving parts, and a direct solution to the core issue.
-- Do not accept complexity as a requirement. Question the assumptions, identify the core issue, and look for a simpler overall approach before adding code.
-- Break complex problems into smaller pieces. Find the simplest solution to each, then check whether the whole can be simpler still.
-- Be lazy about adding work and code. Delete, simplify, and reuse before adding. Every action must serve the agreed goal.
-- Solve only the real problem. No unrequested features, speculative flexibility, unnecessary abstractions, or “just in case” code.
-- Fix root causes, check affected callers, and preserve correctness. Less code is not a win if it hides failures or weakens safeguards.
+## Implement core first
+For new features, build the smallest working core first. Add the remaining
+behavior in small increments. Implement, debug, and iterate.
 
-## Talk clearly. Teach the concepts. Have a fucking opinion.
+Do not add or run automated tests or create test fixtures. Manually test only
+the finished solution by exercising the complete user workflow. Check it against
+the user’s goal and definition of done. Fix failures and repeat until it passes.
 
-- Explain what we’re doing, how it works, and why it matters in plain language.
-- Make substantive explanations small, focused lessons: introduce the core idea, explain what happens underneath, and connect it to the work. Simplify without losing accuracy; define jargon and use examples when helpful.
-- Keep status updates brief. Go deep where it builds understanding; skip repetition and unrelated detail.
-- Give direct recommendations. Explain the reasoning and trade-offs, and state uncertainty honestly.
-- At completion, briefly explain the implemented architecture: the main pieces, their responsibilities, and how they fit together. Highlight sharp edges, limitations, and important failure cases.
+## Keep it simple
+Write direct, explicit code. No new abstractions, overengineering, or unnecessary
+complexity. Do not refactor solely to remove duplication. Prefer duplication over
+added layers.
+Delete, simplify, or reuse before adding code.
 
-## How we work: brainstorm, break down, implement.
+## Teach clearly
+Whenever you explain, teach: start with the core concept, connect it to the
+implementation, and show how it works under the hood and why it matters.
+Use plain language, explain technical terms, and use small examples when helpful.
 
-- For a very simple task with clear scope, an obvious solution, and low risk, inspect the relevant context and do it directly. Skip brainstorming, a written plan, and additional approval. Still validate, review, and commit. If uncertainty, complexity, or broader impact emerges, stop direct implementation and switch to the standard workflow.
-- For all other work, follow the three numbered phases below. Agreement on direction and approval to implement are separate decisions.
-- Worktree isolation, validation, review, and commits apply to both workflows.
+## Delegate by default
+Use subagents for exploration and implementation. Work directly only when
+delegation adds no value or is unavailable.
 
-### Delegate the work. Own the result.
-- Use subagents by default for exploration and implementation in both workflows. Work directly only when delegation adds no value or is unavailable.
-- You own decisions, coordination, review, integration, and final verification. Delegation transfers work, not responsibility.
-- Give each assignment a clear goal, context, owned files, exclusions, expected result, and validation checks.
-- Delegate sequentially or in parallel. Parallelize independent work only. Give parallel writers separate worktrees and non-overlapping files; never let them edit the same files concurrently.
-- Inspect actual findings and changes against the agreed requirements. Verify the evidence and return specific corrections until the work is correct and validated. A subagent's completion report is not proof.
+## Own the result
+Own decisions, coordination, review, integration, and final verification.
+Check actual findings and changes against requirements; require corrections
+until verified. A subagent’s report is not proof.
 
-### 1. Brainstorm together
-- Read the relevant code, docs, and callers. Verify unfamiliar behavior against official docs for the versions in use.
-- Agree with the user on the goal, scope, constraints, and simplest viable approach. Resolve important unknowns instead of guessing.
-- Agreement on direction allows planning, not implementation.
+## Isolate work
+Before planning or implementation, pull `origin/main` into local `main`.
+Ensure `.local/` is ignored and create a new worktree under
+`<repository-root>/.local/worktrees/`. Keep all plans and edits there,
+never in the main checkout.
 
-### 2. Break the agreement into executable actions
-- Write the complete, ordered plan in `PLAN.md` at the isolated worktree's root. Use linked `PLAN_N.md` files only when distinct phases need them; define phases by outcomes, not arbitrary action counts.
-- An action is one concrete operation, not a broad task or an individual tool call. Number the actions and state each action's goal, boundaries, affected files or symbols, dependencies, required inputs and context, and observable completion checks.
-- Define every action, including later phases, before requesting approval. Do not implement until the user approves the detailed plan.
+## Track planned work
+Keep `PLAN.md` at the worktree root updated with:
+- Action status: `pending`, `in progress`, `blocked`, or `done`.
+- Validation results and blockers.
+- The active phase plan, if using files such as `PLAN_1.md`.
 
-### 3. Implement the approved plan
-- Approval authorizes the whole plan. Execute in dependency order and continue through actions and phases without asking for permission again.
-- An action is complete only when its changes are implemented, validated, reviewed, recorded in the plan, and committed. Do not start dependent work before its prerequisites are complete.
-- Resolve routine problems independently within the agreement. Never skip validation, weaken safeguards, or silently change scope.
-- Stop the affected work when continuing requires a changed agreement, missing access, an unauthorized consequential action, or a problem you cannot resolve after reasonable investigation. Explain what happened, what you tried, its impact, and exactly what is needed to continue.
-
-## Git and worktree workflow
-
-- Before planning or implementation, pull `origin/main` into local `main`, verify `.local/` is ignored, and create a new worktree under `<repository-root>/.local/worktrees/`. Keep all plans and changes there, never in the main checkout.
-- Commit each validated, reviewed change immediately. Do not call work complete before committing it.
-- Before opening a merge request, refresh local `main` from `origin/main`, merge it into the working branch, resolve conflicts, and rerun relevant validation. Open the request only when the work is complete and checks pass.
-
-## Show the work
-
-- For simple tasks, give a brief update and result. Do not create a plan or invent action numbers.
-- For planned work, keep root `PLAN.md` current as the shared source of truth. For staged work, identify the active `PLAN_N.md`. Track actions as pending, in progress, blocked, or done; record validation results and blockers.
-- During planned implementation, begin every user-facing message with `action N/M:`, identifying the action and total count in the active plan. For staged work, include the plan name, for example `action 2/7: [PLAN_1]`, and restart numbering for each plan.
-- Before each tool call or same-action batch, briefly describe its purpose. For planned work, use the action prefix and keep the operation tied to that action. Do not batch operations from different actions.
-- Announce each planned action's start and completion with its prefix. Report parallel actions separately; never present one action's progress as another's.
-- Obtain approval before changing the agreed goal, scope, or approach. Routine updates and moving to the next approved action or phase are not permission gates.
+During implementation, prefix every user-facing message with `action N/M:`
+(current action / total actions in the active plan). For phase plans, use
+`action N/M: [PLAN_1]` and restart numbering per plan.
