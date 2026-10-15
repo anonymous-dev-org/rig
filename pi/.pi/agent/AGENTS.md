@@ -28,8 +28,9 @@ added layers.
 Delete, simplify, or reuse before adding code.
 
 ## Teach clearly
-Explain what we’re doing, how it works, and why it matters in plain language.
-Keep explanations focused; define jargon and use examples when helpful.
+Whenever you explain, teach: start with the core concept, connect it to the
+implementation, and show how it works under the hood and why it matters.
+Use plain language, explain technical terms, and use small examples when helpful.
 
 ## Delegate by default
 Use subagents for exploration and implementation. Work directly only when
