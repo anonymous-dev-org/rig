@@ -1,19 +1,31 @@
-# Bun installation migration
+# Fix update.sh Bun compatibility
 
-Goal: use Bun for repository-managed JavaScript installs and migrate existing npm-global applications to Bun, retaining Node for Pi.
+Goal: Update Pi without the unsupported Bun global lockfile warning and print the update heading once.
 
-Definition of done: install/update scripts use Bun; Playwright launcher uses bunx; existing npm-global applications are installed with Bun and removed from npm; executable resolution and CLI startup verified manually. Keep npm tooling itself and Pi's npm: registry identifiers. Preserve unrelated working changes. No automated tests.
+Expected outcome: The update script uses a compatible Bun before installing Pi, preserves --ignore-scripts, and retains pull/re-exec and configuration updates.
 
-1. done — Pulled origin/main into main (already current), confirmed .local ignored, created chore/bun-install worktree. Preserved existing main-checkout change to pi/.pi/agent/AGENTS.md.
-2. done — Changed install/update commands to bun add --global --ignore-scripts, Playwright default/docs to bunx, Pi npmCommand to ["bun"], shell PATH to include Bun binaries. Updated existing Playwright expectation only; no tests added or run. Verified installed Pi 1.3.0 source supports Bun-specific package installation.
-3. done — Installed Pi 1.3.0, Claude ACP 0.91.0 (previously 0.31.0), Northflank 0.13.0 (previously 0.11.0) globally with Bun. Removed all three npm-global copies; npm itself remains. Preserved managed Pi launcher as ~/.pi/agent/bin/pi.before-bun and replaced launcher with Bun-install symlink. Existing local pi symlink continues to resolve correctly. Added local-bin links for Bun/bunx and migrated application commands so current PATH works before shell configuration integration. Old managed release files are retained, not active.
+## Actions
+1. done — Inspect update flow and Bun behavior; identify minimal safe fix. Complete when cause and approach are confirmed.
+2. done — Fix runtime compatibility and duplicate heading in update.sh. Complete when changes are narrow and preserve existing behavior.
+3. done — Manually exercise the finished update workflow and review diff. Complete when no lockfile warning appears, heading prints once, and no unintended changes exist.
 
-Validation: Pi --version and --help passed, pi list reports configured packages, Northflank --version passed, Claude ACP --help exited successfully without output. bunx @playwright/mcp@latest --help passed. Ran narrow worktree pi/sync-settings.mjs successfully and checked only nonsecret keys: live npmCommand=["bun"], Playwright command=bunx with expected args. pi update --extensions successfully invoked Bun and updated unpinned extension packages (pi-subagents 0.78.0, pi-web-access 0.41.0); pinned pi-fast remains configured at 0.3.0. npm list -g shows npm only; bun pm ls -g shows all three apps. Shell syntax checks and git diff --check passed. No automated tests or authenticated cloud/browser operations run. Dependency lifecycle scripts remained blocked (google/genai no-op preinstall, protobufjs postinstall).
+## Publication actions
+1. in progress — Review and commit the verified fix.
+2. pending — Push branch and open a GitHub pull request.
+3. pending — Merge pull request into main after checking merge readiness.
+4. pending — Pull origin/main in original checkout and verify fix is present.
 
-Delivery: user authorized publishing a pull request and merging into main; PR #3 is open and reports mergeable with no required checks. Repository changes are prepared in this isolated worktree for that delivery. Live application and Pi settings migration is applied. Restart Pi to load the new binary/extensions/MCP configuration. Full interactive/authenticated application workflows were not exercised; CLI smoke checks and actual package reconciliation passed. No blockers.
+## Definition of done
+- Unsupported lockfile is handled without deleting users' global lockfiles.
+- Pi installation still disables lifecycle scripts.
+- Heading prints once across pull/re-exec.
+- Manual validation recorded; no automated tests or fixtures added or run.
 
-## Explicit Mac reinstall follow-up
-Goal: force-reinstall the migrated JavaScript applications and Pi dependency tree with Bun on this Mac; verify active commands and complete requested PR delivery.
-1. done — bun add --global --force --ignore-scripts reinstalled Pi 1.3.0, Claude ACP 0.91.0, Northflank 0.13.0 (265 packages).
-2. done — bun install --cwd ~/.pi/agent/npm --force --ignore-scripts --omit=peer reinstalled all 240 dependency packages, including all five existing direct dependencies; no settings declarations or package pins changed. Verified Pi version/list, Northflank version, Claude ACP help exit, and cached Playwright MCP 0.0.83 via bunx. npm global listing contains npm tooling only.
-3. in progress — Commit reinstall evidence, merge PR #3, and fast-forward local main. Definition of done: PR merged, local main matches remote, worktrees clean, and active applications resolve to Bun installs. Node/npm tooling and inactive managed Pi releases remain intentionally retained. No automated tests or authenticated cloud operations performed.
+## Validation / blockers
+- main pulled from origin/main; isolated branch fix/update-lockfile in .local/worktrees/fix-update-lockfile.
+- Installed standalone Bun is 1.3.14 and shadows Homebrew Bun 1.4.3; global lockfile is currently version 1 after the reported install.
+- Implemented upgrade of the selected Bun before global install; Homebrew binaries are identified by their resolved executable path. Duplicate heading removed from re-exec path.
+- Manual validation used an isolated home and copy of Bun 1.3.14. Script upgraded that copy to 1.4.3, installed Pi with lifecycle scripts blocked, and generated a version 2 lockfile. Subsequent run read that lockfile without warnings, updated all seven packages, compiled four Swift apps, and reached Done (exit 0).
+- Temporary-home setup initially exposed existing prerequisites: Aerospace scripts directory must exist and Pi settings reject /tmp's symlink ancestor. Created the directory and used the physical /private/tmp path; no unrelated code changes made.
+- bash -n and git diff --check passed. Pull/re-exec heading behavior reviewed directly; validation invoked --after-pull to avoid changing branch/upstream configuration.
+- Live Bun, global packages, and home configuration links were not modified. Homebrew upgrade branch reviewed against actual resolved /opt/homebrew/Cellar/bun/1.4.3/bin/bun path but not executed.
