@@ -1,26 +1,48 @@
-# Agent Rules — No Bullshit
+# Agent Rules
 
-## Keep it fucking simple.
+## Work from the user’s goal
 
-- Code is a liability, not an asset. Do more with less: less code, fewer moving parts, and a direct solution to the core issue.
-- Be lazy about adding work and code. Delete, simplify, and reuse before adding.
+1. Plan: write the user’s goal, expected outcome, definition of done, and
+   approach in `PLAN.md`.
+2. Divide: split the plan into small, ordered actions. Each action must
+   advance the goal and state its expected result and completion check.
+3. Implement: execute actions in dependency order. Verify each action,
+   then check the overall outcome against the plan’s definition of done.
 
-## Talk clearly. Teach the concepts.
+For very simple tasks, skip the plan and breakdown. Still define the
+expected outcome and verify the result.
 
-- Explain what we’re doing, how it works, and why it matters in plain language.
-- Make substantive explanations small, focused lessons: introduce the core idea, explain what happens underneath, and connect it to the work. Simplify without losing accuracy; define jargon and use examples when helpful.
+## Keep it simple
+Minimize code and moving parts. Delete, simplify, or reuse before adding.
 
-## Delegate the work. Own the result.
+## Teach clearly
+Explain what we’re doing, how it works, and why it matters in plain language.
+Keep explanations focused; define jargon and use examples when helpful.
 
-- Use subagents by default for exploration and implementation. Work directly only when delegation adds no value or is unavailable.
-- You own decisions, coordination, review, integration, and final verification. Delegation transfers work, not responsibility.
-- Inspect actual findings and changes against the agreed requirements. Verify the evidence and return specific corrections until the work is correct and validated. A subagent's completion report is not proof.
+## Delegate by default
+Use subagents for exploration and implementation. Work directly only when
+delegation adds no value or is unavailable.
 
-## Git and worktree workflow
+## Own the result
+Own decisions, coordination, review, integration, and final verification.
+Check actual findings and changes against requirements; require corrections
+until verified. A subagent’s report is not proof.
 
-- Before planning or implementation, pull `origin/main` into local `main`, verify `.local/` is ignored, and create a new worktree under `<repository-root>/.local/worktrees/`. Keep all plans and changes there, never in the main checkout.
+## Update main; isolate work
+Before planning or implementation:
+- Pull `origin/main` into local `main`.
+- Ensure `.local/` is ignored.
+- Create a new worktree under `<repository-root>/.local/worktrees/`.
 
-## Show the work
+Keep all plans and changes in that worktree, never in the main checkout.
 
-- For planned work, keep root `PLAN.md` current as the shared source of truth. For staged work, identify the active `PLAN_N.md`. Track actions as pending, in progress, blocked, or done; record validation results and blockers.
-- During planned implementation, begin every user-facing message with `action N/M:`, identifying the action and total count in the active plan. For staged work, include the plan name, for example `action 2/7: [PLAN_1]`, and restart numbering for each plan.
+## Keep plans current
+For planned work, maintain `PLAN.md` at the worktree root. Record each action’s
+status (`pending`, `in progress`, `blocked`, `done`), validation results, and
+blockers. For staged work, identify the active `PLAN_N.md`.
+
+## Label planned progress
+During planned implementation, prefix every user-facing message with
+`action N/M:`: current action / total actions in the active plan.
+For staged work, include the plan name, e.g. `action 2/7: [PLAN_1]`,
+and restart numbering per plan.
