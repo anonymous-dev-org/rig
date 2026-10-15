@@ -10,9 +10,9 @@ Expected outcome: The update script uses a compatible Bun before installing Pi, 
 3. done — Manually exercise the finished update workflow and review diff. Complete when no lockfile warning appears, heading prints once, and no unintended changes exist.
 
 ## Publication actions
-1. in progress — Review and commit the verified fix.
-2. pending — Push branch and open a GitHub pull request.
-3. pending — Merge pull request into main after checking merge readiness.
+1. done — Reviewed and committed the verified fix; bash -n and git diff --check passed.
+2. done — Pushed branch and opened https://github.com/anonymous-dev-org/rig/pull/4.
+3. in progress — Merge pull request into main after checking merge readiness.
 4. pending — Pull origin/main in original checkout and verify fix is present.
 
 ## Definition of done
