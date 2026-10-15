@@ -88,13 +88,24 @@ prepare_package_config() {
   esac
 }
 
-echo "=== anonymous.rig — Update ==="
-
 # Re-exec after pull so remaining steps always use latest update logic.
 if [[ "${1:-}" != "--after-pull" ]]; then
+  echo "=== anonymous.rig — Update ==="
   git pull
   exec "$SCRIPT_DIR/update.sh" --after-pull
 fi
+
+# Upgrade Bun first so it can read lockfiles written by newer releases.
+# Use Homebrew for Homebrew-managed binaries, otherwise use Bun's self-updater.
+bun_path="$(bun -p 'process.execPath')"
+case "$bun_path" in
+  */Cellar/bun/*|*/Cellar/bun@*/*)
+    brew upgrade bun
+    ;;
+  *)
+    bun upgrade
+    ;;
+esac
 
 # Install or update Pi with Bun, without dependency lifecycle scripts.
 bun add --global --ignore-scripts @earendil-works/pi-coding-agent
