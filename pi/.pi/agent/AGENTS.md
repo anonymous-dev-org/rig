@@ -18,11 +18,9 @@ Example: “reject an empty password,” not “implement authentication.”
 ## Implement core first
 Build the smallest working feature, then add behavior in small increments.
 
-Do not create tests or fixtures unless explicitly requested. This includes
-manual, automated, temporary, and one-off tests, scripts, and fixtures.
-Do not run automated tests. Manually verify the finished user workflow without
-creating tests or fixtures. Fix failures and repeat until completion criteria
-are met.
+Do not create tests, scripts, or fixtures unless explicitly requested, or run
+automated tests. Verify the finished user workflow manually, fixing issues until
+the completion criteria are met.
 
 ## Keep it simple
 Write direct, explicit code. Delete, simplify, or reuse before adding code.
