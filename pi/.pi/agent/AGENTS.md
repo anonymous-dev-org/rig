@@ -25,9 +25,13 @@ Example: “reject an empty password,” not “implement authentication.”
 For new features, build the smallest working core first. Add the remaining
 behavior in small increments. Implement, debug, and iterate.
 
-Do not add or run automated tests or create test fixtures. Manually test only
-the finished solution by exercising the complete user workflow. Check it against
-the user’s goal and definition of done. Fix failures and repeat until it passes.
+Do not spend time creating new tests or fixtures unless the user explicitly
+asks for them. This applies to all tests and fixtures, whether automated or
+manual, permanent or temporary, including one-off tests, scripts, and fixtures.
+Do not run automated tests. Verify only the finished solution by manually
+exercising the complete user workflow without creating tests or fixtures. Check
+it against the user’s goal and definition of done. Fix failures and repeat until
+it passes.
 
 ## Keep it simple
 Write direct, explicit code. No new abstractions, overengineering, or unnecessary
