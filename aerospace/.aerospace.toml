@@ -6,7 +6,10 @@
 # Bindings act on the focused monitor via scripts in $HOME/.config/aerospace/scripts/.
 
 after-login-command = []
-after-startup-command = ['exec-and-forget $HOME/.config/aerospace/scripts/normalize-display-workspaces.sh --show']
+after-startup-command = [
+    'exec-and-forget $HOME/.config/aerospace/scripts/normalize-display-workspaces.sh --show',
+    'exec-and-forget $HOME/.config/aerospace/scripts/auto-grid',
+]
 
 start-at-login = true
 

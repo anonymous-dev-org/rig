@@ -1,0 +1,149 @@
+#!/usr/bin/python3
+"""Membership-driven AeroSpace grid; see ../../../README.md for operation.
+
+Tree operations follow AeroSpace v0.21.3-Beta's JoinWithCommand.swift,
+MoveCommand.swift, BalanceSizesCommand.swift and normalizeContainers.swift:
+https://github.com/nikitabobko/AeroSpace/tree/v0.21.3-Beta/Sources/AppBundle
+No split: normalization removes singleton containers. Join makes a horizontal
+pair in a vertical root; move up inserts subsequent root leaves into that row.
+"""
+import argparse
+import fcntl
+import json
+import os
+from pathlib import Path
+import shutil
+import shlex
+import subprocess
+import sys
+import time
+
+
+BINARY = shutil.which("aerospace") or "/opt/homebrew/bin/aerospace"
+
+
+def command(*args):
+    result = subprocess.run([BINARY, *map(str, args)], capture_output=True,
+                            text=True, timeout=15)
+    if result.returncode:
+        raise RuntimeError(result.stderr.strip() or "AeroSpace command failed")
+    return result.stdout
+
+
+def membership():
+    rows = json.loads(command("list-windows", "--all", "--json", "--format",
+                              "%{window-id} %{workspace} %{window-layout}"))
+    workspaces = {}
+    for row in rows:
+        # Only tile/accordion parents are eligible; never convert floating windows.
+        if row["window-layout"] not in ("h_tiles", "v_tiles", "h_accordion", "v_accordion"):
+            continue
+        workspaces.setdefault(row["workspace"], []).append(int(row["window-id"]))
+    return {ws: tuple(sorted(ids)) for ws, ids in workspaces.items()}
+
+
+def grid(workspace, ids):
+    if not ids:
+        return
+    # Reject an already obsolete snapshot before touching the tree.
+    if membership().get(workspace, ()) != ids:
+        raise RuntimeError("membership changed before rebuild")
+    # Flatten preserves DFS leaf order. Snapshot it before any mutation for the
+    # small case; larger grids establish their own order with root-level moves.
+    order = list(ids)
+    if len(ids) <= 2:
+        order = [int(wid) for wid in command("list-windows", "--workspace", workspace,
+                                            "--format", "%{window-id}").splitlines()
+                 if int(wid) in ids]
+        if sorted(order) != list(ids):
+            raise RuntimeError("membership changed before rebuild")
+    operations = []
+
+    def append(*args):
+        operations.append(shlex.join(map(str, args)))
+
+    append("flatten-workspace-tree", "--workspace", workspace)
+    append("layout", "--workspace", workspace, "--root", "tiles")
+    append("layout", "--workspace", workspace, "--root",
+           "horizontal" if len(ids) <= 2 else "vertical")
+    if len(ids) >= 3:
+        # Establish deterministic root order, independent of focus/MRU and the
+        # previous tree. Workspace boundaries prevent crossing to another screen.
+        for wid in reversed(ids):
+            for _ in range(len(ids) - 1):
+                append("move", "--window-id", wid, "--boundaries", "workspace",
+                       "--boundaries-action", "stop", "up")
+        top = (len(ids) + 1) // 2
+        append("join-with", "--window-id", ids[0], "down")
+        for wid in ids[2:top]:
+            append("move", "--window-id", wid, "--boundaries", "workspace",
+                   "--boundaries-action", "stop", "up")
+        bottom = ids[top:]
+        if len(bottom) >= 2:
+            append("join-with", "--window-id", bottom[0], "down")
+            for wid in bottom[2:]:
+                append("move", "--window-id", wid, "--boundaries", "workspace",
+                       "--boundaries-action", "stop", "up")
+        # Join creates a pair; moving into that row inserts before its last
+        # leaf. Predict final DFS order without a mid-rebuild tree query.
+        order = list(ids[:1] + ids[2:top] + ids[1:2])
+        order += list(bottom[:1] + bottom[2:] + bottom[1:2])
+    # Restore creation-ID order using focus-preserving DFS swaps, all within
+    # the same eval request as the tree construction.
+    for target, wid in enumerate(ids):
+        position = order.index(wid)
+        while position > target:
+            append("swap", "--window-id", wid, "dfs-prev")
+            order[position - 1], order[position] = order[position], order[position - 1]
+            position -= 1
+    append("balance-sizes", "--workspace", workspace)
+    # AeroSpace eval supports shell quoting and &&: stop on the first failure.
+    # One request reduces intermediate layouts, but is not an atomic transaction.
+    command("eval", " && ".join(operations))
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--once", action="store_true", help="rebuild once, then exit")
+    parser.add_argument("--workspace", help="limit management to this workspace")
+    args = parser.parse_args()
+    # Keep the inode forever: unlinking a flock file creates a duplicate-lock
+    # race. The kernel releases this lock even after SIGKILL; stale PID is benign.
+    lock_dir = Path.home() / "Library/Caches/aerospace-auto-grid"
+    lock_dir.mkdir(mode=0o700, parents=True, exist_ok=True)
+    with (lock_dir / "lock").open("a+") as lock:
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            if args.once:
+                print("auto-grid: daemon already running; stop it before --once", file=sys.stderr)
+                return 1
+            return 0
+        lock.seek(0)
+        lock.truncate()
+        lock.write(str(os.getpid()) + "\n")
+        lock.flush()
+        previous = {}
+        while True:
+            try:
+                current = membership()
+                if args.workspace is not None:
+                    current = {args.workspace: current.get(args.workspace, ())}
+                for workspace, ids in current.items():
+                    if args.once or previous.get(workspace) != ids:
+                        grid(workspace, ids)
+                # Only IDs/workspace membership matter, never order, focus or
+                # orientation. Our own mutations therefore do not retrigger.
+                previous = current
+                if args.once:
+                    return 0
+            except (RuntimeError, OSError, ValueError, subprocess.TimeoutExpired) as exc:
+                print(f"auto-grid: {exc}", file=sys.stderr, flush=True)
+                if args.once:
+                    return 1
+                # Retry failed/partial rebuild on the next poll.
+            time.sleep(0.75)
+
+
+if __name__ == "__main__":
+    sys.exit(main())
