@@ -88,9 +88,6 @@ ctrl-alt-cmd-shift-l = 'exec-and-forget $HOME/.config/aerospace/scripts/move-to-
 alt-v = 'join-with right'
 alt-b = 'join-with down'
 
-# Workspace picker
-alt-p = 'exec-and-forget $HOME/.config/aerospace/scripts/workspace-picker.sh'
-
 # Notification picker
 alt-i = 'exec-and-forget $HOME/.config/aerospace/scripts/notification-picker.sh'
 
