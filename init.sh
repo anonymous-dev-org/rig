@@ -120,6 +120,7 @@ for pkg in "${PACKAGES[@]}"; do
   fi
 
   if confirm "Install $pkg config?"; then
+    echo "  ↻ Syncing $pkg config to $HOME..."
     prepare_package_config "$pkg"
 
     # Remove conflicts and migrate absolute links created by older Stow versions

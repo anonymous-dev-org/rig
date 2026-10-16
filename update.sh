@@ -114,6 +114,7 @@ bun add --global --ignore-scripts @earendil-works/pi-coding-agent
 PACKAGES=(neovim zsh aerospace kitty git pi lazysql)
 for pkg in "${PACKAGES[@]}"; do
   if [[ -d "$pkg" ]]; then
+    echo "↻ Syncing $pkg config to $HOME..."
     prepare_package_config "$pkg"
 
     while IFS= read -r -d '' file; do
