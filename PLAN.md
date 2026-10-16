@@ -1,31 +1,35 @@
-# Fix update.sh Bun compatibility
+# Automatic AeroSpace grid
 
-Goal: Update Pi without the unsupported Bun global lockfile warning and print the update heading once.
+## Publication
+- User tried the batched helper and approved its behavior.
+- Commit and push the verified changes on fix/aerospace-grid; no merge or active-config deployment requested.
 
-Expected outcome: The update script uses a compatible Bun before installing Pi, preserves --ignore-scripts, and retains pull/re-exec and configuration updates.
+## Active: batch layout updates
+Goal: reduce visible intermediate layouts using one eval request per grid rebuild.
+Expected outcome: unchanged 1–8 geometry/order and focus, fewer visible intermediate states.
+Definition of done: commands batched including ordering correction; manual real-window workflow verified; honest report of visual limitations; existing user windows preserved.
+1. done — Batched all tree mutations, predicted-order DFS swaps and balance into one safely quoted eval using &&. No intermediate mutation calls.
+2. done — Real disposable windows verified membership growth/moves 1–8, close 8–1, exact geometry/order and nonfocused-workspace focus preservation. Temporary windows/helper cleaned up; original five user windows/workspaces preserved. git diff --check passed. Final geometry verified, not frame-by-frame visual smoothness; no flicker-free guarantee. Installed config unchanged; worktree helper ready for user trial.
 
-## Actions
-1. done — Inspect update flow and Bun behavior; identify minimal safe fix. Complete when cause and approach are confirmed.
-2. done — Fix runtime compatibility and duplicate heading in update.sh. Complete when changes are narrow and preserve existing behavior.
-3. done — Manually exercise the finished update workflow and review diff. Complete when no lockfile warning appears, heading prints once, and no unintended changes exist.
 
-## Publication actions
-1. done — Reviewed and committed the verified fix; bash -n and git diff --check passed.
-2. done — Pushed branch and opened https://github.com/anonymous-dev-org/rig/pull/4.
-3. in progress — Merge pull request into main after checking merge readiness.
-4. pending — Pull origin/main in original checkout and verify fix is present.
+## Follow-up: reduce visible rearrangement
+Goal: investigate official AeroSpace docs for a smoother implementation before changing code.
+Expected outcome: evidence-based recommendation distinguishing documented behavior from unverified batching guarantees.
+Definition of done: identify native layout support, event coverage, and command batching; explain tradeoffs and propose next step without mutating live config/windows.
+1. done — Read official layout/eval/subscribe documentation and verify batching semantics in versioned source. Parent checked refresh.swift and Shell.swift at v0.21.3-Beta: eval runs command model normalization between steps but ordinary workspace layout follows the enclosing request body. No atomic-display guarantee. subscribe lacks closure event; no native grid layout.
+2. done — Recommend first grouping tree operations into one eval per membership update (smallest change), then incremental updates if needed. Keep closure reconciliation; do not promise flicker-free behavior without manual validation. Research only: no helper/live-config changes.
 
-## Definition of done
-- Unsupported lockfile is handled without deleting users' global lockfiles.
-- Pi installation still disables lifecycle scripts.
-- Heading prints once across pull/re-exec.
-- Manual validation recorded; no automated tests or fixtures added or run.
 
-## Validation / blockers
-- main pulled from origin/main; isolated branch fix/update-lockfile in .local/worktrees/fix-update-lockfile.
-- Installed standalone Bun is 1.3.14 and shadows Homebrew Bun 1.4.3; global lockfile is currently version 1 after the reported install.
-- Implemented upgrade of the selected Bun before global install; Homebrew binaries are identified by their resolved executable path. Duplicate heading removed from re-exec path.
-- Manual validation used an isolated home and copy of Bun 1.3.14. Script upgraded that copy to 1.4.3, installed Pi with lifecycle scripts blocked, and generated a version 2 lockfile. Subsequent run read that lockfile without warnings, updated all seven packages, compiled four Swift apps, and reached Done (exit 0).
-- Temporary-home setup initially exposed existing prerequisites: Aerospace scripts directory must exist and Pi settings reject /tmp's symlink ancestor. Created the directory and used the physical /private/tmp path; no unrelated code changes made.
-- bash -n and git diff --check passed. Pull/re-exec heading behavior reviewed directly; validation invoked --after-pull to avoid changing branch/upstream configuration.
-- Live Bun, global packages, and home configuration links were not modified. Homebrew upgrade branch reviewed against actual resolved /opt/homebrew/Cellar/bun/1.4.3/bin/bun path but not executed.
+Goal: automatically arrange workspace windows: 1 fills screen; 2 side-by-side; 3–8 use two equal-height rows with ceil(n/2) on top and floor(n/2) below. Each row divides its full width equally. Beyond 8 retain two balanced rows.
+
+Expected outcome: opening and closing tiled windows updates the grid without changing the focused window or mixing workspaces.
+
+Approach: inspect AeroSpace's supported callbacks and tree commands, implement a small layout helper and hook, then manually exercise the installed app.
+
+Definition of done: configuration is accepted by AeroSpace; real windows demonstrate 2/3/4 layouts and growth/shrink behavior; unrelated settings and user changes are preserved. Record any validation limitation.
+
+1. done — Determine supported layout commands and callbacks; completion: use a polling helper for creation/closure detection and vertical-root/horizontal-row tree commands. Live validation still required.
+2. done — Implement grid helper and config wiring; completion: membership-driven helper with single-instance flock and scoped operation, startup hook, and operation docs. Parent corrected within-row ordering with focus-preserving DFS swaps.
+3. done — Manually exercise and review; completion: real disposable kitty windows confirmed geometry 1–8, shrinking 8–1, correct final ordering, floating exclusion/retiling, duplicate launch handling, and focus preservation across nonfocused workspace rebuild. AeroSpace accepted configuration via dry-run (existing v1 migration warning only). git diff --check passed. Temporary windows/helper cleaned up and original installed config restored.
+
+Validation: definition of done met for implementation. No automated tests/fixtures created or run. Changes remain on fix/aerospace-grid in this worktree; active installation still points to main and has not been deployed. Documented polling latency, non-atomic layout changes, Python3 requirement, and manual layout interaction in aerospace/README.md.
