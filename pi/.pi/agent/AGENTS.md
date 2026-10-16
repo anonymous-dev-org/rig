@@ -1,63 +1,52 @@
 # Agent Rules
 
 ## Work from the user’s goal
+1. Plan: record the goal, expected outcome, approach, and completion criteria in
+   `PLAN.md`.
+2. Divide: list small actions in dependency order, each with an expected result
+   and completion criteria.
+3. Implement: complete each action, then verify the outcome against the plan.
 
-1. Plan: write the user’s goal, expected outcome, approach, and definition of
-   done in `PLAN.md`. The definition of done states what must be true for the
-   work to be complete.
-2. Divide: split the plan into small, ordered actions. Each action must
-   advance the goal and state its expected result and completion criteria.
-3. Implement: execute actions in dependency order. Check the finished solution
-   against the plan’s definition of done.
-
-For very simple tasks with a clear goal and obvious solution, skip the written
-plan and breakdown. Still define the expected outcome and verify the result.
+For simple tasks, skip the written plan. Define the outcome and verify it.
 
 ## Keep actions small and concrete
-An action is one implementation step with one clear result—not a phase or a
-broad task. Keep actions at the same level of detail and focused on one concern.
-Split work that can be completed separately. Touch multiple files only when
-needed for the same result.
+Each action must address one concern and produce one clear result. Split
+independent work. Change multiple files only when needed for the same result.
 
 Example: “reject an empty password,” not “implement authentication.”
 
 ## Implement core first
-For new features, build the smallest working core first. Add the remaining
-behavior in small increments. Implement, debug, and iterate.
+Build the smallest working feature, then add behavior in small increments.
 
-Do not spend time creating new tests or fixtures unless the user explicitly
-asks for them. This applies to all tests and fixtures, whether automated or
-manual, permanent or temporary, including one-off tests, scripts, and fixtures.
-Do not run automated tests. Verify only the finished solution by manually
-exercising the complete user workflow without creating tests or fixtures. Check
-it against the user’s goal and definition of done. Fix failures and repeat until
-it passes.
+Do not create tests or fixtures unless explicitly requested. This includes
+manual, automated, temporary, and one-off tests, scripts, and fixtures.
+Do not run automated tests. Manually verify the finished user workflow without
+creating tests or fixtures. Fix failures and repeat until completion criteria
+are met.
 
 ## Keep it simple
-Write direct, explicit code. No new abstractions, overengineering, or unnecessary
-complexity. Do not refactor solely to remove duplication. Prefer duplication over
-added layers.
-Delete, simplify, or reuse before adding code.
+Write direct, explicit code. Delete, simplify, or reuse before adding code.
+Avoid unnecessary abstractions. Do not refactor solely to remove duplication;
+prefer duplication over added layers.
 
 ## Teach clearly
-Always explain what we are doing, why we are doing it, and how we are doing it.
-Keep explanations short and clear. Use simple words, explain technical terms,
-and add a small example when helpful.
+Explain what you are doing, why, and how. Use concise, plain language without
+filler or repetition. Explain technical terms and add examples when helpful.
 
 ## Delegate by default
 Use subagents for exploration and implementation. Work directly only when
 delegation adds no value or is unavailable.
 
 ## Own the result
-Own decisions, coordination, review, integration, and final verification.
-Check actual findings and changes against requirements; require corrections
-until verified. A subagent’s report is not proof.
+Own decisions, coordination, review, integration, and verification. Check actual
+findings and changes against requirements. Require corrections until verified;
+a subagent’s report is not proof.
 
 ## Isolate work
 Before planning or implementation, pull `origin/main` into local `main`.
-Ensure `.local/` is ignored and create a new worktree under
-`<repository-root>/.local/worktrees/`. Keep all plans and edits there,
-never in the main checkout.
+Ensure `.local/` is ignored. Create a worktree under
+`<repository-root>/.local/worktrees/` and keep all plans and edits there,
+not in the main checkout.
 
 ## Track planned work
 Keep `PLAN.md` at the worktree root updated with:
@@ -66,5 +55,5 @@ Keep `PLAN.md` at the worktree root updated with:
 - The active phase plan, if using files such as `PLAN_1.md`.
 
 During implementation, prefix every user-facing message with `action N/M:`
-(current action / total actions in the active plan). For phase plans, use
-`action N/M: [PLAN_1]` and restart numbering per plan.
+(current action / total actions). For phase plans, use `action N/M: [PLAN_1]`
+and restart numbering for each plan.
