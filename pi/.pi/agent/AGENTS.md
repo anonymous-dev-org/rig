@@ -45,6 +45,8 @@ Before planning or implementation, pull `origin/main` into local `main`.
 Ensure `.local/` is ignored. Create a worktree under
 `<repository-root>/.local/worktrees/` and keep all plans and edits there,
 not in the main checkout.
+After successfully merging the worktree branch, remove the worktree with
+`git worktree remove <worktree-path>` so its directory is deleted from `.local/worktrees/`.
 
 ## Track planned work
 Keep `PLAN.md` at the worktree root updated with:
