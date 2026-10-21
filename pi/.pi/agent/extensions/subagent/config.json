@@ -1,0 +1,5 @@
+{
+  "worktreeBaseDir": ".local/worktrees",
+  "maxSubagentSpawnsPerSession": 0,
+  "maxActiveAsyncRunsPerSession": 0
+}
