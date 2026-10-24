@@ -92,7 +92,7 @@ alt-b = 'join-with down'
 alt-i = 'exec-and-forget $HOME/.config/aerospace/scripts/notification-picker.sh'
 
 # Clipboard history
-alt-c = 'exec-and-forget $HOME/.config/aerospace/scripts/clipboard-history.sh'
+alt-c = 'exec-and-forget open raycast://extensions/raycast/clipboard-history/clipboard-history'
 
 # App launchers
 alt-shift-t = 'exec-and-forget open -na kitty --args --single-instance -d $HOME'
