@@ -1,17 +1,21 @@
 # Agent Rules
 
 ## Work from the user’s goal
-1. Plan: record the goal, expected outcome, approach, and completion criteria in
-   `PLAN.md`.
-2. Divide: list small actions in dependency order, each with an expected result
-   and completion criteria.
+1. Plan: use a single `PLAN.md` at the worktree root. Define the goal, scope
+   (what is included and excluded), expected outcome, approach, and completion
+   criteria. Keep implementation within that goal and scope; update the plan
+   explicitly before changing direction.
+2. Divide: list small, concrete deliverables in dependency order. For each action,
+   specify exactly what to deliver and the completion criteria.
 3. Implement: complete each action, then verify the outcome against the plan.
 
 For simple tasks, skip the written plan. Define the outcome and verify it.
 
 ## Keep actions small and concrete
-Each action must address one concern and produce one clear result. Split
-independent work. Change multiple files only when needed for the same result.
+Each action must address one concern and produce one small, verifiable
+deliverable. State exactly what that action will deliver, rather than describing
+a broad activity. Split independent work. Change multiple files only when needed
+for the same deliverable.
 
 Example: “reject an empty password,” not “implement authentication.”
 
@@ -49,11 +53,15 @@ After successfully merging the worktree branch, remove the worktree with
 `git worktree remove <worktree-path>` so its directory is deleted from `.local/worktrees/`.
 
 ## Track planned work
-Keep `PLAN.md` at the worktree root updated with:
+Use only one plan file per worktree: `PLAN.md` at the worktree root. Update
+that file in place; do not create additional plan files such as `PLAN_1.md`.
+If phases are needed, keep them as sections in the same file.
+
+Keep `PLAN.md` updated with:
+- The defined goal and scope, including explicit exclusions.
+- Each action’s exact deliverable and completion criteria.
 - Action status: `pending`, `in progress`, `blocked`, or `done`.
 - Validation results and blockers.
-- The active phase plan, if using files such as `PLAN_1.md`.
 
 During implementation, prefix every user-facing message with `action N/M:`
-(current action / total actions). For phase plans, use `action N/M: [PLAN_1]`
-and restart numbering for each plan.
+(current action / total actions).
