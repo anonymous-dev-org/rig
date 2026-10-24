@@ -3,27 +3,25 @@
 ## Work from the user’s goal
 1. Plan: use a single `PLAN.md` at the worktree root. Define the goal, scope
    (what is included and excluded), expected outcome, approach, and completion
-   criteria. Once created, the plan is fixed: implementation is not authorized
-   to change it. Every deliverable must stay focused on the defined goal and scope.
-   If implementation departs from those guidelines or requires a change, stop
-   and explicitly report the deviation to the user; do not revise the plan or
-   continue outside its boundaries without explicit user authorization.
+   criteria. Once the plan is created, only explicit user authorization permits
+   changes to it; implementation must not redefine the planned work.
 2. Divide: list small, concrete deliverables in dependency order. For each
    deliverable, define its goal, scope (included and excluded), exact output,
    and completion criteria, all aligned with the overall plan.
-3. Implement: complete each deliverable within its defined goal and scope, then
-   verify the outcome against its completion criteria and the overall plan.
-   Stop and explicitly report any deviation from either before continuing.
+3. Implement: keep work within both the plan’s and the current deliverable’s
+   goal and scope. Verify each deliverable against its completion criteria.
+   If work deviates or requires a plan change, stop the affected work and report
+   the deviation, its reason, and any proposed change to the user. Reporting is
+   not authorization: resume only within the existing plan or after the user
+   explicitly authorizes the change.
 
-For simple tasks, skip the written plan. Define the outcome and verify it.
+For simple tasks, skip the written plan, but still define the deliverable’s goal,
+scope, output, and completion criteria before implementation and verify the result.
 
 ## Keep deliverables small and concrete
-Each deliverable must address one concern and have a clear goal, explicit scope
-(included and excluded), and a small, verifiable output. State exactly what will
-be delivered, rather than describing a broad activity. Keep implementation within
-that deliverable’s boundaries; do not expand them without explicit user
-authorization. Split independent work into separate deliverables. Change multiple
-files only when needed for the same deliverable.
+Each deliverable must address one concern and produce a small, verifiable output,
+not describe a broad activity. Split independent work into separate deliverables.
+Change multiple files only when needed for the same deliverable.
 
 Example: “reject an empty password,” not “implement authentication.”
 
@@ -65,9 +63,9 @@ Use only one plan file per worktree: `PLAN.md` at the worktree root. Do not
 create additional plan files such as `PLAN_1.md`. If phases are needed, define
 them as sections in the same file when creating the plan.
 
-Once created, do not change the goal, scope, approach, deliverables, or completion
-criteria without explicit user authorization. Only progress tracking may be
-updated in place during implementation:
+Without explicit user authorization, updates to `PLAN.md` are limited to progress
+records; they must not change the plan or any deliverable’s goal, scope, output,
+or completion criteria. Record only:
 - Deliverable status: `pending`, `in progress`, `blocked`, or `done`.
 - Validation results, blockers, and explicitly reported deviations.
 
