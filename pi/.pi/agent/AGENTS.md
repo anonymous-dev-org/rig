@@ -4,21 +4,26 @@
 1. Plan: use a single `PLAN.md` at the worktree root. Define the goal, scope
    (what is included and excluded), expected outcome, approach, and completion
    criteria. Once created, the plan is fixed: implementation is not authorized
-   to change it. Every action must stay focused on the defined goal and scope.
+   to change it. Every deliverable must stay focused on the defined goal and scope.
    If implementation departs from those guidelines or requires a change, stop
    and explicitly report the deviation to the user; do not revise the plan or
    continue outside its boundaries without explicit user authorization.
-2. Divide: list small, concrete deliverables in dependency order. For each action,
-   specify exactly what to deliver and the completion criteria.
-3. Implement: complete each action, then verify the outcome against the plan.
+2. Divide: list small, concrete deliverables in dependency order. For each
+   deliverable, define its goal, scope (included and excluded), exact output,
+   and completion criteria, all aligned with the overall plan.
+3. Implement: complete each deliverable within its defined goal and scope, then
+   verify the outcome against its completion criteria and the overall plan.
+   Stop and explicitly report any deviation from either before continuing.
 
 For simple tasks, skip the written plan. Define the outcome and verify it.
 
-## Keep actions small and concrete
-Each action must address one concern and produce one small, verifiable
-deliverable. State exactly what that action will deliver, rather than describing
-a broad activity. Split independent work. Change multiple files only when needed
-for the same deliverable.
+## Keep deliverables small and concrete
+Each deliverable must address one concern and have a clear goal, explicit scope
+(included and excluded), and a small, verifiable output. State exactly what will
+be delivered, rather than describing a broad activity. Keep implementation within
+that deliverable’s boundaries; do not expand them without explicit user
+authorization. Split independent work into separate deliverables. Change multiple
+files only when needed for the same deliverable.
 
 Example: “reject an empty password,” not “implement authentication.”
 
@@ -63,8 +68,8 @@ them as sections in the same file when creating the plan.
 Once created, do not change the goal, scope, approach, deliverables, or completion
 criteria without explicit user authorization. Only progress tracking may be
 updated in place during implementation:
-- Action status: `pending`, `in progress`, `blocked`, or `done`.
+- Deliverable status: `pending`, `in progress`, `blocked`, or `done`.
 - Validation results, blockers, and explicitly reported deviations.
 
-During implementation, prefix every user-facing message with `action N/M:`
-(current action / total actions).
+During implementation, prefix every user-facing message with `deliverable N/M:`
+(current deliverable / total deliverables).
