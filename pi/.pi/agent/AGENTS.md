@@ -3,8 +3,11 @@
 ## Work from the user’s goal
 1. Plan: use a single `PLAN.md` at the worktree root. Define the goal, scope
    (what is included and excluded), expected outcome, approach, and completion
-   criteria. Keep implementation within that goal and scope; update the plan
-   explicitly before changing direction.
+   criteria. Once created, the plan is fixed: implementation is not authorized
+   to change it. Every action must stay focused on the defined goal and scope.
+   If implementation departs from those guidelines or requires a change, stop
+   and explicitly report the deviation to the user; do not revise the plan or
+   continue outside its boundaries without explicit user authorization.
 2. Divide: list small, concrete deliverables in dependency order. For each action,
    specify exactly what to deliver and the completion criteria.
 3. Implement: complete each action, then verify the outcome against the plan.
@@ -53,15 +56,15 @@ After successfully merging the worktree branch, remove the worktree with
 `git worktree remove <worktree-path>` so its directory is deleted from `.local/worktrees/`.
 
 ## Track planned work
-Use only one plan file per worktree: `PLAN.md` at the worktree root. Update
-that file in place; do not create additional plan files such as `PLAN_1.md`.
-If phases are needed, keep them as sections in the same file.
+Use only one plan file per worktree: `PLAN.md` at the worktree root. Do not
+create additional plan files such as `PLAN_1.md`. If phases are needed, define
+them as sections in the same file when creating the plan.
 
-Keep `PLAN.md` updated with:
-- The defined goal and scope, including explicit exclusions.
-- Each action’s exact deliverable and completion criteria.
+Once created, do not change the goal, scope, approach, deliverables, or completion
+criteria without explicit user authorization. Only progress tracking may be
+updated in place during implementation:
 - Action status: `pending`, `in progress`, `blocked`, or `done`.
-- Validation results and blockers.
+- Validation results, blockers, and explicitly reported deviations.
 
 During implementation, prefix every user-facing message with `action N/M:`
 (current action / total actions).
