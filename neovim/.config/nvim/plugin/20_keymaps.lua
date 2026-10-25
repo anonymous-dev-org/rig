@@ -600,7 +600,7 @@ nmap_leader('ms', '<Cmd>lua MiniMap.toggle_side()<CR>',  'Side (toggle)')
 nmap_leader('mt', '<Cmd>lua MiniMap.toggle()<CR>',       'Toggle')
 
 -- o opens the GitLab merge request picker.
-nmap_leader('o', function() require('gitlab').choose_merge_request() end, 'GitLab merge requests')
+nmap_leader('o', function() Config.open_gitlab() end, 'GitLab merge requests')
 
 -- r is for 'Request' (hurl.nvim HTTP client).
 nmap_leader('ra', '<Cmd>HurlRunnerAt<CR>',          'Run at cursor')

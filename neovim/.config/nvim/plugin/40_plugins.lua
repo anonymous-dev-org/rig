@@ -392,16 +392,27 @@ end)
 
 -- Git and GitLab ==============================================================
 
+-- GitLab can download/build its helper. Do that only when opening a review,
+-- never while starting the editor.
+Config.open_gitlab = function()
+	add({
+		source = "harrisoncramer/gitlab.nvim",
+		checkout = "main",
+		depends = { "MunifTanjim/nui.nvim", "dlyongemallo/diffview-plus.nvim" },
+	})
+	local gitlab = require("gitlab")
+	if not Config.gitlab_ready then
+		gitlab.setup({})
+		Config.gitlab_ready = true
+	end
+	gitlab.choose_merge_request()
+end
+
 later(function()
 	add("lewis6991/gitsigns.nvim")
 	add({
 		source = "NeogitOrg/neogit",
 		depends = { "nvim-lua/plenary.nvim", "dlyongemallo/diffview-plus.nvim" },
-	})
-	add({
-		source = "harrisoncramer/gitlab.nvim",
-		checkout = "main",
-		depends = { "MunifTanjim/nui.nvim", "dlyongemallo/diffview-plus.nvim" },
 	})
 	add("dlyongemallo/diffview-plus.nvim")
 
@@ -495,7 +506,6 @@ later(function()
 		},
 	})
 
-	require("gitlab").setup({})
 end)
 
 -- HTTP client =================================================================
