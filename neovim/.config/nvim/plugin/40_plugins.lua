@@ -407,7 +407,42 @@ Config.open_gitlab = function()
 		return
 	end
 	if not Config.gitlab_ready then
-		gitlab.setup({})
+		gitlab.setup({
+			auth_provider = function()
+				local token, url = require("gitlab.state").default_auth_provider()
+				if not url or url == "" then
+					local remote = vim.system({ "git", "remote", "get-url", "origin" }, { text = true, timeout = 5000 }):wait()
+					local origin = vim.trim(remote.stdout or "")
+					url = origin:match("^(https?://[^/]+)")
+					local ssh_host = origin:match("^ssh://[^@/]+@([^/:]+)") or origin:match("^[^@]+@([^:]+):")
+					if not url and ssh_host then
+						url = "https://" .. ssh_host
+					end
+				end
+				if token and token ~= "" then
+					return token, url, nil
+				end
+				local host = url and url:match("^https?://([^/]+)")
+				if not host then
+					local err = "Cannot resolve GitLab host from origin. Set GITLAB_URL for this repository."
+					vim.notify(err, vim.log.levels.ERROR)
+					return nil, nil, err
+				end
+				if vim.fn.executable("glab") ~= 1 then
+					local err = "GitLab authentication requires glab. Install it with brew install glab."
+					vim.notify(err, vim.log.levels.ERROR)
+					return nil, nil, err
+				end
+				local credentials = vim.system({ "glab", "config", "get", "token", "--host", host }, { text = true, timeout = 5000 }):wait()
+				token = vim.trim(credentials.stdout or "")
+				if credentials.code ~= 0 or token == "" then
+					local err = "No glab credentials available for " .. host .. ". Run: glab auth login --hostname " .. host
+					vim.notify(err, vim.log.levels.ERROR)
+					return nil, nil, err
+				end
+				return token, url, nil
+			end,
+		})
 		Config.gitlab_ready = true
 	end
 	gitlab.choose_merge_request()
