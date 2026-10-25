@@ -67,6 +67,7 @@
   "packages": [
     "npm:pi-subagents@latest",
     "npm:pi-web-access",
-    "npm:pi-fast@0.3.0"
+    "npm:pi-fast@0.3.0",
+    "npm:pi-antigravity"
   ]
 }
