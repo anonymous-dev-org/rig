@@ -390,19 +390,20 @@ later(function()
 	})
 end)
 
--- Git and GitHub ==============================================================
+-- Git and GitLab ==============================================================
 
 later(function()
 	add("lewis6991/gitsigns.nvim")
 	add({
 		source = "NeogitOrg/neogit",
-		depends = { "nvim-lua/plenary.nvim", "sindrets/diffview.nvim" },
+		depends = { "nvim-lua/plenary.nvim", "dlyongemallo/diffview-plus.nvim" },
 	})
 	add({
-		source = "pwntester/octo.nvim",
-		depends = { "nvim-lua/plenary.nvim", "nvim-telescope/telescope.nvim" },
+		source = "harrisoncramer/gitlab.nvim",
+		checkout = "main",
+		depends = { "MunifTanjim/nui.nvim", "dlyongemallo/diffview-plus.nvim" },
 	})
-	add("sindrets/diffview.nvim")
+	add("dlyongemallo/diffview-plus.nvim")
 
 	require("gitsigns").setup({
 		current_line_blame = false,
@@ -418,8 +419,6 @@ later(function()
 		},
 		kind = "tab",
 	})
-
-	require("octo").setup({ enable_builtin = true })
 
 	local diffview_actions = require("diffview.actions")
 	require("diffview").setup({
@@ -495,6 +494,8 @@ later(function()
 			},
 		},
 	})
+
+	require("gitlab").setup({})
 end)
 
 -- HTTP client =================================================================
