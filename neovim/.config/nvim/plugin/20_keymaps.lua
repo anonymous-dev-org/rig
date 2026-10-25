@@ -67,6 +67,10 @@ _G.Config.leader_group_clues = {
   { mode = 'n', keys = '<Leader>f', desc = '+Find' },
   { mode = 'n', keys = '<Leader>g', desc = '+Git' },
   { mode = 'n', keys = '<Leader>c', desc = '+Code' },
+  { mode = 'n', keys = '<Leader>l', desc = '+GitLab' },
+  { mode = 'n', keys = '<Leader>la', desc = '+Assignees' },
+  { mode = 'n', keys = '<Leader>ll', desc = '+Labels' },
+  { mode = 'n', keys = '<Leader>lr', desc = '+Reviewers/Rebase' },
   { mode = 'n', keys = '<Leader>m', desc = '+Map' },
   { mode = 'n', keys = '<Leader>r', desc = '+Request' },
   { mode = 'n', keys = '<Leader>t', desc = '+Terminal' },
@@ -599,8 +603,34 @@ nmap_leader('mr', '<Cmd>lua MiniMap.refresh()<CR>',      'Refresh')
 nmap_leader('ms', '<Cmd>lua MiniMap.toggle_side()<CR>',  'Side (toggle)')
 nmap_leader('mt', '<Cmd>lua MiniMap.toggle()<CR>',       'Toggle')
 
--- l opens the GitLab merge request picker.
-nmap_leader('l', function() Config.open_gitlab() end, 'gitlab')
+-- l is for 'GitLab'. Mirror global gl suffixes, keeping lm as the picker.
+-- lM merges; lG enables auto-merge (the default glm would collide with lm).
+nmap_leader('lm', function() Config.open_gitlab('choose_merge_request') end, 'Choose merge request')
+nmap_leader('lc', function() Config.open_gitlab('choose_merge_request') end, 'Choose merge request')
+nmap_leader('lp', function() Config.open_gitlab('pipeline') end, 'Pipeline')
+nmap_leader('laa', function() Config.open_gitlab('add_assignee') end, 'Add assignee')
+nmap_leader('lad', function() Config.open_gitlab('delete_assignee') end, 'Delete assignee')
+nmap_leader('lla', function() Config.open_gitlab('add_label') end, 'Add label')
+nmap_leader('lld', function() Config.open_gitlab('delete_label') end, 'Delete label')
+nmap_leader('lra', function() Config.open_gitlab('add_reviewer') end, 'Add reviewer')
+nmap_leader('lrd', function() Config.open_gitlab('delete_reviewer') end, 'Delete reviewer')
+nmap_leader('lA', function() Config.open_gitlab('approve') end, 'Approve merge request')
+nmap_leader('lR', function() Config.open_gitlab('revoke') end, 'Revoke approval')
+nmap_leader('lM', function() Config.open_gitlab('merge') end, 'Merge merge request')
+nmap_leader('lG', function() Config.open_gitlab('merge', { auto_merge = true }) end, 'Enable auto-merge')
+nmap_leader('lrr', function() Config.open_gitlab('rebase') end, 'Rebase merge request')
+nmap_leader('lrs', function() Config.open_gitlab('rebase', { skip_ci = true }) end, 'Rebase and skip CI')
+nmap_leader('lrf', function() Config.open_gitlab('rebase', { force = true }) end, 'Force rebase')
+nmap_leader('lC', function() Config.open_gitlab('create_mr') end, 'Create merge request')
+nmap_leader('lS', function() Config.open_gitlab('review') end, 'Start review')
+nmap_leader('l<C-R>', function() Config.open_gitlab('reload_review') end, 'Reload review')
+nmap_leader('ls', function() Config.open_gitlab('summary') end, 'Merge request summary')
+nmap_leader('lu', function() Config.open_gitlab('copy_mr_url') end, 'Copy merge request URL')
+nmap_leader('lo', function() Config.open_gitlab('open_in_browser') end, 'Open merge request in browser')
+nmap_leader('ln', function() Config.open_gitlab('create_note') end, 'Create note')
+nmap_leader('ld', function() Config.open_gitlab('toggle_discussions') end, 'Toggle discussions')
+nmap_leader('lD', function() Config.open_gitlab('toggle_draft_mode') end, 'Toggle draft mode')
+nmap_leader('lP', function() Config.open_gitlab('publish_all_drafts') end, 'Publish all drafts')
 
 -- r is for 'Request' (hurl.nvim HTTP client).
 nmap_leader('ra', '<Cmd>HurlRunnerAt<CR>',          'Run at cursor')

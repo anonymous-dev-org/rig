@@ -392,9 +392,9 @@ end)
 
 -- Git and GitLab ==============================================================
 
--- GitLab can download/build its helper. Do that only when opening a review,
+-- GitLab can download/build its helper. Do that only when invoking an action,
 -- never while starting the editor.
-Config.open_gitlab = function()
+Config.open_gitlab = function(action, opts)
 	add({
 		source = "harrisoncramer/gitlab.nvim",
 		checkout = "main",
@@ -445,7 +445,7 @@ Config.open_gitlab = function()
 		})
 		Config.gitlab_ready = true
 	end
-	gitlab.choose_merge_request()
+	gitlab[action or "choose_merge_request"](opts)
 end
 
 later(function()
