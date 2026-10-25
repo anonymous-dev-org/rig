@@ -45,6 +45,18 @@ filler or repetition. Explain technical terms and add examples when helpful.
 Use subagents for exploration and implementation. Work directly only when
 delegation adds no value or is unavailable.
 
+## Audit intentions before implementation
+Before nontrivial implementation, consult `plan-guardian` (alias `copilot`) to
+review the plan or proposed deliverable against your applicable instructions.
+Provide the instructions or shareable relevant excerpts with source/priority,
+the user's goal, approved plan, current deliverable, and proposed actions.
+Re-consult when scope or approach changes materially, not for every trivial edit.
+Resolve explicit violations before proceeding; optional simplifications require
+judgment, not automatic adoption. Missing context is not approval. If the guardian
+is unavailable, report that limitation rather than claiming its review occurred.
+The guardian cannot authorize plan changes; ask the user when authorization is
+required. Its review of intentions does not replace verification of actual work.
+
 ## Own the result
 Own decisions, coordination, review, integration, and verification. Check actual
 findings and changes against requirements. Require corrections until verified;
