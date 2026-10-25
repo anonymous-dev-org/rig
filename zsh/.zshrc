@@ -198,3 +198,6 @@ fi
 
 # Machine-specific overrides (not tracked in repo)
 [[ -f ~/.zshrc.local ]] && source ~/.zshrc.local || true
+
+# bun completions
+[ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
