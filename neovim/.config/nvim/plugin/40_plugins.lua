@@ -400,7 +400,12 @@ Config.open_gitlab = function()
 		checkout = "main",
 		depends = { "MunifTanjim/nui.nvim", "dlyongemallo/diffview-plus.nvim" },
 	})
-	local gitlab = require("gitlab")
+	local ok, gitlab = pcall(require, "gitlab")
+	if not ok then
+		vim.notify("Could not load gitlab.nvim; check its installation in "
+			.. vim.fn.stdpath("data") .. "/site/pack/deps/opt/gitlab.nvim\n" .. tostring(gitlab), vim.log.levels.ERROR)
+		return
+	end
 	if not Config.gitlab_ready then
 		gitlab.setup({})
 		Config.gitlab_ready = true
