@@ -163,4 +163,4 @@ echo "  Authenticate the CLI with: glab auth login"
 echo "  gitlab.nvim separately requires GITLAB_TOKEN in Neovim's environment."
 echo '  Set it locally before launching Neovim: export GITLAB_TOKEN="<personal-access-token>"'
 echo "  For self-hosted GitLab, also export GITLAB_URL=https://gitlab.example.com"
-echo "  Never commit your token. Press <Leader>o in Neovim to select an MR."
+echo "  Never commit your token. Press <Leader>l in Neovim to select an MR."

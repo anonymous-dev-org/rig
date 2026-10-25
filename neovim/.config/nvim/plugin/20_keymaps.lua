@@ -66,7 +66,7 @@ _G.Config.leader_group_clues = {
   { mode = 'n', keys = '<Leader>e', desc = '+Explore/Edit' },
   { mode = 'n', keys = '<Leader>f', desc = '+Find' },
   { mode = 'n', keys = '<Leader>g', desc = '+Git' },
-  { mode = 'n', keys = '<Leader>l', desc = '+Code' },
+  { mode = 'n', keys = '<Leader>c', desc = '+Code' },
   { mode = 'n', keys = '<Leader>m', desc = '+Map' },
   { mode = 'n', keys = '<Leader>r', desc = '+Request' },
   { mode = 'n', keys = '<Leader>t', desc = '+Terminal' },
@@ -74,7 +74,7 @@ _G.Config.leader_group_clues = {
 
   { mode = 'x', keys = '<Leader>a', desc = '+Pi harness' },
   { mode = 'x', keys = '<Leader>g', desc = '+Git' },
-  { mode = 'x', keys = '<Leader>l', desc = '+Code' },
+  { mode = 'x', keys = '<Leader>c', desc = '+Code' },
   { mode = 'x', keys = '<Leader>r', desc = '+Request' },
 }
 
@@ -564,31 +564,31 @@ nmap_leader('dO', function() with_module('dap', function(dap) dap.step_out() end
 nmap_leader('dr', function() with_module('dap', function(dap) dap.repl.open() end) end, 'REPL')
 nmap_leader('du', function() with_module('dapui', function(dapui) dapui.toggle() end) end, 'UI toggle')
 
--- l is for 'Code'. Common usage:
--- - `<Leader>ld` - show more diagnostic details in a floating window
--- - `<Leader>lr` - perform rename via LSP
--- - `<Leader>ls` - navigate to definition of symbol under cursor
--- - `<Leader>lu` - list usages/references of symbol under cursor
+-- c is for 'Code'. Common usage:
+-- - `<Leader>cd` - show more diagnostic details in a floating window
+-- - `<Leader>cr` - perform rename via LSP
+-- - `<Leader>cs` - navigate to definition of symbol under cursor
+-- - `<Leader>cu` - list usages/references of symbol under cursor
 --
 -- NOTE: most LSP mappings represent a more structured way of replacing built-in
 -- LSP mappings (like `:h gra` and others). This is needed because `gr` is mapped
 -- by an "replace" operator in 'mini.operators' (which is more commonly used).
-nmap_leader('la', function() with_lsp(function() vim.lsp.buf.code_action() end) end, 'Actions')
-nmap_leader('ld', '<Cmd>lua vim.diagnostic.open_float()<CR>',   'Diagnostic popup')
-nmap_leader('lj', goto_next_error,                                'Next error')
-nmap_leader('lk', goto_prev_error,                                'Previous error')
-nmap_leader('lf', function() with_module('conform', function(conform) conform.format() end) end, 'Format')
-nmap_leader('lh', function() with_lsp(function() vim.lsp.buf.hover() end) end, 'Hover docs')
-nmap_leader('li', function() with_lsp(function() vim.lsp.buf.implementation() end) end, 'Find implementations')
-nmap_leader('lI', add_missing_imports,                             'Add missing imports')
-nmap_leader('lm', enable_lsp_server,                            'Manual enable server')
-nmap_leader('lo', organize_imports,                             'Organize imports')
-nmap_leader('lr', function() with_lsp(function() vim.lsp.buf.rename() end) end, 'Rename symbol')
-nmap_leader('ls', function() with_lsp(function() vim.lsp.buf.definition() end) end, 'Go to definition')
-nmap_leader('lt', function() with_lsp(function() vim.lsp.buf.type_definition() end) end, 'Type definition')
-nmap_leader('lu', function() with_lsp(function() vim.cmd('Pick lsp scope="references"') end) end, 'Find all references')
+nmap_leader('ca', function() with_lsp(function() vim.lsp.buf.code_action() end) end, 'Actions')
+nmap_leader('cd', '<Cmd>lua vim.diagnostic.open_float()<CR>',   'Diagnostic popup')
+nmap_leader('cj', goto_next_error,                                'Next error')
+nmap_leader('ck', goto_prev_error,                                'Previous error')
+nmap_leader('cf', function() with_module('conform', function(conform) conform.format() end) end, 'Format')
+nmap_leader('ch', function() with_lsp(function() vim.lsp.buf.hover() end) end, 'Hover docs')
+nmap_leader('ci', function() with_lsp(function() vim.lsp.buf.implementation() end) end, 'Find implementations')
+nmap_leader('cI', add_missing_imports,                             'Add missing imports')
+nmap_leader('cm', enable_lsp_server,                            'Manual enable server')
+nmap_leader('co', organize_imports,                             'Organize imports')
+nmap_leader('cr', function() with_lsp(function() vim.lsp.buf.rename() end) end, 'Rename symbol')
+nmap_leader('cs', function() with_lsp(function() vim.lsp.buf.definition() end) end, 'Go to definition')
+nmap_leader('ct', function() with_lsp(function() vim.lsp.buf.type_definition() end) end, 'Type definition')
+nmap_leader('cu', function() with_lsp(function() vim.cmd('Pick lsp scope="references"') end) end, 'Find all references')
 
-xmap_leader('lf', function() with_module('conform', function(conform) conform.format() end) end, 'Format selection')
+xmap_leader('cf', function() with_module('conform', function(conform) conform.format() end) end, 'Format selection')
 
 -- m is for 'Map'. Common usage:
 -- - `<Leader>mt` - toggle map from 'mini.map' (closed by default)
@@ -599,8 +599,8 @@ nmap_leader('mr', '<Cmd>lua MiniMap.refresh()<CR>',      'Refresh')
 nmap_leader('ms', '<Cmd>lua MiniMap.toggle_side()<CR>',  'Side (toggle)')
 nmap_leader('mt', '<Cmd>lua MiniMap.toggle()<CR>',       'Toggle')
 
--- o opens the GitLab merge request picker.
-nmap_leader('o', function() Config.open_gitlab() end, 'gitlab')
+-- l opens the GitLab merge request picker.
+nmap_leader('l', function() Config.open_gitlab() end, 'gitlab')
 
 -- r is for 'Request' (hurl.nvim HTTP client).
 nmap_leader('ra', '<Cmd>HurlRunnerAt<CR>',          'Run at cursor')
