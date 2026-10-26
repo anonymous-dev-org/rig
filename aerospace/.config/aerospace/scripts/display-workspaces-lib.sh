@@ -83,11 +83,21 @@ focused_display_slot() {
   slot_for_monitor_id "$monitor_id"
 }
 
+workspace_for_position_on_display() {
+  local pos="$1"
+  local slot="$2"
+  if [[ "$slot" == "1" ]]; then
+    echo "$pos"
+  else
+    echo "${pos}${slot}"
+  fi
+}
+
 workspace_for_position_on_focused_display() {
   local pos="$1"
   local slot
   slot=$(focused_display_slot)
-  echo "${pos}${slot}"
+  workspace_for_position_on_display "$pos" "$slot"
 }
 
 workspace_has_windows() {
@@ -113,7 +123,7 @@ first_workspace_clockwise() {
   start=$(position_index "$preferred_pos")
   for offset in 0 1 2 3; do
     pos="${POSITIONS[$(((start + offset) % 4))]}"
-    workspace="${pos}${slot}"
+    workspace=$(workspace_for_position_on_display "$pos" "$slot")
     if ! workspace_has_windows "$workspace"; then
       echo "$workspace"
       return 0
@@ -134,14 +144,14 @@ first_occupied_workspace_clockwise() {
   start=$(position_index "$preferred_pos")
   for offset in 0 1 2 3; do
     pos="${POSITIONS[$(((start + offset) % 4))]}"
-    workspace="${pos}${slot}"
+    workspace=$(workspace_for_position_on_display "$pos" "$slot")
     if workspace_has_windows "$workspace"; then
       echo "$workspace"
       return 0
     fi
   done
 
-  echo "n${slot}"
+  workspace_for_position_on_display n "$slot"
 }
 
 normalize_display_workspaces() {
@@ -151,7 +161,7 @@ normalize_display_workspaces() {
 
   while IFS= read -r monitor_id; do
     for pos in "${POSITIONS[@]}"; do
-      aerospace move-workspace-to-monitor --workspace "${pos}${slot}" "$monitor_id" >/dev/null 2>&1 || true
+      aerospace move-workspace-to-monitor --workspace "$(workspace_for_position_on_display "$pos" "$slot")" "$monitor_id" >/dev/null 2>&1 || true
     done
     slot=$((slot + 1))
   done < <(monitor_ids_by_slot)
@@ -173,6 +183,6 @@ show_preferred_workspace_per_display() {
   if [[ -n "$current" ]]; then
     aerospace workspace "$current" >/dev/null 2>&1 || true
   else
-    aerospace workspace n1 >/dev/null 2>&1 || true
+    aerospace workspace n >/dev/null 2>&1 || true
   fi
 }

@@ -1,8 +1,9 @@
 # AeroSpace: cardinal workspaces and manual layouts
 
-The configuration uses `config-version = 2`. Workspaces `n1/e1/s1/w1`
+The configuration uses `config-version = 2`. Workspaces `n/e/s/w`
 remain available even when empty. Cardinal navigation is per display; additional
-display slots are created on demand. Both container normalizations are disabled
+display slots are created on demand as `n2/e2/s2/w2`, `n3/e3/s3/w3`, etc.
+Slot 1 is the built-in display when present, otherwise the first listed monitor. Both container normalizations are disabled
 to support manual splits. **Auto-grid is not started.**
 
 Install/symlink `.aerospace.toml` to `~/.aerospace.toml` and the existing
@@ -13,6 +14,16 @@ Validate and activate with:
 aerospace reload-config --dry-run --warnings-as-errors
 aerospace reload-config --warnings-as-errors
 ```
+
+## Migrating existing workspaces
+
+After installing the updated config **and helpers**, reload the config using the
+commands above. Existing `n1/e1/s1/w1` workspaces are not renamed or emptied
+automatically: move their windows to `n/e/s/w` explicitly (for example, focus a
+window on `n1` and run `aerospace move-node-to-workspace n`, repeating for each
+window). Empty old workspaces disappear once they are no longer active or
+persistent. Extra-display names (`n2/e2/s2/w2` and above) are unchanged.
+No live configuration or windows are modified by this repository change.
 
 ## Shortcut cheat sheet
 
@@ -67,7 +78,7 @@ The shared helper prints only nonempty monitor arrays to avoid macOS Bash
 ```
 
 Validation: config reload with warnings treated as errors, cardinal navigation
-through n1/e1/s1/w1 and return, and two Kitty windows tiled as a subgroup.
+through n/e/s/w and return, and two Kitty windows tiled as a subgroup.
 Raycast global hotkeys have **not** been cleared or fully audited; those settings
 must be managed in Raycast. The launchers below are not configured there by this repository.
 

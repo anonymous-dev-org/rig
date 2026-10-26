@@ -24,7 +24,7 @@ fi
 slot=$(focused_display_slot)
 focused_workspace=$(aerospace list-workspaces --focused)
 
-case "$focused_workspace" in
-  n"$slot" | e"$slot" | s"$slot" | w"$slot") ;;
-  *) aerospace workspace "$(first_occupied_workspace_clockwise "$slot")" ;;
-esac
+position=$(workspace_position "$focused_workspace")
+if [[ "$focused_workspace" != "$(workspace_for_position_on_display "$position" "$slot")" ]]; then
+  aerospace workspace "$(first_occupied_workspace_clockwise "$slot")"
+fi

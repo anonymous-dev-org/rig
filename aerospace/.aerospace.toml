@@ -1,8 +1,8 @@
 # AeroSpace config - cardinal desktops with manual layouts (no auto-grid)
 config-version = 2
-persistent-workspaces = ['n1', 'e1', 's1', 'w1']
+persistent-workspaces = ['n', 'e', 's', 'w']
 # Each display has 4 desktops arranged clockwise: n -> e -> s -> w.
-# Workspace IDs are <position><display-slot>, e.g. n1, e2.
+# Workspace IDs are <position> for slot 1; append the slot for slots 2+, e.g. n, e2.
 # Display slot 1 is always the Mac built-in display when present; external
 # displays are assigned after it, independent of left-to-right monitor order.
 # Bindings act on the focused monitor via scripts in $HOME/.config/aerospace/scripts/.
