@@ -26,7 +26,7 @@ H/J/K/L means left/down/up/right (west/south/north/east).
 | Cmd + Option + Shift + H/J/K/L | Send window to cardinal workspace |
 | Option + Tab | Previous workspace |
 | Option + S | New Safari window |
-| Option + T or Return | New Kitty window |
+| Option + T | New Kitty window |
 | Option + F | Open home folder in Finder |
 | Option + Shift + F | AeroSpace fullscreen |
 | Option + B / V | Prepare horizontal / vertical split for a new window |

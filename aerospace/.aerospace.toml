@@ -99,7 +99,6 @@ alt-shift-c = 'reload-config'
 alt-c = 'exec-and-forget open raycast://extensions/raycast/clipboard-history/clipboard-history'
 
 # App launchers
-alt-enter = 'exec-and-forget open -na kitty --args --single-instance -d $HOME'
 alt-t = 'exec-and-forget open -na kitty --args --single-instance -d $HOME'
 alt-s = '''exec-and-forget osascript -e 'tell application "Safari" to make new document' '''
 alt-f = 'exec-and-forget open -a Finder ~'
