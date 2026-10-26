@@ -95,6 +95,9 @@ if [[ "${1:-}" != "--after-pull" ]]; then
   exec "$SCRIPT_DIR/update.sh" --after-pull
 fi
 
+# Install missing Brewfile packages and upgrade existing ones.
+brew bundle --file="$SCRIPT_DIR/brew/Brewfile"
+
 # Upgrade Bun first so it can read lockfiles written by newer releases.
 # Use Homebrew for Homebrew-managed binaries, otherwise use Bun's self-updater.
 bun_path="$(bun -p 'process.execPath')"
