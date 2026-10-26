@@ -50,8 +50,9 @@ monitor_ids_by_slot() {
   done < <(aerospace list-monitors --format '%{monitor-id}|%{monitor-name}')
 
   if ((${#builtin_ids[@]} > 0)); then
-    printf '%s\n' "${builtin_ids[@]}" "${external_ids[@]}"
-  else
+    printf '%s\n' "${builtin_ids[@]}"
+  fi
+  if ((${#external_ids[@]} > 0)); then
     printf '%s\n' "${external_ids[@]}"
   fi
 }
