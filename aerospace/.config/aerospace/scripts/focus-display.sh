@@ -1,31 +1,13 @@
 #!/bin/bash
-# Focus another display and land on that display's current cardinal desktop.
-
+# Native display focus; retain the destination's visible workspace.
 set -euo pipefail
-
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-# shellcheck source=/dev/null
-source "$SCRIPT_DIR/display-workspaces-lib.sh"
-
 target="${1:-}"
 case "$target" in
   left | down | up | right | next | prev) ;;
   *) echo "usage: $(basename "$0") <left|down|up|right|next|prev>" >&2; exit 1 ;;
 esac
-
-normalize_display_workspaces
-
-if [[ "$target" == "next" || "$target" == "prev" ]]; then
+if [[ "$target" == next || "$target" == prev ]]; then
   aerospace focus-monitor --wrap-around "$target"
 else
   aerospace focus-monitor "$target"
-fi
-
-slot=$(focused_display_slot)
-focused_workspace=$(aerospace list-workspaces --focused)
-
-position=$(workspace_position "$focused_workspace")
-group=$(workspace_group "$focused_workspace")
-if [[ "$focused_workspace" != "$(workspace_for_position_on_display "$position" "$slot" "$group")" ]]; then
-  aerospace workspace "$(first_occupied_workspace_clockwise "$slot" "$position" "$group")"
 fi

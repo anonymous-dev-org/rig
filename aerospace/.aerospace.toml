@@ -1,17 +1,11 @@
 # AeroSpace config - cardinal desktops with manual layouts (no auto-grid)
 config-version = 2
 persistent-workspaces = ['n', 'e', 's', 'w']
-# Each display has groups 1..9 of n -> e -> s -> w.
-# Group 1 uses legacy names; groups 2..9 append -gN, e.g. e2-g3.
-# Workspace IDs are <position> for slot 1; append the slot for slots 2+, e.g. n, e2.
-# Display slot 1 is always the Mac built-in display when present; external
-# displays are assigned after it, independent of left-to-right monitor order.
-# Bindings act on the focused monitor via scripts in $HOME/.config/aerospace/scripts/.
+# Groups 1..9 are shared across all displays: n/e/s/w, n2/e2/s2/w2, ... n9/e9/s9/w9.
+# Focus follows an existing workspace to its display; no display-slot routing.
 
 after-login-command = []
-after-startup-command = [
-    'exec-and-forget $HOME/.config/aerospace/scripts/normalize-display-workspaces.sh --show',
-]
+after-startup-command = []
 
 start-at-login = true
 
@@ -46,7 +40,7 @@ alt-shift-j = 'move down'
 alt-shift-k = 'move up'
 alt-shift-l = 'move right'
 
-# --- Numbered groups on the focused display; preserve direction
+# --- Shared numbered groups; preserve direction
 alt-1 = 'exec-and-forget $HOME/.config/aerospace/scripts/switch-group.sh 1'
 alt-2 = 'exec-and-forget $HOME/.config/aerospace/scripts/switch-group.sh 2'
 alt-3 = 'exec-and-forget $HOME/.config/aerospace/scripts/switch-group.sh 3'
@@ -57,14 +51,14 @@ alt-7 = 'exec-and-forget $HOME/.config/aerospace/scripts/switch-group.sh 7'
 alt-8 = 'exec-and-forget $HOME/.config/aerospace/scripts/switch-group.sh 8'
 alt-9 = 'exec-and-forget $HOME/.config/aerospace/scripts/switch-group.sh 9'
 
-# --- Cardinal desktop navigation on focused display: cmd + alt + hjkl
+# --- Cardinal navigation in current shared group: cmd + alt + hjkl
 # Vim-style positions: h=W  j=S  k=N  l=E
 cmd-alt-k = 'exec-and-forget $HOME/.config/aerospace/scripts/switch-workspace.sh n'
 cmd-alt-h = 'exec-and-forget $HOME/.config/aerospace/scripts/switch-workspace.sh w'
 cmd-alt-l = 'exec-and-forget $HOME/.config/aerospace/scripts/switch-workspace.sh e'
 cmd-alt-j = 'exec-and-forget $HOME/.config/aerospace/scripts/switch-workspace.sh s'
 
-# --- Send focused window to a cardinal desktop on the focused display
+# --- Send focused window to a cardinal workspace in the current shared group
 cmd-alt-shift-k = 'exec-and-forget $HOME/.config/aerospace/scripts/move-to-workspace.sh n'
 cmd-alt-shift-h = 'exec-and-forget $HOME/.config/aerospace/scripts/move-to-workspace.sh w'
 cmd-alt-shift-l = 'exec-and-forget $HOME/.config/aerospace/scripts/move-to-workspace.sh e'

@@ -1,35 +1,14 @@
 #!/bin/bash
-# Move the focused window to another display.
-# The destination desktop keeps the same cardinal position as the source.
-# AeroSpace handles multiple windows inside that workspace by tiling them.
-
+# Send to the destination monitor's visible workspace and follow the window.
+# Never relocate or rename a global workspace to match a display.
 set -euo pipefail
-
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-# shellcheck source=/dev/null
-source "$SCRIPT_DIR/display-workspaces-lib.sh"
-
 target="${1:-}"
 case "$target" in
   left | down | up | right | next | prev) ;;
   *) echo "usage: $(basename "$0") <left|down|up|right|next|prev>" >&2; exit 1 ;;
 esac
-
-normalize_display_workspaces
-
-window_id=$(aerospace list-windows --focused --format '%{window-id}' | awk 'NF { print $1; exit }')
-source_workspace=$(aerospace list-workspaces --focused)
-source_position=$(workspace_position "$source_workspace")
-
-if [[ "$target" == "next" || "$target" == "prev" ]]; then
-  aerospace focus-monitor --wrap-around "$target"
+if [[ "$target" == next || "$target" == prev ]]; then
+  aerospace move-node-to-monitor --focus-follows-window --wrap-around "$target"
 else
-  aerospace focus-monitor "$target"
+  aerospace move-node-to-monitor --focus-follows-window "$target"
 fi
-
-target_slot=$(focused_display_slot)
-target_workspace=$(workspace_for_position_on_display "$source_position" "$target_slot" "$(workspace_group "$source_workspace")")
-
-aerospace move-node-to-workspace --window-id "$window_id" "$target_workspace"
-aerospace workspace "$target_workspace"
-aerospace focus --window-id "$window_id" >/dev/null 2>&1 || true

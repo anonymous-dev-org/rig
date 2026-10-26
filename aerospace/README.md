@@ -1,43 +1,50 @@
 # AeroSpace: numbered cardinal workspace groups and manual layouts
 
-The configuration uses `config-version = 2`. Workspaces `n/e/s/w`
-remain available even when empty. Cardinal navigation is per display; additional
-display slots are created on demand as `n2/e2/s2/w2`, `n3/e3/s3/w3`, etc.
-Each display has independent groups **1–9**, each with n/e/s/w. Group 1 is
- the default and retains those legacy names. Groups 2–9 append `-gN`:
-`n-g2` is north, group 2, display 1; `e2-g3` is east, group 3, display 2.
-Option+1…9 switches groups on the focused display while preserving direction.
-Direction keys and window sends stay in the focused workspace's group; no
-separate group state is stored. Noncanonical names (including `n1`, `notes`,
-`n-g1`, and malformed suffixes) default to north/group 1 for navigation and
-are left untouched by normalization. New groups are created on demand.
-Display sends preserve source direction **and group**; display focus keeps the
-destination display's current group. The next-empty helper searches only the
-current group's four desktops. Normalization routes all existing canonical
-grouped names without renaming, merging or moving individual windows; groups
-on disconnected display slots remain untouched until that slot returns.
+The configuration uses `config-version = 2`. Groups **1–9 are shared across
+all displays**, not duplicated per monitor. Group 1 (default) is `n/w/e/s`;
+group 2 is `n2/w2/e2/s2`, through `n9/w9/e9/s9`. Only group 1 is persistent;
+other workspaces are created on demand. There is no separate group state:
+the focused workspace determines the current group and direction.
 
-Slot 1 is the built-in display when present, otherwise the first listed monitor. Both container normalizations are disabled
-to support manual splits. **Auto-grid is not started.**
+Option+1…9 changes group while retaining direction. Cmd+Option+H/J/K/L
+focuses west/south/north/east in the current group; adding Shift sends the
+focused window there without following. Ordinary workspace focus follows an
+existing workspace to its display; it never summons it to the current monitor.
+Display focus uses native monitor focus, retaining the destination's visible
+workspace. Display sends use native monitor moves and follow the window into
+the destination's visible workspace, without preserving the source direction
+or group and without relocating any workspace.
 
-Install/symlink `.aerospace.toml` to `~/.aerospace.toml` and the existing
-`.config/aerospace/scripts/` helpers into `~/.config/aerospace/scripts/`.
-Validate and activate with:
+The shared contract is `scripts/workspace-groups-lib.sh`. Noncanonical names
+(including `notes`, `n1`, `n10`, and old `-gN` names) default to north/group 1
+for navigation only; their windows and names are not automatically changed.
+`new-workspace.sh` picks the next empty workspace clockwise within the current
+shared group, checking occupancy globally. Both container normalizations are
+disabled for manual splits. **Auto-grid is not started.** There is no startup
+workspace routing or monitor-slot normalization.
+
+## Install and safe legacy behavior
+
+Install/symlink `.aerospace.toml` to `~/.aerospace.toml` and the complete current
+`.config/aerospace/scripts/` directory to `~/.config/aerospace/scripts/`.
+A worktree alone does not change live symlink targets. After explicitly choosing
+to activate the update, validate and reload:
 
 ```sh
 aerospace reload-config --dry-run --warnings-as-errors
 aerospace reload-config --warnings-as-errors
 ```
 
-## Migrating existing workspaces
-
-After installing the updated config **and helpers**, reload the config using the
-commands above. Existing `n1/e1/s1/w1` workspaces are not renamed or emptied
-automatically: move their windows to `n/e/s/w` explicitly (for example, focus a
-window on `n1` and run `aerospace move-node-to-workspace n`, repeating for each
-window). Empty old workspaces disappear once they are no longer active or
-persistent. Extra-display names (`n2/e2/s2/w2` and above) are unchanged.
-No live configuration or windows are modified by this repository change.
+This repository change does **not** reload the live config, move windows, or
+rename/migrate workspaces. Existing `n-g2`, `e2-g3`, etc. remain usable via
+native workspace commands or a user's external picker; group/cardinal shortcuts
+treat them as noncanonical. Existing `n2/e2/s2/w2` now mean **group 2**, even if
+they previously represented display 2. No automatic migration can safely infer
+that intent. If desired, manually move selected windows after inspecting
+`aerospace list-workspaces --all`; do not batch-rename or merge live workspaces.
+Old helper files left in an installed directory are not called by this config;
+remove obsolete `normalize-display-workspaces.sh` and `display-workspaces-lib.sh`
+when updating the installation so they cannot be invoked accidentally.
 
 ## Shortcut cheat sheet
 
@@ -47,7 +54,7 @@ H/J/K/L means left/down/up/right (west/south/north/east).
 | --- | --- |
 | Option + H/J/K/L | Focus a window |
 | Option + Shift + H/J/K/L | Move a window |
-| Option + 1…9 | Select group on focused display, preserving direction |
+| Option + 1…9 | Select shared group, preserving direction |
 | Cmd + Option + H/J/K/L | Switch cardinal workspace in current group |
 | Cmd + Option + Shift + H/J/K/L | Send window to cardinal workspace in current group |
 | Option + Tab | Previous workspace |
@@ -110,25 +117,18 @@ check all modes and the absence of AeroSpace app-specific exceptions.
 ## Mocked regression check
 
 Run `bash aerospace/tests/workspace-groups.sh` from the repository root. It
-uses a mocked CLI only, never real windows. Auto-grid keys membership by the
-complete workspace name already, so different groups/displays remain separate;
-no auto-grid change or opt-in is needed. No live reload/migration was performed
-for this change. Monitor slots still follow built-in-first CLI enumeration, not
-persistent monitor identity among multiple external displays.
+uses a mocked CLI only, never real windows, and checks naming, group/direction
+navigation, global next-empty selection, and native display commands. Run
+`python3.14 aerospace/tests/binding-contract.py` for the static mode contract.
+No workspace-picker implementation is present in this repository; native or
+external pickers can select exact global names without display translation.
+Auto-grid already keys membership by the full workspace name (not monitor), so
+it needs no code change: `n2` is one workspace and `n` is another. It remains an
+explicit opt-in and can change layouts, including legacy workspaces.
 
-## Monitor helper check
-
-The shared helper prints only nonempty monitor arrays to avoid macOS Bash
-`set -u` errors when there are no external displays. Check against real displays:
-
-```sh
-/bin/bash -uc 'source "$HOME/.config/aerospace/scripts/display-workspaces-lib.sh"; monitor_ids_by_slot; focused_display_slot'
-```
-
-Validation: config reload with warnings treated as errors, cardinal navigation
-through n/e/s/w and return, and two Kitty windows tiled as a subgroup.
-Raycast global hotkeys have **not** been cleared or fully audited; those settings
-must be managed in Raycast. The launchers below are not configured there by this repository.
+Live multi-monitor/key-delivery testing has not been performed for this change.
+Raycast/global hotkeys, Accessibility permissions and Secure Input remain
+installation-level considerations, not guarantees provided by these bindings.
 
 ---
 

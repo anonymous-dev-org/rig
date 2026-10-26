@@ -1,14 +1,13 @@
 #!/bin/bash
-# Move the focused window to a cardinal desktop on the focused display.
+# Send the focused window to a shared cardinal workspace without following.
 # Uses the focused workspace group; noncanonical names default to group 1.
-# Display slot 1 is always the Mac built-in display when present.
 # Usage: move-to-workspace.sh <n|e|s|w>
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 # shellcheck source=/dev/null
-source "$SCRIPT_DIR/display-workspaces-lib.sh"
+source "$SCRIPT_DIR/workspace-groups-lib.sh"
 
 pos="${1:-}"
 if ! is_cardinal_position "$pos"; then
@@ -16,5 +15,4 @@ if ! is_cardinal_position "$pos"; then
     exit 1
 fi
 
-normalize_display_workspaces
-aerospace move-node-to-workspace "$(workspace_for_position_on_focused_display "$pos")"
+aerospace move-node-to-workspace "$(workspace_for_position "$pos" "$(focused_workspace_group)")"
