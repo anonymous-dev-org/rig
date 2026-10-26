@@ -98,5 +98,15 @@ done
 rm -f "$HOME/.config/aerospace/last-layout"
 rm -f "$HOME/.config/aerospace/last-desktop"
 
+if command -v aerospace >/dev/null 2>&1; then
+  if aerospace reload-config; then
+    echo "✓ AeroSpace config reloaded"
+  else
+    echo "⚠ AeroSpace config reload failed (is AeroSpace running?)" >&2
+  fi
+else
+  echo "⚠ AeroSpace config reload skipped (aerospace not found)"
+fi
+
 echo ""
 echo "Done."
