@@ -83,6 +83,30 @@ aerospace layout --root h_tiles
 aerospace list-workspaces --all
 ```
 
+## Foundational, application-independent shortcuts
+
+Group selection, cardinal navigation/window sends, and Option+H/J/K/L window
+focus/moves are declared directly in **both main and resize modes** with
+identical commands. They are not conditional on the focused application, and
+remain available without leaving resize mode (plain H/J/K/L still resize).
+AeroSpace has no app-specific rules or exceptions in this configuration.
+
+Repository shortcut audit: Kitty's tab bindings use **Ctrl+Option**, not these
+Option-number or Cmd+Option chords; Kitty also already disables Secure Keyboard
+Entry. Neovim's Mini modules define Option+H/J/K/L actions, but those are
+application-local fallbacks: active AeroSpace global bindings take precedence
+when macOS delivers the keys. No conflicting group/cardinal app mapping or
+system shortcut override was found in the repository's Kitty, Neovim, shell,
+macOS defaults, Lazysql or Pi configuration; no app config needed editing.
+This is a static audit, **not live override testing**. External app defaults,
+Raycast/global hotkeys and user-local settings are outside the repository audit.
+macOS Secure Input, missing Accessibility permissions, disabled AeroSpace,
+system-reserved shortcuts, or another global hotkey owner can prevent delivery;
+configuration cannot universally override those OS-level conditions.
+
+Run `python3 aerospace/tests/binding-contract.py` with Python 3.11+ to statically
+check all modes and the absence of AeroSpace app-specific exceptions.
+
 ## Mocked regression check
 
 Run `bash aerospace/tests/workspace-groups.sh` from the repository root. It
