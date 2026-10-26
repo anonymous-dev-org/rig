@@ -40,7 +40,6 @@ H/J/K/L means left/down/up/right (west/south/north/east).
 | Ctrl + Cmd + Option + H/J/K/L | Focus display in physical direction |
 | Ctrl + Cmd + Option + Shift + H/J/K/L | Send window to display and follow |
 | Option + C | Raycast clipboard history |
-| Option + I | Notification picker |
 | Option + Shift + C | Reload config |
 
 A split alone shows no empty pane: press Option+B/V, then launch a window.

@@ -4,46 +4,6 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"
 git config --local core.hooksPath .githooks
 
-compile_swift_apps() {
-  local scripts_dir="$HOME/.config/aerospace/scripts"
-  [[ -d "$scripts_dir" ]] || return
-
-  for src in "$scripts_dir"/*.swift; do
-    [ -f "$src" ] || continue
-    local name bin
-    name=$(basename "$src" .swift)
-    bin=$(echo "$name" | sed 's/\([a-z]\)\([A-Z]\)/\1-\2/g' | tr '[:upper:]' '[:lower:]')-app
-    echo "  Compiling $name..."
-
-    local swiftc_args=(
-      -O
-      -o "$scripts_dir/$bin"
-      "$src"
-      -framework SwiftUI
-      -framework AppKit
-    )
-    if grep -q '^import SQLite3$' "$src"; then
-      swiftc_args+=(-lsqlite3)
-    fi
-
-    swiftc "${swiftc_args[@]}"
-    echo "  ✓ $bin rebuilt"
-  done
-}
-
-clean_aerospace_generated_apps() {
-  local scripts_dir="$HOME/.config/aerospace/scripts"
-  [[ -d "$scripts_dir" ]] || return
-
-  for src in "$SCRIPT_DIR"/aerospace/.config/aerospace/scripts/*.swift; do
-    [ -f "$src" ] || continue
-    local name bin
-    name=$(basename "$src" .swift)
-    bin=$(echo "$name" | sed 's/\([a-z]\)\([A-Z]\)/\1-\2/g' | tr '[:upper:]' '[:lower:]')-app
-    rm -f "$scripts_dir/$bin"
-  done
-}
-
 prepare_local_config() {
   local local_config="$SCRIPT_DIR/$1"
   local example_config="$SCRIPT_DIR/$2"
@@ -131,22 +91,12 @@ for pkg in "${PACKAGES[@]}"; do
       fi
     done < <(find "$SCRIPT_DIR/$pkg" -not -type d -print0)
 
-    if [[ "$pkg" == "aerospace" ]]; then
-      clean_aerospace_generated_apps
-    fi
     stow --no-folding -t ~ -R "$pkg" 2>/dev/null && echo "✓ $pkg updated" || echo "⚠ $pkg skipped (not stowed on this machine)"
   fi
 done
 
-# Clean up generated app binaries before recompiling them locally
-clean_aerospace_generated_apps
 rm -f "$HOME/.config/aerospace/last-layout"
 rm -f "$HOME/.config/aerospace/last-desktop"
-
-# Recompile Swift picker apps
-if command -v swiftc &>/dev/null && [[ -d "$HOME/.config/aerospace/scripts" ]]; then
-  compile_swift_apps
-fi
 
 echo ""
 echo "Done."

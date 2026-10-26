@@ -95,9 +95,6 @@ alt-w = 'layout accordion horizontal vertical'
 alt-shift-space = 'layout floating tiling'
 alt-shift-c = 'reload-config'
 
-# Notification picker
-alt-i = 'exec-and-forget $HOME/.config/aerospace/scripts/notification-picker.sh'
-
 # Clipboard history
 alt-c = 'exec-and-forget open raycast://extensions/raycast/clipboard-history/clipboard-history'
 

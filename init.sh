@@ -9,48 +9,6 @@ if [[ "$1" == "--yes" ]]; then
   YES_ALL=true
 fi
 
-compile_swift_apps() {
-  local scripts_dir="$HOME/.config/aerospace/scripts"
-  [[ -d "$scripts_dir" ]] || return
-
-  for src in "$scripts_dir"/*.swift; do
-    [ -f "$src" ] || continue
-    local name bin
-    name=$(basename "$src" .swift)
-    # Convert CamelCase to kebab-case for the binary name
-    bin=$(echo "$name" | sed 's/\([a-z]\)\([A-Z]\)/\1-\2/g' | tr '[:upper:]' '[:lower:]')-app
-    echo "  Compiling $name..."
-
-    local swiftc_args=(
-      -O
-      -o "$scripts_dir/$bin"
-      "$src"
-      -framework SwiftUI
-      -framework AppKit
-    )
-    if grep -q '^import SQLite3$' "$src"; then
-      swiftc_args+=(-lsqlite3)
-    fi
-
-    swiftc "${swiftc_args[@]}"
-    echo "  ✓ $bin built"
-  done
-}
-
-clean_aerospace_generated_apps() {
-  local scripts_dir="$HOME/.config/aerospace/scripts"
-  [[ -d "$scripts_dir" ]] || return
-
-  for src in "$SCRIPT_DIR"/aerospace/.config/aerospace/scripts/*.swift; do
-    [ -f "$src" ] || continue
-    local name bin
-    name=$(basename "$src" .swift)
-    # Convert CamelCase to kebab-case for the binary name
-    bin=$(echo "$name" | sed 's/\([a-z]\)\([A-Z]\)/\1-\2/g' | tr '[:upper:]' '[:lower:]')-app
-    rm -f "$scripts_dir/$bin"
-  done
-}
-
 prepare_local_config() {
   local local_config="$SCRIPT_DIR/$1"
   local example_config="$SCRIPT_DIR/$2"
@@ -146,13 +104,6 @@ if confirm "Apply macOS system defaults (Dock, Finder, keyboard, etc.)?"; then
   ./macos/defaults.sh
 fi
 
-# --- Compile Swift picker apps ---
-if command -v swiftc &>/dev/null && [[ -d "$HOME/.config/aerospace/scripts" ]]; then
-  if confirm "Compile Aerospace picker apps?"; then
-    clean_aerospace_generated_apps
-    compile_swift_apps
-  fi
-fi
 
 echo ""
 echo "Done! Run ./update.sh anytime to pull latest changes."
