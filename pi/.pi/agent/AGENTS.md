@@ -1,22 +1,19 @@
-- Understand before editing: read the relevant code, trace the end-to-end flow, and inspect callers.
-- Question whether code is needed; skip speculative features and scaffolding for later.
-- Use the first sufficient solution: existing code, standard library, native platform feature, installed dependency, then minimal custom code.
-- Look before writing; reuse existing helpers, types, and patterns.
-- Fix root causes where affected callers converge instead of patching symptoms in each caller.
-- Prefer deletion and simplification; change the fewest lines and files needed for correctness.
-- Write boring, direct, explicit code; do not trade clarity for brevity.
-- Avoid premature abstractions, single-implementation interfaces, single-product factories, and configuration for values that never change.
-- Do not refactor solely to remove duplication; prefer duplication over unnecessary layers.
-- Do not add dependencies when existing tools or a few clear lines suffice.
-- Choose correctness over superficial brevity; prefer equally simple solutions that handle edge cases.
-- Build the simplest version that satisfies the request; question unnecessary complexity without dropping explicit requirements.
-- Document deliberate shortcuts with a `ponytail:` comment naming their limits and when to upgrade.
-- Never simplify away trust-boundary validation, security, accessibility, or error handling that prevents data loss.
-- Leave a small runnable check for non-trivial logic; avoid unnecessary testing infrastructure.
-- Respect real-world constraints; retain calibration and tuning controls where required.
-- Keep handoffs concise: state what changed, what was skipped, and when more complexity would be needed; explain further when asked.
-- Minimize the solution, not understanding, correctness, or verification.
-- Use subagents for exploration and implementation; work directly only when delegation adds no value or is unavailable.
-- Before planning or implementation, pull `origin/main` into local `main`.
-- Ensure `.local/` is ignored; create a worktree under `<repository-root>/.local/worktrees/` and keep all plans and edits there, not in the main checkout.
-- After successfully merging the worktree branch, remove it with `git worktree remove <worktree-path>`.
+# Agent Rules
+
+## Keep it simple
+Write direct, explicit code. Delete, simplify, or reuse before adding code.
+Avoid unnecessary abstractions. Do not refactor solely to remove duplication;
+prefer duplication over added layers.
+
+## Delegate by default
+Use subagents for exploration and implementation. Work directly only when
+delegation adds no value or is unavailable.
+
+## Isolate work
+Before planning or implementation, pull `origin/main` into local `main`.
+Ensure `.local/` is ignored. Create a worktree under
+`<repository-root>/.local/worktrees/` and keep all plans and edits there,
+not in the main checkout.
+After successfully merging the worktree branch, remove the worktree with
+`git worktree remove <worktree-path>` so its directory is deleted from `.local/worktrees/`.
+
