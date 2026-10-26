@@ -11,8 +11,11 @@ cat > "$TMP/bin/pgrep" <<'MOCK'
 MOCK
 cat > "$TMP/bin/aerospace" <<'MOCK'
 #!/bin/bash
-if [[ "$1" == reload-config ]]; then exit "${RELOAD_STATUS:-0}"; fi
-printf '%s\n' "${ACTIVE:-$HOME/.aerospace.toml}"
+case "$*" in
+  reload-config) exit "${RELOAD_STATUS:-0}" ;;
+  'config --config-path') printf '%s\n' "${ACTIVE:-$HOME/.aerospace.toml}" ;;
+  *) echo "Unexpected AeroSpace arguments: $*" >&2; exit 1 ;;
+esac
 MOCK
 chmod +x "$TMP/bin/"*
 printf old > "$HOME/.aerospace.toml"

@@ -83,8 +83,8 @@ if ! aerospace reload-config; then
   echo 'AeroSpace reload/parse failed. Fix the reported config error and rerun scripts/install-aerospace.sh.' >&2
   exit 1
 fi
-if ! active="$(aerospace config --get-config-path)"; then
-  echo 'Cannot verify active AeroSpace config (config --get-config-path failed).' >&2
+if ! active="$(aerospace config --config-path)"; then
+  echo 'Cannot verify active AeroSpace config (config --config-path failed).' >&2
   exit 1
 fi
 if [[ ! -f "$active" || ! "$active" -ef "$SOURCE/.aerospace.toml" ]]; then
