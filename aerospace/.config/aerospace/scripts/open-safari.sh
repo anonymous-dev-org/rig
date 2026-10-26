@@ -1,16 +1,9 @@
 #!/bin/bash
 set -euo pipefail
-
-if ! pgrep -x Safari >/dev/null; then
-  open -a Safari
-  exit 0
-fi
-
-osascript <<'EOF'
+# Native activation works on first launch too; do not depend on System Events.
+osascript <<'APPLESCRIPT'
 tell application "Safari"
   make new document
+  activate
 end tell
-tell application "System Events"
-  tell process "Safari" to set frontmost to true
-end tell
-EOF
+APPLESCRIPT

@@ -139,6 +139,24 @@ CLI on PATH (with `/opt/homebrew/bin/aerospace` as fallback). Command semantics
 were checked against the official **0.21.3-Beta** source; older releases may not
 support the window/workspace-targeted flags used here.
 
+## New-window launch shortcuts
+
+Option+S creates a new Safari document then activates Safari. Option+F creates a
+new Finder home window (not a possibly reused `open ~` window), raises it and
+activates Finder. Option+T uses Kitty's native single-instance new-OS-window
+protocol with normal window state and native `open` activation, including when
+Kitty already runs. These bindings also work in resize mode. HOME is passed as
+a quoted argument. App/AppleScript errors are not swallowed; macOS may require
+Automation approval for AeroSpace to control Safari/Finder. No System Events
+Accessibility automation or global window-detection focus rule is installed.
+
+`bash scripts/aerospace-launchers.test.sh` checks bindings and mocked launch
+commands without opening windows (Python 3.11+; set `PYTHON=python3.14` if your
+system `python3` is older). Actual macOS focus/Automation prompts still
+require a manual check on the user's desktop. Kitty 0.49.2 installed help confirms
+`--single-instance` creates a new top-level window in the existing instance;
+its installed single-instance handler focuses the new session's OS window.
+
 ## Install / start / reload
 
 `./init.sh` (select AeroSpace) and `./update.sh` both call

@@ -105,11 +105,14 @@ alt-shift-c = 'reload-config'
 alt-c = 'exec-and-forget open raycast://extensions/raycast/clipboard-history/clipboard-history'
 
 # App launchers
-alt-t = 'exec-and-forget open -na kitty --args --single-instance -d $HOME'
-alt-s = '''exec-and-forget osascript -e 'tell application "Safari" to make new document' '''
-alt-f = 'exec-and-forget open -a Finder ~'
+alt-t = 'exec-and-forget "$HOME/.config/aerospace/scripts/open-kitty.sh"'
+alt-s = 'exec-and-forget "$HOME/.config/aerospace/scripts/open-safari.sh"'
+alt-f = 'exec-and-forget "$HOME/.config/aerospace/scripts/open-finder.sh"'
 
 [mode.resize.binding]
+alt-t = 'exec-and-forget "$HOME/.config/aerospace/scripts/open-kitty.sh"'
+alt-s = 'exec-and-forget "$HOME/.config/aerospace/scripts/open-safari.sh"'
+alt-f = 'exec-and-forget "$HOME/.config/aerospace/scripts/open-finder.sh"'
 h = 'resize width -50'
 j = 'resize height +50'
 k = 'resize height -50'

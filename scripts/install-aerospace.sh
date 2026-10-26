@@ -45,9 +45,9 @@ install_link() {
 
 [[ -s "$SOURCE/.aerospace.toml" ]] || { echo 'Missing AeroSpace config source' >&2; exit 1; }
 # Validate the complete source manifest before making any changes.
-helpers=(auto-grid focus-display.sh move-to-display.sh move-to-workspace.sh new-workspace.sh open-safari.sh switch-group.sh switch-workspace.sh workspace-groups-lib.sh)
+helpers=(auto-grid focus-display.sh move-to-display.sh move-to-workspace.sh new-workspace.sh open-finder.sh open-kitty.sh open-safari.sh switch-group.sh switch-workspace.sh workspace-groups-lib.sh)
 for name in "${helpers[@]}"; do
-  [[ -f "$SOURCE/.config/aerospace/scripts/$name" ]] || { echo "Missing AeroSpace helper: $name" >&2; exit 1; }
+  [[ -f "$SOURCE/.config/aerospace/scripts/$name" && -x "$SOURCE/.config/aerospace/scripts/$name" ]] || { echo "Missing/non-executable AeroSpace helper: $name" >&2; exit 1; }
 done
 install_link "$SOURCE/.aerospace.toml" "$HOME/.aerospace.toml"
 # AeroSpace rejects competing discovery paths; preserve only the conflicting file.
