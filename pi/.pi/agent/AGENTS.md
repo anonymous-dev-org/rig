@@ -1,85 +1,22 @@
-# Agent Rules
-
-## Work from the user’s goal
-1. Plan: use a single `PLAN.md` at the worktree root. Define the goal, scope
-   (what is included and excluded), expected outcome, approach, and completion
-   criteria. Once the plan is created, only explicit user authorization permits
-   changes to it; implementation must not redefine the planned work.
-2. Divide: list small, concrete deliverables in dependency order. For each
-   deliverable, define its goal, scope (included and excluded), exact output,
-   and completion criteria, all aligned with the overall plan.
-3. Implement: keep work within both the plan’s and the current deliverable’s
-   goal and scope. Verify each deliverable against its completion criteria.
-   If work deviates or requires a plan change, stop the affected work and report
-   the deviation, its reason, and any proposed change to the user. Reporting is
-   not authorization: resume only within the existing plan or after the user
-   explicitly authorizes the change.
-
-For simple tasks, skip the written plan, but still define the deliverable’s goal,
-scope, output, and completion criteria before implementation and verify the result.
-
-## Keep deliverables small and concrete
-Each deliverable must address one concern and produce a small, verifiable output,
-not describe a broad activity. Split independent work into separate deliverables.
-Change multiple files only when needed for the same deliverable.
-
-Example: “reject an empty password,” not “implement authentication.”
-
-## Implement core first
-Build the smallest working feature, then add behavior in small increments.
-
-Do not create tests, scripts, or fixtures unless explicitly requested, or run
-automated tests. Verify the finished user workflow manually, fixing issues until
-the completion criteria are met.
-
-## Keep it simple
-Write direct, explicit code. Delete, simplify, or reuse before adding code.
-Avoid unnecessary abstractions. Do not refactor solely to remove duplication;
-prefer duplication over added layers.
-
-## Teach clearly
-Explain what you are doing, why, and how. Use concise, plain language without
-filler or repetition. Explain technical terms and add examples when helpful.
-
-## Delegate by default
-Use subagents for exploration and implementation. Work directly only when
-delegation adds no value or is unavailable.
-
-## Audit intentions before implementation
-Before nontrivial implementation, consult `plan-guardian` (alias `copilot`) to
-review the plan or proposed deliverable against your applicable instructions.
-Provide the instructions or shareable relevant excerpts with source/priority,
-the user's goal, approved plan, current deliverable, and proposed actions.
-Re-consult when scope or approach changes materially, not for every trivial edit.
-Resolve explicit violations before proceeding; optional simplifications require
-judgment, not automatic adoption. Missing context is not approval. If the guardian
-is unavailable, report that limitation rather than claiming its review occurred.
-The guardian cannot authorize plan changes; ask the user when authorization is
-required. Its review of intentions does not replace verification of actual work.
-
-## Own the result
-Own decisions, coordination, review, integration, and verification. Check actual
-findings and changes against requirements. Require corrections until verified;
-a subagent’s report is not proof.
-
-## Isolate work
-Before planning or implementation, pull `origin/main` into local `main`.
-Ensure `.local/` is ignored. Create a worktree under
-`<repository-root>/.local/worktrees/` and keep all plans and edits there,
-not in the main checkout.
-After successfully merging the worktree branch, remove the worktree with
-`git worktree remove <worktree-path>` so its directory is deleted from `.local/worktrees/`.
-
-## Track planned work
-Use only one plan file per worktree: `PLAN.md` at the worktree root. Do not
-create additional plan files such as `PLAN_1.md`. If phases are needed, define
-them as sections in the same file when creating the plan.
-
-Without explicit user authorization, updates to `PLAN.md` are limited to progress
-records; they must not change the plan or any deliverable’s goal, scope, output,
-or completion criteria. Record only:
-- Deliverable status: `pending`, `in progress`, `blocked`, or `done`.
-- Validation results, blockers, and explicitly reported deviations.
-
-During implementation, prefix every user-facing message with `deliverable N/M:`
-(current deliverable / total deliverables).
+- Understand before editing: read the relevant code, trace the end-to-end flow, and inspect callers.
+- Question whether code is needed; skip speculative features and scaffolding for later.
+- Use the first sufficient solution: existing code, standard library, native platform feature, installed dependency, then minimal custom code.
+- Look before writing; reuse existing helpers, types, and patterns.
+- Fix root causes where affected callers converge instead of patching symptoms in each caller.
+- Prefer deletion and simplification; change the fewest lines and files needed for correctness.
+- Write boring, direct, explicit code; do not trade clarity for brevity.
+- Avoid premature abstractions, single-implementation interfaces, single-product factories, and configuration for values that never change.
+- Do not refactor solely to remove duplication; prefer duplication over unnecessary layers.
+- Do not add dependencies when existing tools or a few clear lines suffice.
+- Choose correctness over superficial brevity; prefer equally simple solutions that handle edge cases.
+- Build the simplest version that satisfies the request; question unnecessary complexity without dropping explicit requirements.
+- Document deliberate shortcuts with a `ponytail:` comment naming their limits and when to upgrade.
+- Never simplify away trust-boundary validation, security, accessibility, or error handling that prevents data loss.
+- Leave a small runnable check for non-trivial logic; avoid unnecessary testing infrastructure.
+- Respect real-world constraints; retain calibration and tuning controls where required.
+- Keep handoffs concise: state what changed, what was skipped, and when more complexity would be needed; explain further when asked.
+- Minimize the solution, not understanding, correctness, or verification.
+- Use subagents for exploration and implementation; work directly only when delegation adds no value or is unavailable.
+- Before planning or implementation, pull `origin/main` into local `main`.
+- Ensure `.local/` is ignored; create a worktree under `<repository-root>/.local/worktrees/` and keep all plans and edits there, not in the main checkout.
+- After successfully merging the worktree branch, remove it with `git worktree remove <worktree-path>`.
