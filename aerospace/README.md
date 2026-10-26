@@ -1,4 +1,80 @@
-# Automatic grid
+# AeroSpace: cardinal workspaces and manual layouts
+
+The configuration uses `config-version = 2`. Workspaces `n1/e1/s1/w1`
+remain available even when empty. Cardinal navigation is per display; additional
+display slots are created on demand. Both container normalizations are disabled
+to support manual splits. **Auto-grid is not started.**
+
+Install/symlink `.aerospace.toml` to `~/.aerospace.toml` and the existing
+`.config/aerospace/scripts/` helpers into `~/.config/aerospace/scripts/`.
+Validate and activate with:
+
+```sh
+aerospace reload-config --dry-run --warnings-as-errors
+aerospace reload-config --warnings-as-errors
+```
+
+## Shortcut cheat sheet
+
+H/J/K/L means left/down/up/right (west/south/north/east).
+
+| Shortcut | Action |
+| --- | --- |
+| Option + H/J/K/L | Focus a window |
+| Option + Shift + H/J/K/L | Move a window |
+| Cmd + Option + H/J/K/L | Switch cardinal workspace |
+| Cmd + Option + Shift + H/J/K/L | Send window to cardinal workspace |
+| Option + Tab | Previous workspace |
+| Option + S | New Safari window |
+| Option + T or Return | New Kitty window |
+| Option + F | Open home folder in Finder |
+| Option + Shift + F | AeroSpace fullscreen |
+| Option + B / V | Prepare horizontal / vertical split for a new window |
+| Option + Shift + B / V | Join existing neighbor right / below |
+| Option + E or slash | Tiles; toggle horizontal/vertical |
+| Option + W or comma | Accordion; toggle horizontal/vertical |
+| Option + Shift + Space | Floating/tiling toggle |
+| Option + R | Resize mode: plain H/L adjust width, J/K height by 50; Escape/Return exits |
+| Option + M | Focus next display |
+| Option + Shift + M | Send window to next display |
+| Ctrl + Cmd + Option + H/J/K/L | Focus display in physical direction |
+| Ctrl + Cmd + Option + Shift + H/J/K/L | Send window to display and follow |
+| Option + C | Raycast clipboard history |
+| Option + I | Notification picker |
+| Option + Shift + C | Reload config |
+
+A split alone shows no empty pane: press Option+B/V, then launch a window.
+Grouping needs an existing neighbor in the requested direction. Layout shortcuts
+affect the focused window's immediate container, not necessarily the workspace root.
+To tile a pair within horizontal accordion: focus the left window, Option+Shift+B,
+then Option+E. Hidden/minimized app windows may not participate normally.
+
+Recovery commands (not undo):
+
+```sh
+aerospace flatten-workspace-tree          # Remove nested groups
+aerospace layout --root h_accordion       # Set outer layout explicitly
+aerospace layout --root h_tiles
+aerospace list-workspaces --all
+```
+
+## Monitor helper check
+
+The shared helper prints only nonempty monitor arrays to avoid macOS Bash
+`set -u` errors when there are no external displays. Check against real displays:
+
+```sh
+/bin/bash -uc 'source "$HOME/.config/aerospace/scripts/display-workspaces-lib.sh"; monitor_ids_by_slot; focused_display_slot'
+```
+
+Validation: config reload with warnings treated as errors, cardinal navigation
+through n1/e1/s1/w1 and return, and two Kitty windows tiled as a subgroup.
+Raycast global hotkeys have **not** been cleared or fully audited; those settings
+must be managed in Raycast. The launchers below are not configured there by this repository.
+
+---
+
+# Optional legacy automatic grid
 
 `auto-grid` requires Python 3 (`/usr/bin/python3` on this Mac) and the AeroSpace
 CLI on PATH (with `/opt/homebrew/bin/aerospace` as fallback). Command semantics
@@ -12,8 +88,8 @@ Install `.aerospace.toml` as your AeroSpace config and install or symlink the
 `$HOME/.config/aerospace/scripts/auto-grid`, alongside the existing scripts.
 A worktree alone does not change an existing installation's symlink targets.
 
-On actual AeroSpace startup, `after-startup-command` starts the helper. Reloading
-config does **not** run that hook. After installing/reloading an existing session:
+The current config does **not** start this helper. Starting it manually is an
+explicit opt-in and can overwrite manual/accordion layouts. To opt in:
 
 ```sh
 aerospace reload-config --dry-run

@@ -1,4 +1,6 @@
-# AeroSpace config - per-display cardinal desktops
+# AeroSpace config - cardinal desktops with manual layouts (no auto-grid)
+config-version = 2
+persistent-workspaces = ['n1', 'e1', 's1', 'w1']
 # Each display has 4 desktops arranged clockwise: n -> e -> s -> w.
 # Workspace IDs are <position><display-slot>, e.g. n1, e2.
 # Display slot 1 is always the Mac built-in display when present; external
@@ -8,12 +10,11 @@
 after-login-command = []
 after-startup-command = [
     'exec-and-forget $HOME/.config/aerospace/scripts/normalize-display-workspaces.sh --show',
-    'exec-and-forget $HOME/.config/aerospace/scripts/auto-grid',
 ]
 
 start-at-login = true
 
-enable-normalization-flatten-containers = true
+enable-normalization-flatten-containers = false
 enable-normalization-opposite-orientation-for-nested-containers = false
 
 # Always split monitors horizontally (left/right) by default
@@ -63,10 +64,10 @@ alt-r = 'mode resize'
 # Layout toggles
 alt-slash = 'layout tiles horizontal vertical'
 alt-comma = 'layout accordion horizontal vertical'
-alt-f = 'fullscreen'
+alt-shift-f = 'fullscreen'
 
-# Focus back-and-forth
-alt-tab = 'focus-back-and-forth'
+# Workspace back-and-forth
+alt-tab = 'workspace-back-and-forth'
 
 # Displays: jump focus / send window across screens
 alt-m       = 'exec-and-forget $HOME/.config/aerospace/scripts/focus-display.sh next'
@@ -84,9 +85,15 @@ ctrl-alt-cmd-shift-j = 'exec-and-forget $HOME/.config/aerospace/scripts/move-to-
 ctrl-alt-cmd-shift-k = 'exec-and-forget $HOME/.config/aerospace/scripts/move-to-display.sh up'
 ctrl-alt-cmd-shift-l = 'exec-and-forget $HOME/.config/aerospace/scripts/move-to-display.sh right'
 
-# Join with direction
-alt-v = 'join-with right'
-alt-b = 'join-with down'
+# Manual splits and grouping of existing neighbors
+alt-b = 'split horizontal'
+alt-v = 'split vertical'
+alt-shift-b = 'join-with right'
+alt-shift-v = 'join-with down'
+alt-e = 'layout tiles horizontal vertical'
+alt-w = 'layout accordion horizontal vertical'
+alt-shift-space = 'layout floating tiling'
+alt-shift-c = 'reload-config'
 
 # Notification picker
 alt-i = 'exec-and-forget $HOME/.config/aerospace/scripts/notification-picker.sh'
@@ -95,9 +102,10 @@ alt-i = 'exec-and-forget $HOME/.config/aerospace/scripts/notification-picker.sh'
 alt-c = 'exec-and-forget open raycast://extensions/raycast/clipboard-history/clipboard-history'
 
 # App launchers
-alt-shift-t = 'exec-and-forget open -na kitty --args --single-instance -d $HOME'
-alt-shift-s = 'exec-and-forget $HOME/.config/aerospace/scripts/open-safari.sh'
-alt-shift-f = 'exec-and-forget open -a Finder ~'
+alt-enter = 'exec-and-forget open -na kitty --args --single-instance -d $HOME'
+alt-t = 'exec-and-forget open -na kitty --args --single-instance -d $HOME'
+alt-s = '''exec-and-forget osascript -e 'tell application "Safari" to make new document' '''
+alt-f = 'exec-and-forget open -a Finder ~'
 
 [mode.resize.binding]
 h = 'resize width -50'
