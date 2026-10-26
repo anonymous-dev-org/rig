@@ -79,6 +79,10 @@ for pkg in "${PACKAGES[@]}"; do
 
   if confirm "Install $pkg config?"; then
     echo "  ↻ Syncing $pkg config to $HOME..."
+    if [[ "$pkg" == aerospace ]]; then
+      bash "$SCRIPT_DIR/scripts/install-aerospace.sh"
+      continue
+    fi
     prepare_package_config "$pkg"
 
     # Remove conflicts and migrate absolute links created by older Stow versions

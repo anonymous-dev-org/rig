@@ -141,10 +141,21 @@ support the window/workspace-targeted flags used here.
 
 ## Install / start / reload
 
-Install `.aerospace.toml` as your AeroSpace config and install or symlink the
-**executable** `.config/aerospace/scripts/auto-grid` to
-`$HOME/.config/aerospace/scripts/auto-grid`, alongside the existing scripts.
-A worktree alone does not change an existing installation's symlink targets.
+`./init.sh` (select AeroSpace) and `./update.sh` both call
+`bash scripts/install-aerospace.sh`. You can also run that helper directly.
+It installs only the config and an explicit helper manifest, never tests/docs.
+Conflicting files or links receive unique timestamped `.backup-*` siblings;
+unrelated config files stay in place. Competing default/XDG `aerospace.toml`
+files are backed up individually. Folded directory links are detached before
+writes so installation cannot overwrite their source through HOME.
+
+The installer never starts/restarts AeroSpace. Missing CLI or a stopped app
+produces a deferred-reload warning; launch it manually and rerun the installer.
+For a running app, reload/parse failures and an active config path other than
+the installed repo config are fatal. A custom `--config-path` launch override
+must be removed manually before relaunching. A worktree alone does not change
+an existing installation's symlink targets. Run isolated installer checks with
+`bash scripts/install-aerospace.test.sh` (temporary HOME and mocked CLI).
 
 The current config does **not** start this helper. Starting it manually is an
 explicit opt-in and can overwrite manual/accordion layouts. To opt in:

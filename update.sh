@@ -78,6 +78,10 @@ PACKAGES=(neovim zsh aerospace kitty git pi lazysql)
 for pkg in "${PACKAGES[@]}"; do
   if [[ -d "$pkg" ]]; then
     echo "↻ Syncing $pkg config to $HOME..."
+    if [[ "$pkg" == aerospace ]]; then
+      bash "$SCRIPT_DIR/scripts/install-aerospace.sh"
+      continue
+    fi
     prepare_package_config "$pkg"
 
     while IFS= read -r -d '' file; do
@@ -94,19 +98,6 @@ for pkg in "${PACKAGES[@]}"; do
     stow --no-folding -t ~ -R "$pkg" 2>/dev/null && echo "✓ $pkg updated" || echo "⚠ $pkg skipped (not stowed on this machine)"
   fi
 done
-
-rm -f "$HOME/.config/aerospace/last-layout"
-rm -f "$HOME/.config/aerospace/last-desktop"
-
-if command -v aerospace >/dev/null 2>&1; then
-  if aerospace reload-config; then
-    echo "✓ AeroSpace config reloaded"
-  else
-    echo "⚠ AeroSpace config reload failed (is AeroSpace running?)" >&2
-  fi
-else
-  echo "⚠ AeroSpace config reload skipped (aerospace not found)"
-fi
 
 echo ""
 echo "Done."
