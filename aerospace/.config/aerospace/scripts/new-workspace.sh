@@ -13,9 +13,9 @@ current=$(aerospace list-workspaces --focused)
 slot=$(focused_display_slot)
 preferred=$(workspace_position "$current")
 
-if workspace=$(first_workspace_clockwise "$preferred" "$slot"); then
+if workspace=$(first_workspace_clockwise "$preferred" "$slot" "$(workspace_group "$current")"); then
     aerospace workspace "$workspace"
     exit 0
 fi
 
-osascript -e 'display notification "All 4 desktops on this display are in use" with title "AeroSpace"'
+osascript -e 'display notification "All 4 desktops in this display group are in use" with title "AeroSpace"'

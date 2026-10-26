@@ -1,8 +1,22 @@
-# AeroSpace: cardinal workspaces and manual layouts
+# AeroSpace: numbered cardinal workspace groups and manual layouts
 
 The configuration uses `config-version = 2`. Workspaces `n/e/s/w`
 remain available even when empty. Cardinal navigation is per display; additional
 display slots are created on demand as `n2/e2/s2/w2`, `n3/e3/s3/w3`, etc.
+Each display has independent groups **1–9**, each with n/e/s/w. Group 1 is
+ the default and retains those legacy names. Groups 2–9 append `-gN`:
+`n-g2` is north, group 2, display 1; `e2-g3` is east, group 3, display 2.
+Option+1…9 switches groups on the focused display while preserving direction.
+Direction keys and window sends stay in the focused workspace's group; no
+separate group state is stored. Noncanonical names (including `n1`, `notes`,
+`n-g1`, and malformed suffixes) default to north/group 1 for navigation and
+are left untouched by normalization. New groups are created on demand.
+Display sends preserve source direction **and group**; display focus keeps the
+destination display's current group. The next-empty helper searches only the
+current group's four desktops. Normalization routes all existing canonical
+grouped names without renaming, merging or moving individual windows; groups
+on disconnected display slots remain untouched until that slot returns.
+
 Slot 1 is the built-in display when present, otherwise the first listed monitor. Both container normalizations are disabled
 to support manual splits. **Auto-grid is not started.**
 
@@ -33,8 +47,9 @@ H/J/K/L means left/down/up/right (west/south/north/east).
 | --- | --- |
 | Option + H/J/K/L | Focus a window |
 | Option + Shift + H/J/K/L | Move a window |
-| Cmd + Option + H/J/K/L | Switch cardinal workspace |
-| Cmd + Option + Shift + H/J/K/L | Send window to cardinal workspace |
+| Option + 1…9 | Select group on focused display, preserving direction |
+| Cmd + Option + H/J/K/L | Switch cardinal workspace in current group |
+| Cmd + Option + Shift + H/J/K/L | Send window to cardinal workspace in current group |
 | Option + Tab | Previous workspace |
 | Option + S | New Safari window |
 | Option + T | New Kitty window |
@@ -67,6 +82,15 @@ aerospace layout --root h_accordion       # Set outer layout explicitly
 aerospace layout --root h_tiles
 aerospace list-workspaces --all
 ```
+
+## Mocked regression check
+
+Run `bash aerospace/tests/workspace-groups.sh` from the repository root. It
+uses a mocked CLI only, never real windows. Auto-grid keys membership by the
+complete workspace name already, so different groups/displays remain separate;
+no auto-grid change or opt-in is needed. No live reload/migration was performed
+for this change. Monitor slots still follow built-in-first CLI enumeration, not
+persistent monitor identity among multiple external displays.
 
 ## Monitor helper check
 

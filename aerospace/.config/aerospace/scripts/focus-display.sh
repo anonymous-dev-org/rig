@@ -25,6 +25,7 @@ slot=$(focused_display_slot)
 focused_workspace=$(aerospace list-workspaces --focused)
 
 position=$(workspace_position "$focused_workspace")
-if [[ "$focused_workspace" != "$(workspace_for_position_on_display "$position" "$slot")" ]]; then
-  aerospace workspace "$(first_occupied_workspace_clockwise "$slot")"
+group=$(workspace_group "$focused_workspace")
+if [[ "$focused_workspace" != "$(workspace_for_position_on_display "$position" "$slot" "$group")" ]]; then
+  aerospace workspace "$(first_occupied_workspace_clockwise "$slot" "$position" "$group")"
 fi

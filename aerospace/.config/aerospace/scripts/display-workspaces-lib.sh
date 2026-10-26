@@ -20,13 +20,29 @@ position_index() {
 }
 
 workspace_position() {
-  local workspace="${1:-}"
-  local pos="${workspace:0:1}"
-  if is_cardinal_position "$pos"; then
-    echo "$pos"
+  if is_cardinal_workspace "${1:-}"; then
+    echo "${1:0:1}"
   else
-    echo "n"
+    echo n
   fi
+}
+
+# Group 1 retains legacy names; other groups use <position>[slot]-g<2..9>.
+# Reject explicit slot 1, leading zeroes and near-matches.
+is_cardinal_workspace() {
+  [[ "${1:-}" =~ ^[nesw]([2-9]|[1-9][0-9]+)?(-g[2-9])?$ ]]
+}
+
+workspace_group() {
+  if is_cardinal_workspace "${1:-}" && [[ "$1" == *-g* ]]; then
+    echo "${1##*-g}"
+  else
+    echo 1
+  fi
+}
+
+focused_workspace_group() {
+  workspace_group "$(aerospace list-workspaces --focused)"
 }
 
 is_builtin_monitor_name() {
@@ -86,18 +102,19 @@ focused_display_slot() {
 workspace_for_position_on_display() {
   local pos="$1"
   local slot="$2"
-  if [[ "$slot" == "1" ]]; then
-    echo "$pos"
-  else
-    echo "${pos}${slot}"
-  fi
+  local group="${3:-1}"
+  is_cardinal_position "$pos" && [[ "$slot" =~ ^[1-9][0-9]*$ && "$group" =~ ^[1-9]$ ]] || return 1
+  local workspace="$pos"
+  [[ "$slot" == 1 ]] || workspace="${workspace}${slot}"
+  [[ "$group" == 1 ]] || workspace="${workspace}-g${group}"
+  echo "$workspace"
 }
 
 workspace_for_position_on_focused_display() {
   local pos="$1"
   local slot
   slot=$(focused_display_slot)
-  workspace_for_position_on_display "$pos" "$slot"
+  workspace_for_position_on_display "$pos" "$slot" "$(focused_workspace_group)"
 }
 
 workspace_has_windows() {
@@ -115,6 +132,7 @@ workspace_has_windows() {
 first_workspace_clockwise() {
   local preferred_pos="$1"
   local slot="$2"
+  local group="${3:-1}"
   local start
   local offset
   local pos
@@ -123,7 +141,7 @@ first_workspace_clockwise() {
   start=$(position_index "$preferred_pos")
   for offset in 0 1 2 3; do
     pos="${POSITIONS[$(((start + offset) % 4))]}"
-    workspace=$(workspace_for_position_on_display "$pos" "$slot")
+    workspace=$(workspace_for_position_on_display "$pos" "$slot" "$group")
     if ! workspace_has_windows "$workspace"; then
       echo "$workspace"
       return 0
@@ -136,6 +154,7 @@ first_workspace_clockwise() {
 first_occupied_workspace_clockwise() {
   local slot="$1"
   local preferred_pos="${2:-n}"
+  local group="${3:-1}"
   local start
   local offset
   local pos
@@ -144,25 +163,32 @@ first_occupied_workspace_clockwise() {
   start=$(position_index "$preferred_pos")
   for offset in 0 1 2 3; do
     pos="${POSITIONS[$(((start + offset) % 4))]}"
-    workspace=$(workspace_for_position_on_display "$pos" "$slot")
+    workspace=$(workspace_for_position_on_display "$pos" "$slot" "$group")
     if workspace_has_windows "$workspace"; then
       echo "$workspace"
       return 0
     fi
   done
 
-  workspace_for_position_on_display n "$slot"
+  workspace_for_position_on_display n "$slot" "$group"
 }
 
 normalize_display_workspaces() {
   local slot=1
   local monitor_id
-  local pos
+  local workspace position group candidate existing
+  existing=$(aerospace list-workspaces --all)
 
   while IFS= read -r monitor_id; do
-    for pos in "${POSITIONS[@]}"; do
-      aerospace move-workspace-to-monitor --workspace "$(workspace_for_position_on_display "$pos" "$slot")" "$monitor_id" >/dev/null 2>&1 || true
-    done
+    # Only route existing canonical names; never rename or merge workspaces.
+    while IFS= read -r workspace; do
+      is_cardinal_workspace "$workspace" || continue
+      position=$(workspace_position "$workspace")
+      group=$(workspace_group "$workspace")
+      candidate=$(workspace_for_position_on_display "$position" "$slot" "$group")
+      [[ "$workspace" == "$candidate" ]] || continue
+      aerospace move-workspace-to-monitor --workspace "$workspace" "$monitor_id" >/dev/null 2>&1 || true
+    done <<< "$existing"
     slot=$((slot + 1))
   done < <(monitor_ids_by_slot)
 }
@@ -175,7 +201,7 @@ show_preferred_workspace_per_display() {
   current=$(aerospace list-workspaces --focused 2>/dev/null || true)
 
   while IFS= read -r _; do
-    workspace=$(first_occupied_workspace_clockwise "$slot")
+    workspace=$(first_occupied_workspace_clockwise "$slot" "$(workspace_position "$current")" "$(workspace_group "$current")")
     aerospace workspace "$workspace" >/dev/null 2>&1 || true
     slot=$((slot + 1))
   done < <(monitor_ids_by_slot)

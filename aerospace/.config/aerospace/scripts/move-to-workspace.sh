@@ -1,6 +1,6 @@
 #!/bin/bash
 # Move the focused window to a cardinal desktop on the focused display.
-# Workspaces are named <position> for slot 1; append the slot for slots 2+, e.g. n, e2.
+# Uses the focused workspace group; noncanonical names default to group 1.
 # Display slot 1 is always the Mac built-in display when present.
 # Usage: move-to-workspace.sh <n|e|s|w>
 
