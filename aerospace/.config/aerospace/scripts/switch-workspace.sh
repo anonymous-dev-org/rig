@@ -1,6 +1,6 @@
 #!/bin/bash
 # Jump to a cardinal desktop on the currently focused display.
-# Workspaces are named <position><display-slot>, e.g. n1, e2.
+# Workspaces are named <position> for slot 1; append the slot for slots 2+, e.g. n, e2.
 # Display slot 1 is always the Mac built-in display when present.
 # Usage: switch-workspace.sh <n|e|s|w>
 

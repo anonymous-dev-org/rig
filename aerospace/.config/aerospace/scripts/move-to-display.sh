@@ -28,7 +28,7 @@ else
 fi
 
 target_slot=$(focused_display_slot)
-target_workspace="${source_position}${target_slot}"
+target_workspace=$(workspace_for_position_on_display "$source_position" "$target_slot")
 
 aerospace move-node-to-workspace --window-id "$window_id" "$target_workspace"
 aerospace workspace "$target_workspace"
