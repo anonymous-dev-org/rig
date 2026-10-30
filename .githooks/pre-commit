@@ -3,16 +3,34 @@ set -eu
 
 # Reject paths and identifiers tied to one user or machine.
 path_pattern='(/Users/[^/[:space:]]+|/home/[^/[:space:]]+|[A-Za-z]:[\\/]Users[\\/][^\\/[:space:]]+|/Volumes/[^/[:space:]]+|/private/var/folders/[^/[:space:]]+)'
-identifier_pattern='(hardware_uuid|serial_number|computer_name|local_host_name|hostname)[[:space:]]*[:=]'
+identifier_pattern='(hardware_uuid|serial_number|computer_name|local_host_name|hostname)[[:space:]]*[:=][[:space:]]*["`'"'"']*[[:alnum:]_<${][^[:space:]`",;]*'
 mac_address_pattern='(^|[^[:xdigit:]])([[:xdigit:]]{2}:){5}[[:xdigit:]]{2}([^[:xdigit:]]|$)'
 
+# Keep individual matches: ignoring a placeholder must not hide another value
+# on the same line. Git status 1 means no matches; other errors block commits.
+status=0
 matches=$(
-  git grep --cached -n -I -i -E \
+  git grep --cached -n -o -I -i -E \
     -e "$path_pattern" \
     -e "$identifier_pattern" \
     -e "$mac_address_pattern" \
-    -- . ':(exclude).githooks/pre-commit' || true
-)
+    -- . ':(exclude).githooks/pre-commit'
+) || status=$?
+if [ "$status" -gt 1 ]; then
+  printf '%s\n' 'Commit blocked: unable to inspect staged files.' >&2
+  exit 1
+fi
+
+matches=$(printf '%s\n' "$matches" | awk '
+  {
+    value = $0
+    sub(/^.*:[0-9]+:/, "", value)
+    value = tolower(value)
+    if (value ~ /^(\/users\/|\/home\/|[a-z]:[\\\/]users[\\\/])(you|<[^<>]+>)$/) next
+    if (value ~ /^(hardware_uuid|serial_number|computer_name|local_host_name|hostname)[[:space:]]*[:=][[:space:]]*<[^<>]+>$/) next
+    if (length($0)) print
+  }
+')
 
 if [ -n "$matches" ]; then
   printf '%s\n' 'Commit blocked: staged files contain a user- or machine-specific value:' >&2

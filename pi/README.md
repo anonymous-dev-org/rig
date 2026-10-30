@@ -76,3 +76,26 @@ A lock is never stolen automatically. After confirming no rig sync process is
 running, inspect the external state and remove only a genuinely stale lock,
 then rerun. Do not discard pending journals or migration receipts to bypass an
 error. Backups do not imply secure erasure of old snapshots/history.
+
+## Optional pstack adapter
+
+`packages/pstack/` contains a full pinned upstream snapshot and a single Pi entry
+skill. It is excluded from Stow and is not installed by init/update. Install it
+explicitly with Pi's native local package support:
+
+```sh
+pi install /absolute/path/to/rig/pi/packages/pstack
+```
+
+Use `/reload` or restart Pi, then try `/skill:pstack investigate a failing build`
+or `/skill:pstack verify the current changes`. This local source depends on the
+checkout remaining at that location. Remove it using the exact installed source:
+
+```sh
+pi remove /absolute/path/to/rig/pi/packages/pstack
+```
+
+Reload or restart after removal. There is no `pstack on` / `pstack off` yet. See
+[`packages/pstack/README.md`](packages/pstack/README.md) for the alternative
+ephemeral loading mode, offline integrity checks, runtime journey prompts and
+limitations.

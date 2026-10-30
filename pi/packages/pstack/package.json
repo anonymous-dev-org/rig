@@ -1,0 +1,12 @@
+{
+  "name": "rig-pstack",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Pinned pstack skills behind a single Pi harness entry",
+  "pi": {
+    "skills": ["./skills/pstack/SKILL.md"],
+    "extensions": [],
+    "prompts": [],
+    "themes": []
+  }
+}
