@@ -1,3 +1,24 @@
+# Current task: clarify AGENTS.md rules
+
+Goal: make the existing agent instructions concise, non-repetitive, and easy to follow without dropping user requirements.
+Scope: rewrite `pi/.pi/agent/AGENTS.md` in this worktree and track this task here. Do not change application code, other instructions, or the earlier plan below. The user authorized a pull request and merge into `main`; exclude unrelated local commits and preserve the original uncommitted draft.
+
+- [x] Consolidate overlapping rules. Done: organized the instructions into four sections and reduced them from 570 to 379 words without repeated reminders.
+- [x] Replace vague exceptions with decision criteria. Done: specified the mechanical-edit plan exception, delegation boundary, explicit scope approval, completion conditions, and prohibition on new verification artifacts.
+- [x] Preserve all existing requirements. Done: manually compared the rewrite against the original instructions and the delegated draft; all requested behaviors remain. `git diff --check` passed; no tests or probes were added.
+
+- [x] Follow-up: replace the rule catalogue with a few defined concepts. Definition of done: scope and simplicity follow one central principle, communication and tracking explain their purpose and boundaries, concrete workflow requirements remain explicit, and manual comparison plus `git diff --check` confirms no requested behavior was lost. Completed: defined necessary and sufficient work, user understanding, and visible progress; separated required workflow from principles; manual comparison and whitespace check passed.
+
+- [x] Separate goal/scope from simplicity. Definition of done: one principle defines what work belongs in the task, another defines how to choose the simplest correct solution; remaining principles and workflow requirements stay unchanged. Completed: split the principle, renumbered the remaining headings, and confirmed the other text is unchanged. `git diff --check` passed.
+
+- [x] Review remaining ambiguity. Definition of done: inspect all four principles and the workflow, resolve wording that permits materially different actions without adding policy, preserve existing requirements, and manually review the final text with `git diff --check` passing. Completed: independent review found two ambiguities; clarified the delegation exception with "neither/nor" and explicitly included fileless one-off probes in the prohibition. Final manual review found no other material ambiguity; `git diff --check` passed.
+
+- [x] Remove filler and simplify sentences. Definition of done: use direct wording and shorter sentences while preserving the four principles, their boundaries and exceptions, and all workflow requirements; manual comparison and `git diff --check` pass. Completed: reduced this pass from 448 to 384 words, removed repeated wording, and preserved approval, timing, completion, delegation, and verification conditions. Manual comparison and whitespace check passed.
+
+Technical debt / shortcomings: none identified. Instruction wording guides model behavior; it is not a programmatic enforcement mechanism.
+
+---
+
 # Automatic AeroSpace grid
 
 ## Publication
