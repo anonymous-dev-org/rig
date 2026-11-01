@@ -1,18 +1,18 @@
 ## Goal and scope
-- Resolve the local Pi config conflict without losing settings.
-- Report real Stow failures in update.sh.
+- Run coding-partner through Claude Code CLI using claude-opus-5.5, with review instructions and caller context.
 
 ## Excluded
-- General automatic conflict resolution or unrelated config changes.
+- Custom runners, package changes, and unrelated agent settings.
 
 ## Implementation details
-- Identical local/repository subagent config confirmed with diff.
-- Back up the local file under ignored .local/, then link to the main checkout copy.
-- Remove stderr suppression and stop update.sh on Stow failure.
-- Get coding-partner review; run shell syntax and Stow simulation checks.
+- Use pi-subagents' existing read-only claude-code adapter.
+- Keep concise review output; make supplied-context-only boundaries explicit.
+- Review profile and adapter prompt/model wiring.
+- User approved skipping quota-blocked coding-partner review and requested PR creation and merge.
 
 ## Requirements list and tracking
-- [x] Local config preserved and Pi restow succeeds. Backup: .local/pi-stow-backup.67xmDv/config.json in main checkout; Stow created its relative link.
-- [x] Stow errors remain visible and failed updates exit unsuccessfully.
-- [x] Review and existing checks complete. bash -n, git diff --check, and Stow simulation passed; coding-partner final review found no blocking issues.
-- Existing limitation: pre-Stow cleanup can remove matching absolute links before a later conflict aborts; unchanged and outside scope. A follow-up could revisit cleanup safety.
+- [x] Profile selects Claude Code CLI and claude-opus-5.5.
+- [x] Prompt defines expected feedback and how to handle supplied or missing context.
+- [x] Manual diff and adapter wiring review complete; git diff --check passed. Partner review skipped by user approval.
+- Verification limit: no live Claude invocation; model access/authentication not exercised.
+- Limitation: adapter has no tools; callers must supply excerpts/diffs. Requires local Claude login and trusted user settings/hooks.
