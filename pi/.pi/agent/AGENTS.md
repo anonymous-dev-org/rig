@@ -26,6 +26,8 @@ After successfully merging the branch, remove its worktree with `git worktree re
 
 Before implementation, create or update the single `PLAN.md` at the worktree root. Never create additional plan files in that worktree. Skip `PLAN.md` only for mechanical edits with known results that require no investigation or design decisions.
 
+Write `PLAN.md` as brief working notes, not a report. Use short bullets and direct wording. Omit filler, repetition, and lengthy explanations. Keep only what is needed to implement and track the current task. Update existing entries instead of appending repetitive history; remove obsolete details.
+
 Use these sections in order:
 
 1. **Goal and scope** — the objective and included work.
