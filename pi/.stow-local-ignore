@@ -2,4 +2,3 @@
 ^/sync-settings\.test\.mjs$
 ^/README\.md$
 ^/\.pi/agent/(settings|mcp)(\.example)?\.json$
-^/packages$

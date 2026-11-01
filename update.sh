@@ -87,7 +87,7 @@ for pkg in "${PACKAGES[@]}"; do
     while IFS= read -r -d '' file; do
       rel="${file#$SCRIPT_DIR/$pkg/}"
       dest="$HOME/$rel"
-      if [[ "$pkg" == "pi" && ( "$rel" == ".pi/agent/settings.json" || "$rel" == ".pi/agent/mcp.json" || "$rel" == ".pi/agent/settings.example.json" || "$rel" == ".pi/agent/mcp.example.json" || "$rel" == "README.md" || "$rel" == "sync-settings.mjs" || "$rel" == "sync-settings.test.mjs" || "$rel" == ".stow-local-ignore" || "$rel" == packages/* ) ]]; then
+      if [[ "$pkg" == "pi" && ( "$rel" == ".pi/agent/settings.json" || "$rel" == ".pi/agent/mcp.json" || "$rel" == ".pi/agent/settings.example.json" || "$rel" == ".pi/agent/mcp.example.json" || "$rel" == "README.md" || "$rel" == "sync-settings.mjs" || "$rel" == "sync-settings.test.mjs" || "$rel" == ".stow-local-ignore" ) ]]; then
         continue
       fi
       if [[ -L "$dest" && "$(readlink "$dest")" == "$file" ]]; then
