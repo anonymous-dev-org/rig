@@ -1,35 +1,56 @@
-# Core principles
+# Working instructions
 
 ## 1. Goal and scope
 
-**Do only what the agreed goal and scope require.**
+Do only what the agreed goal and scope require. Before planning and each implementation step, check that the work is necessary and in scope. Ask if scope is unclear; get explicit user approval before expanding it.
 
-Before planning and each implementation step, ask: "Is this needed for the goal and within scope?" Skip unrelated work. Ask if scope is unclear. Get explicit user approval before expanding it. Stop when the goal and completion conditions are met.
+## 2. Simplicity and code quality
 
-## 2. Simplest sufficient solution
+Make the code work correctly first, using the simplest solution that meets every current requirement. Keep code clear. Prefer existing code, then standard libraries, native platform features, installed dependencies, and minimal custom code.
 
-**Choose the simplest approach that meets every requirement correctly.**
+Do not build for hypothetical future needs. Add structure or settings, refactor, optimize, or introduce abstractions only when current requirements need them. Before each implementation step and whenever complexity grows, check for a simpler sufficient solution and use it.
 
-Build for current requirements, not future possibilities. Prefer existing code, then standard libraries, native platform features, installed dependencies, and minimal custom code. Add structure or settings only when current requirements need them. Before each implementation step and whenever complexity grows, ask: "Is there a simpler solution that meets every requirement?" If so, simplify before continuing.
+## 3. Worktree and delegation
 
-## 3. User understanding
+Before planning or implementation:
 
-**Explain why the solution fits and how it works, not just what changed.**
+1. Pull `origin/main` into local `main`.
+2. Ensure `.local/` is ignored by Git.
+3. Create a worktree on a task branch under `<repository-root>/.local/worktrees/`. Keep all plans and edits in that worktree, not the main checkout.
 
-Use plain language and define technical terms on first use. Explain plans before implementation and changes during implementation and at completion. Describe internal steps, how parts interact, behavior changes, tradeoffs, and limits. Explain concepts in detail unless the user asks to shorten or skip explanations.
+Use subagents for separable exploration or implementation work, or useful independent review. Work without subagents only when none of these applies.
 
-## 4. Visible progress
+After successfully merging the branch, remove its worktree with `git worktree remove <worktree-path>`.
 
-**Keep `PLAN.md` as the current record of requirements and progress.**
+## 4. Plan and track
 
-Before implementation, create it at the worktree root with the precise goal, scope, exclusions, and detailed requirements as `- [ ]` items. Give each requirement an observable completion condition: its definition of done. Skip the file only for mechanical edits with known results requiring no investigation or design decisions.
+Before implementation, create or update the single `PLAN.md` at the worktree root. Never create additional plan files in that worktree. Skip `PLAN.md` only for mechanical edits with known results that require no investigation or design decisions.
 
-Mark each requirement `- [x]` as soon as its definition of done is met; leave partial work unchecked. Record approved scope changes. Record technical debt and implementation shortcomings as they arise, with their impact and remaining work.
+Write `PLAN.md` as brief working notes, not a report. Use short bullets and direct wording. Omit filler, repetition, and lengthy explanations. Keep only what is needed to implement and track the current task. Update existing entries instead of appending repetitive history; remove obsolete details.
 
-# Required workflow
+Use these sections in order:
 
-Before planning or implementation, pull `origin/main` into local `main`. Ensure `.local/` is ignored and create a worktree under `<repository-root>/.local/worktrees/`. Keep all plans and edits there, not in the main checkout. After successfully merging the branch, remove its worktree with `git worktree remove <worktree-path>`.
+1. **Goal and scope** — the objective and included work.
+2. **Excluded** — work outside the scope.
+3. **Implementation details** — the approach and concrete steps.
+4. **Requirements list and tracking** — requirements as `- [ ]` items, each with an observable completion condition, plus progress updates.
 
-Use subagents for exploration and implementation. Work directly only when there is neither a separable task nor a useful independent review to delegate.
+Mark an item `- [x]` as soon as its completion condition is met; leave partial work unchecked. Record approved plan or scope changes.
+
+In **Requirements list and tracking**, note technical debt left by the implementation and shortcomings of the implemented solution as they arise. Keep each note brief: issue, impact, and remaining work.
+
+## 5. Implement, verify, and finish
+
+Once the plan is written, implement and verify it until all completion conditions are met. Do not stop after planning or ask routinely whether to continue.
+
+- **Implementation issue:** pause implementation, analyze the cause, and evaluate solutions against the goal and scope. Choose the simplest sufficient solution without unnecessary complexity. If it stays within scope and does not significantly deviate from the plan, update `PLAN.md` as needed and resume without asking permission.
+- **Significant deviation:** a change to the agreed scope, requirements, completion conditions, or main implementation approach. Pause, explain the change and its impact, and get explicit user approval. After approval, update `PLAN.md` before resuming implementation.
+- **Blocked:** if no solution meets the goal within the current scope and plan, explain the blocker and ask the user how to proceed.
 
 Verify with existing checks or manual review. Never create tests, probes, diagnostic scripts, or other verification artifacts, even temporarily. This includes one-off probes that create no files.
+
+When all completion conditions are met, stop implementation. Review the recorded technical debt and shortcomings, explain their impact, and recommend improvements where worthwhile. Let the user decide whether to authorize follow-up refactoring, optimization, or abstraction work; do not start it automatically.
+
+## 6. Explain the work
+
+Use plain language and define technical terms on first use. Explain the plan before implementation, changes during implementation, and the result at completion. Describe why the solution fits, how it works, how its parts interact, behavior changes, tradeoffs, and limitations. Explain concepts in detail unless the user asks for shorter explanations or none.
