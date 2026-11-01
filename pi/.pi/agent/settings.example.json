@@ -28,6 +28,9 @@
       "claude-code": {
         "disabled": true
       },
+      "claude-code-writer": {
+        "disabled": true
+      },
       "coding-partner": {
         "fast": false
       },
