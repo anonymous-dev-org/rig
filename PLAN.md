@@ -1,19 +1,21 @@
 ## Goal and scope
-- Run coding-partner as a native Pi subagent using openai/gpt-6-astra, without Claude Code dependencies.
-- Remove the Claude shell alias; preserve the review role.
+- Make coding-partner strictly review work against PLAN.md in its launch worktree.
+- Require independent checks of the parent handoff using clear, simple rules.
 
 ## Excluded
-- Uninstalling machine-wide software or changing other agents.
-- Removing disabled-agent safeguards or the harmless Git ignore rule.
+- Runtime enforcement, model/tool changes, other agents, and unrelated cleanup.
 
 ## Implementation details
-- Replace external runner configuration with native model frontmatter.
-- Describe Pi tools instead of Claude tools in the handoff instructions.
-- Review the diff manually. User approved skipping coding-partner review after the old Claude runner hit its session limit.
+- Require worktree identification and reading its root PLAN.md before review.
+- Check parent claims against plan, files, diffs, and available verification evidence.
+- Block approval for missing evidence or unresolved conflicts; require user approval and a plan update for scope changes.
+- Preserve simplicity guidance and bounded advisory behavior.
+- Review the prompt manually, consult coding-partner, and run git diff --check; create no verification artifacts.
 
 ## Requirements list and tracking
-- [x] coding-partner configuration uses native Pi execution and openai/gpt-6-astra.
-- [x] No active Claude dependency remains in repository configuration; disabled-agent safeguards and Git ignore rule remain.
-- [x] Manual diff review and git diff --check pass; partner review waived by user.
-- Limitation: configuration reviewed statically; native Astra execution not exercised.
-- Limitation: existing user settings can override the agent model; no machine-wide software removal is included.
+- [x] Prompt requires reading the launch worktree's root PLAN.md, not a parent summary or another checkout's plan.
+- [x] Prompt requires checking parent context and reporting unsupported claims and conflicts.
+- [x] Prompt blocks approval when plan/context is missing or scope conflicts remain; scope changes need user approval and a plan update.
+- [x] Prompt retains simple, in-scope advice and reports plan/evidence references.
+- [x] Independent coding-partner review found no material issues; git diff --check passes.
+- Limitation: prompt rules guide model behavior; they are not runtime enforcement.
