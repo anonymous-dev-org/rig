@@ -1,21 +1,19 @@
 ## Goal and scope
-- Keep coding-partner on Claude Code with unrestricted CLI tool access, as requested.
+- Run coding-partner as a native Pi subagent using openai/gpt-6-astra, without Claude Code dependencies.
+- Remove the Claude shell alias; preserve the review role.
 
 ## Excluded
-- Changing other agents or copying Pi MCP configuration into Claude Code.
+- Uninstalling machine-wide software or changing other agents.
+- Removing disabled-agent safeguards or the harmless Git ignore rule.
 
 ## Implementation details
-- Use the supported generic external-cli runner with explicit Claude print/model arguments and permission bypass.
-- Leave Claude's normal tools, settings, and MCP discovery enabled.
-- Replace handoff-only/no-tools instructions with scoped tool use.
-- Review configuration manually and request coding-partner feedback.
+- Replace external runner configuration with native model frontmatter.
+- Describe Pi tools instead of Claude tools in the handoff instructions.
+- Review the diff manually. User approved skipping coding-partner review after the old Claude runner hit its session limit.
 
 ## Requirements list and tracking
-- [x] Claude Code and the existing model remain selected.
-- [x] Launch no longer disables tools or MCP; permission prompts are bypassed.
-- [x] Prompt permits tools within delegated scope.
-- [x] Review diff and address coding-partner feedback. Review aligned; source confirms buildExternalCliPrompt includes instructions and task, sent through stdin. git diff --check passed.
-- Verification is static configuration/source review, not an end-to-end tool exercise.
-- Scope and recursion restrictions are prompt instructions, not enforced tool limits; callers must avoid concurrent delegated edits.
-- Tradeoff: generic runner returns stdout rather than adapter-validated streaming results; model selection moves to CLI arguments.
-- Limitation: only Claude-configured MCP servers are available; Pi tools are not automatically shared.
+- [x] coding-partner configuration uses native Pi execution and openai/gpt-6-astra.
+- [x] No active Claude dependency remains in repository configuration; disabled-agent safeguards and Git ignore rule remain.
+- [x] Manual diff review and git diff --check pass; partner review waived by user.
+- Limitation: configuration reviewed statically; native Astra execution not exercised.
+- Limitation: existing user settings can override the agent model; no machine-wide software removal is included.
