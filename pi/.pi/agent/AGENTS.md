@@ -35,7 +35,9 @@ Use these sections in order:
 3. **Implementation details** — the approach and concrete steps.
 4. **Requirements list and tracking** — requirements as `- [ ]` items, each with an observable completion condition, plus progress updates.
 
-Mark an item `- [x]` as soon as its completion condition is met; leave partial work unchecked. Record approved plan or scope changes. Record technical debt and implementation shortcomings as they arise, including their impact and remaining work.
+Mark an item `- [x]` as soon as its completion condition is met; leave partial work unchecked. Record approved plan or scope changes.
+
+In **Requirements list and tracking**, note technical debt left by the implementation and shortcomings of the implemented solution as they arise. Keep each note brief: issue, impact, and remaining work.
 
 ## 5. Implement, verify, and finish
 
