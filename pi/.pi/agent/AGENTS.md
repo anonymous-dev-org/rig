@@ -33,6 +33,14 @@ Structure it with these sections in order:
 
 Mark each requirement `- [x]` as soon as its definition of done is met; leave partial work unchecked. Record approved scope changes. Record technical debt and implementation shortcomings as they arise, with their impact and remaining work.
 
+## 5. Execute the plan to completion
+
+**Once the plan is written, proceed with implementation and verification until all completion conditions are met.**
+
+Do not stop after planning or at intermediate steps to ask whether to continue. If implementation significantly deviates from the plan, pause, explain the deviation and its impact, and get user approval before proceeding with a revised plan.
+
+When an implementation issue arises, pause implementation and analyze its cause before making further changes. Evaluate possible solutions against the agreed goal and scope, and choose the simplest sufficient solution without adding unnecessary complexity. Update `PLAN.md` as needed and resume implementation if the solution stays within scope and does not significantly deviate from the plan; otherwise, seek user approval first.
+
 # Required workflow
 
 Before planning or implementation, pull `origin/main` into local `main`. Ensure `.local/` is ignored and create a worktree under `<repository-root>/.local/worktrees/`. Keep all plans and edits there, not in the main checkout. After successfully merging the branch, remove its worktree with `git worktree remove <worktree-path>`.
