@@ -1,16 +1,16 @@
 ## Goal and scope
-- Replace code-simplifier with coding-partner for goal-focused, simplicity-first implementation feedback and help when blocked.
+- Record the 15 requested agent disables in rig defaults and sync this Mac.
 
 ## Excluded
-- Automatic monitoring, extension changes, unrelated reviewer changes.
+- Deleting agent definitions, changing other agents, or changing sync behavior.
 
 ## Implementation details
-- Replace the agent prompt; retain read-only review boundaries.
-- Require feedback and blocker consultation in AGENTS.md.
-- Rename the existing settings override; manually review the diff and obtain independent feedback.
+- Add disabled overrides in pi/.pi/agent/settings.example.json; retain existing fields.
+- Review with coding-partner, run existing checks, and use pi/sync-settings.mjs.
 
 ## Requirements list and tracking
-- [x] coding-partner replaces code-simplifier and covers goal alignment, simplicity, and blockers.
-- [x] AGENTS.md requires implementation feedback and consultation when blocked, with material feedback addressed.
-- [x] Settings reference the new name; diff and independent review complete. Reviewer reported no findings; git diff --check passed.
-- Limitation: agent discovery and runtime instruction adherence were not exercised; verification was manual only.
+- [x] Rig defaults disable exactly the 15 requested agents; claude-code-writer and the other six remain available.
+- [x] Independent review complete: coding-partner approved with no findings. git diff --check passed; existing suite: 42/43 passed (unrelated failure below).
+- [x] Mac settings aligned using rig sync; live agent list verified.
+- Existing check failure: MCP test expects --headless, but unchanged defaults intentionally use a visible browser; unrelated to agent settings and left unchanged.
+- Limitation: existing sync preserves personal overrides on other machines; defaults are not enforced policy.
