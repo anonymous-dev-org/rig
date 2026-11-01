@@ -20,6 +20,8 @@ Before planning or implementation:
 
 Use subagents for separable exploration or implementation work, or useful independent review. Work without subagents only when none of these applies.
 
+Use `coding-partner` to get feedback on the implementation at meaningful decision points and before declaring it complete. Also consult it when blocked, repeatedly trying unsuccessful approaches, or considering a more complex workaround. Give it the agreed goal, requirements, relevant code or diff, and any blocker and attempted solutions. Its role is to catch goal drift and overengineering and recommend the simplest solution that meets current requirements—not to expand scope. Address material feedback before proceeding: adopt it or explain why a current requirement makes it unsuitable. Ask the user about unresolved scope decisions. Keep consultations bounded; do not request feedback after every edit. This is a main-agent responsibility; subagents must not recursively invoke `coding-partner`.
+
 After successfully merging the branch, remove its worktree with `git worktree remove <worktree-path>`.
 
 ## 4. Plan and track

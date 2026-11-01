@@ -13,7 +13,7 @@
       "npm:pi-fast@0.3.0"
     ],
     "agentOverrides": {
-      "code-simplifier": {
+      "coding-partner": {
         "fast": false
       },
       "delegate": {
