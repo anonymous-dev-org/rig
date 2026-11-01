@@ -22,7 +22,14 @@ Use plain language and define technical terms on first use. Explain plans before
 
 **Keep `PLAN.md` as the current record of requirements and progress.**
 
-Before implementation, create it at the worktree root with the precise goal, scope, exclusions, and detailed requirements as `- [ ]` items. Give each requirement an observable completion condition: its definition of done. Skip the file only for mechanical edits with known results requiring no investigation or design decisions.
+Before implementation, create `PLAN.md` at the worktree root. Keep only one `PLAN.md` per worktree; update the existing file rather than creating additional plans. Skip the file only for mechanical edits with known results requiring no investigation or design decisions.
+
+Structure it with these sections in order:
+
+1. **Goal and scope** — the precise objective and included work.
+2. **Excluded** — work explicitly outside the scope.
+3. **Implementation details** — the planned approach and concrete implementation steps.
+4. **Requirements list and tracking** — detailed requirements as `- [ ]` items, each with an observable completion condition (its definition of done), and progress updates.
 
 Mark each requirement `- [x]` as soon as its definition of done is met; leave partial work unchecked. Record approved scope changes. Record technical debt and implementation shortcomings as they arise, with their impact and remaining work.
 
