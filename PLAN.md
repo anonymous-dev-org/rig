@@ -1,18 +1,21 @@
 ## Goal and scope
-- Run coding-partner through Claude Code CLI using claude-opus-5.5, with review instructions and caller context.
+- Keep coding-partner on Claude Code with unrestricted CLI tool access, as requested.
 
 ## Excluded
-- Custom runners, package changes, and unrelated agent settings.
+- Changing other agents or copying Pi MCP configuration into Claude Code.
 
 ## Implementation details
-- Use pi-subagents' existing read-only claude-code adapter.
-- Keep concise review output; make supplied-context-only boundaries explicit.
-- Review profile and adapter prompt/model wiring.
-- User approved skipping quota-blocked coding-partner review and requested PR creation and merge.
+- Use the supported generic external-cli runner with explicit Claude print/model arguments and permission bypass.
+- Leave Claude's normal tools, settings, and MCP discovery enabled.
+- Replace handoff-only/no-tools instructions with scoped tool use.
+- Review configuration manually and request coding-partner feedback.
 
 ## Requirements list and tracking
-- [x] Profile selects Claude Code CLI and claude-opus-5.5.
-- [x] Prompt defines expected feedback and how to handle supplied or missing context.
-- [x] Manual diff and adapter wiring review complete; git diff --check passed. Partner review skipped by user approval.
-- Verification limit: no live Claude invocation; model access/authentication not exercised.
-- Limitation: adapter has no tools; callers must supply excerpts/diffs. Requires local Claude login and trusted user settings/hooks.
+- [x] Claude Code and the existing model remain selected.
+- [x] Launch no longer disables tools or MCP; permission prompts are bypassed.
+- [x] Prompt permits tools within delegated scope.
+- [x] Review diff and address coding-partner feedback. Review aligned; source confirms buildExternalCliPrompt includes instructions and task, sent through stdin. git diff --check passed.
+- Verification is static configuration/source review, not an end-to-end tool exercise.
+- Scope and recursion restrictions are prompt instructions, not enforced tool limits; callers must avoid concurrent delegated edits.
+- Tradeoff: generic runner returns stdout rather than adapter-validated streaming results; model selection moves to CLI arguments.
+- Limitation: only Claude-configured MCP servers are available; Pi tools are not automatically shared.
