@@ -1,3 +1,30 @@
+# Current task: simplify and clarify the agent prompt
+
+## Goal and scope
+
+Rewrite `pi/.pi/agent/AGENTS.md` to make the existing instructions concise, consistent, and easy to follow without changing the agreed policy. Track this task in this worktree's existing `PLAN.md`.
+
+## Excluded
+
+Application code, new policies, new verification artifacts, remote publication, and changes to the previous task records below.
+
+## Implementation details
+
+1. Consolidate repeated instructions and organize the prompt around scope, simplicity, planning, execution, communication, and repository workflow.
+2. Clarify when to continue, pause for analysis, request approval, and finish. Separate required implementation from optional improvements after completion.
+3. Have one read-only reviewer compare the rewrite with the original. Resolve concrete ambiguity or lost requirements, then manually review and run `git diff --check`.
+4. Commit the verified changes, merge into local `main`, and remove the worktree.
+
+## Requirements list and tracking
+
+- [x] Preserve every existing policy. Done when manual comparison and independent review confirm that scope approval, simplicity, communication, one plan per worktree, plan structure/tracking, execution, issue handling, code-quality priorities, delegation, repository isolation, and verification restrictions remain intact. Completed: independent reviewer found no lost requirements or contradictions; final manual review also preserved immediate debt recording and made approval-before-plan-update-before-implementation explicit.
+- [x] Make the instructions clear and concise. Done when repeated rules are consolidated, continuation and approval conditions are explicit, and the rewrite has fewer words without dropping requirements. Completed: consolidated six sections, defined significant deviation, separated issue handling from approval and completion, and reduced the prompt from 663 to 594 words.
+- [x] Verify the rewrite without creating verification artifacts. Done when independent review is resolved, manual review is complete, and `git diff --check` passes. Completed: reviewer verdict OK with no findings; manual review and `git diff --check` passed, including the final timing clarifications. No verification code or artifacts were created.
+
+Technical debt / shortcomings: wording can reduce ambiguity but cannot guarantee an agent will always interpret or follow it correctly.
+
+### Previous task records (unchanged)
+
 # Current task: clarify AGENTS.md rules
 
 Goal: make the existing agent instructions concise, non-repetitive, and easy to follow without dropping user requirements.
