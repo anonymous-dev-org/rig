@@ -95,7 +95,12 @@ for pkg in "${PACKAGES[@]}"; do
       fi
     done < <(find "$SCRIPT_DIR/$pkg" -not -type d -print0)
 
-    stow --no-folding -t ~ -R "$pkg" 2>/dev/null && echo "✓ $pkg updated" || echo "⚠ $pkg skipped (not stowed on this machine)"
+    if stow --no-folding -t ~ -R "$pkg"; then
+      echo "✓ $pkg updated"
+    else
+      echo "✗ $pkg config update failed (stow); see errors above" >&2
+      exit 1
+    fi
   fi
 done
 
