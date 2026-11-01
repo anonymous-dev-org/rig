@@ -41,6 +41,14 @@ Do not stop after planning or at intermediate steps to ask whether to continue. 
 
 When an implementation issue arises, pause implementation and analyze its cause before making further changes. Evaluate possible solutions against the agreed goal and scope, and choose the simplest sufficient solution without adding unnecessary complexity. Update `PLAN.md` as needed and resume implementation if the solution stays within scope and does not significantly deviate from the plan; otherwise, seek user approval first.
 
+## 6. Code quality: make it work, then improve it
+
+**First make the code work correctly with the simplest solution that meets the agreed goal.**
+
+Keep code clear and focused on current requirements. Refactor, optimize, or introduce abstractions during implementation only when needed to meet those requirements; do not delay a working solution for speculative improvements.
+
+Once the goal and completion conditions are met, review the recorded technical debt and solution shortcomings. Explain their impact and possible improvements so the user can decide whether further work is worthwhile. Get approval before starting follow-up refactoring, optimization, or abstraction work; do not automatically expand the completed task.
+
 # Required workflow
 
 Before planning or implementation, pull `origin/main` into local `main`. Ensure `.local/` is ignored and create a worktree under `<repository-root>/.local/worktrees/`. Keep all plans and edits there, not in the main checkout. After successfully merging the branch, remove its worktree with `git worktree remove <worktree-path>`.
