@@ -1,6 +1,6 @@
 ---
 name: coding-partner
-model: claude-opus-5.5
+model: claude-opus-5-5
 description: Provides goal-focused feedback through Claude Code CLI; include the goal, constraints, and relevant code or diff in the handoff
 runner:
   type: external-cli
