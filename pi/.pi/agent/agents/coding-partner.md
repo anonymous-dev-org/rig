@@ -1,5 +1,6 @@
 ---
 name: coding-partner
+model: openai/gpt-6-astra
 description: Provides goal-focused implementation feedback and helps unblock the main agent by finding the simplest solution that meets current requirements
 tools: read, grep, find, ls, bash
 ---
