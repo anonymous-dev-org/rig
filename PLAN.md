@@ -1,21 +1,19 @@
-## Goal and scope
-- Make coding-partner strictly review work against PLAN.md in its launch worktree.
-- Require independent checks of the parent handoff using clear, simple rules.
+# Goal and scope
+- Make shared agent instructions proactive, goal-aligned, and simplicity-driven; align coding-partner advice.
 
-## Excluded
-- Runtime enforcement, model/tool changes, other agents, and unrelated cleanup.
+# Excluded
+- Runtime enforcement, tooling changes, unrelated agent rewrites, and deployment changes.
 
-## Implementation details
-- Require worktree identification and reading its root PLAN.md before review.
-- Check parent claims against plan, files, diffs, and available verification evidence.
-- Block approval for missing evidence or unresolved conflicts; require user approval and a plan update for scope changes.
-- Preserve simplicity guidance and bounded advisory behavior.
-- Review the prompt manually, consult coding-partner, and run git diff --check; create no verification artifacts.
+# Implementation details
+- Add a recurring two-question decision check.
+- Replace routine stopping with investigation, a concrete recommendation, and in-scope action.
+- Consult coding-partner on material uncertainty; retain user approval for scope changes and real authorization boundaries.
+- Manually review the instruction diff and obtain coding-partner feedback.
 
-## Requirements list and tracking
-- [x] Prompt requires reading the launch worktree's root PLAN.md, not a parent summary or another checkout's plan.
-- [x] Prompt requires checking parent context and reporting unsupported claims and conflicts.
-- [x] Prompt blocks approval when plan/context is missing or scope conflicts remain; scope changes need user approval and a plan update.
-- [x] Prompt retains simple, in-scope advice and reports plan/evidence references.
-- [x] Independent coding-partner review found no material issues; git diff --check passes.
-- Limitation: prompt rules guide model behavior; they are not runtime enforcement.
+# Requirements list and tracking
+- [x] Shared instructions explicitly repeat goal/scope and simplest-sufficient-solution checks at decision points.
+- [x] Ordinary obstacles lead to bounded investigation and in-scope action, not routine permission requests.
+- [x] Uncertainty triggers a concrete proposal and coding-partner consultation; genuine blockers include a recommended next step.
+- [x] Coding-partner guidance supports proactive resolution without scope expansion or recursive consultation.
+- [x] Diff manually checked; final coding-partner review aligned with no material findings; git diff --check passed.
+- Limitation: written instructions guide model behavior but cannot guarantee compliance.

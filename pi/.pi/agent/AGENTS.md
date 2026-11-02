@@ -1,14 +1,21 @@
 # Working instructions
 
-## 1. Goal and scope
+## 1. Goal, scope, and decision mantra
 
-Do only what the agreed goal and scope require. Before planning and each implementation step, check that the work is necessary and in scope. Ask if scope is unclear; get explicit user approval before expanding it.
+Before planning, each implementation step, when an obstacle, uncertainty, or added complexity appears, and before declaring completion, always ask yourself:
+
+- **Is this aligned with the agreed goal and scope?**
+- **Is this the simplest solution that meets all current requirements?**
+
+Use these questions as an internal decision check, not a ritual to repeat in every reply. If either answer is no, correct the approach before proceeding. If unsure, inspect the available evidence and consult `coding-partner` for material uncertainty rather than guessing or immediately handing the problem back to the user.
+
+Do only what the agreed goal and scope require. Resolve routine implementation questions through investigation and judgment; ask the user when an unresolved ambiguity changes what should be delivered or requires their authority. Get explicit user approval before expanding scope.
 
 ## 2. Simplicity and code quality
 
 Make the code work correctly first, using the simplest solution that meets every current requirement. Keep code clear. Prefer existing code, then standard libraries, native platform features, installed dependencies, and minimal custom code.
 
-Do not build for hypothetical future needs. Add structure or settings, refactor, optimize, or introduce abstractions only when current requirements need them. Before each implementation step and whenever complexity grows, check for a simpler sufficient solution and use it.
+Do not build for hypothetical future needs. Add structure or settings, refactor, optimize, or introduce abstractions only when current requirements need them. Use the decision mantra to remove unnecessary complexity without dropping requirements or weakening correctness or safety.
 
 ## 3. Worktree and delegation
 
@@ -20,7 +27,9 @@ Before planning or implementation:
 
 Use subagents for separable exploration or implementation work, or useful independent review. Work without subagents only when none of these applies.
 
-Use `coding-partner` to get feedback on the implementation at meaningful decision points and before declaring it complete. Also consult it when blocked, repeatedly trying unsuccessful approaches, or considering a more complex workaround. Give it the agreed goal, requirements, relevant code or diff, and any blocker and attempted solutions. Its role is to catch goal drift and overengineering and recommend the simplest solution that meets current requirements—not to expand scope. Address material feedback before proceeding: adopt it or explain why a current requirement makes it unsuitable. Ask the user about unresolved scope decisions. Keep consultations bounded; do not request feedback after every edit. This is a main-agent responsibility; subagents must not recursively invoke `coding-partner`.
+Use `coding-partner` to get feedback on the implementation at meaningful decision points and before declaring it complete. Also consult it when materially uncertain about the cause of an issue, goal/scope alignment, or solution choice; before declaring a blocker; after repeated unsuccessful approaches; or before adopting a more complex workaround. Bring the agreed goal, requirements, relevant code or diff, observed evidence, attempted solutions, and your recommended next step with its tradeoffs. If no solution is supported yet, bring the specific uncertainty and your proposed next investigation.
+
+Its role is to help resolve uncertainty, catch goal drift and overengineering, and recommend the simplest supported solution—not to expand scope or replace the main agent's judgment. Address material feedback before proceeding: adopt it or explain why a current requirement makes it unsuitable. Ask the user about unresolved scope or authorization decisions with a concrete recommendation. Keep consultations bounded and focused on the unresolved decision; do not request feedback after every edit or delegate routine, well-understood choices. This is a main-agent responsibility; subagents must not recursively invoke `coding-partner`.
 
 After successfully merging the branch, remove its worktree with `git worktree remove <worktree-path>`.
 
@@ -43,11 +52,12 @@ In **Requirements list and tracking**, note technical debt left by the implement
 
 ## 5. Implement, verify, and finish
 
-Once the plan is written, implement and verify it until all completion conditions are met. Do not stop after planning or ask routinely whether to continue.
+Once the plan is written, own the work through implementation and verification until all completion conditions are met. Do not stop after planning, merely describe work you can safely perform, or ask routinely whether to continue.
 
-- **Implementation issue:** pause implementation, analyze the cause, and evaluate solutions against the goal and scope. Choose the simplest sufficient solution without unnecessary complexity. If it stays within scope and does not significantly deviate from the plan, update `PLAN.md` as needed and resume without asking permission.
-- **Significant deviation:** a change to the agreed scope, requirements, completion conditions, or main implementation approach. Pause, explain the change and its impact, and get explicit user approval. After approval, update `PLAN.md` before resuming implementation.
-- **Blocked:** if no solution meets the goal within the current scope and plan, explain the blocker and ask the user how to proceed.
+- **Implementation issue or minor limit:** investigate the cause using relevant code, available evidence, and existing tools. A failed attempt, unavailable convenience tool, or incomplete information is not by itself a blocker. Compare plausible alternatives using the decision mantra, choose the simplest supported in-scope solution, update `PLAN.md` as needed, and act without asking permission when it does not significantly deviate from the plan. Respect tool, safety, and authorization limits; do not bypass them to keep moving.
+- **Uncertainty or repeated failure:** consult `coding-partner` as described above. Use new evidence to change the approach rather than repeating an unsuccessful attempt unchanged. Keep investigation bounded to what can resolve the decision; do not turn a small obstacle into an unrelated redesign.
+- **Significant deviation:** a change to the agreed scope, requirements, completion conditions, or main implementation approach. Pause the affected work, explain the recommended change and its impact, and get explicit user approval. After approval, update `PLAN.md` before resuming that work. Routine implementation adjustments that preserve these boundaries do not need approval.
+- **Genuine blocker:** after bounded investigation and coding-partner consultation, if no supported path meets the goal within the current scope and authority, state the exact constraint, evidence, and alternatives attempted or ruled out. Recommend the smallest next step and ask the specific question or permission needed to unlock it—not an open-ended request for direction. If consultation itself is unavailable, report that limitation and a concrete recovery step rather than implying review occurred. Continue independent, safe, in-scope work where possible; do not claim blocked requirements are complete.
 
 Verify with existing checks or manual review. Never create tests, probes, diagnostic scripts, or other verification artifacts, even temporarily. This includes one-off probes that create no files.
 
