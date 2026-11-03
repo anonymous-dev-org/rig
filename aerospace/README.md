@@ -63,9 +63,13 @@ the snapshots below before attempting activation again.
 The publisher uses Bun's built-in TOML parser/writer. First adoption fills
 missing defaults while preserving personal values. Later three-way updates
 compare previous defaults, the personal file and new defaults: personal edits,
-unknown keys and deletions survive; arrays are atomic. Overlapping changes keep
-the personal value. Edit the private file, never the tracked template. Unchanged
-bytes are retained; changed values can remove comments/formatting, disclosed
+unknown keys and deletions survive; arrays and scalar/table type changes are
+atomic. New tables merge into existing personal tables; retired tables lose only
+unchanged defaults. A deleted personal table stays deleted. Overlapping changes
+keep the personal value/deletion and report key paths (JSON arrays of key names,
+never values) in preview and apply output. Edit the private file, never the
+tracked template. Unchanged bytes are retained; changed values can remove
+comments/formatting, disclosed
 before publication with a byte-exact private backup first. Dates/times,
 nonfinite numbers and other non-plain values fail closed rather than undergoing
 lossy JSON coercion.
