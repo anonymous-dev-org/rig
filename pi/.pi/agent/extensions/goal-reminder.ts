@@ -1,7 +1,7 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
 const REMINDER_INTERVAL = 20;
-const REMINDER = "Look back at the user's current goal and agreed scope. Keep the next action directly focused on that goal. Choose the simplest solution that meets the requirements; do not add unrelated improvements or speculative abstractions. If the goal is met, stop rather than inventing more work.";
+const REMINDER = "Take a step back and evaluate whether the current work is aligned with the task’s agreed goal and scope. It looks like the current solution is overengineered. Check whether there is a simpler approach that meets all current requirements. If so, use it without weakening correctness or safety. Do not add unrelated improvements or speculative abstractions.";
 
 export default function (pi: ExtensionAPI) {
   let calls = 0;

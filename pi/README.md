@@ -75,8 +75,10 @@ security sandbox. Do not expose untrusted pages to privileged secrets casually.
 ## Goal reminder
 
 The `goal-reminder.ts` extension adds a short instruction every 20 model calls:
-look back at the user's current goal, keep the next action focused, choose the
-simplest solution that meets the requirements, and stop when the goal is met.
+step back and evaluate alignment with the agreed goal and scope, reconsider an
+overengineered solution, and use a simpler approach that meets all requirements
+without weakening correctness or safety. Avoid unrelated improvements and
+speculative abstractions.
 Change `REMINDER_INTERVAL` in the extension to adjust the cadence. Calls are counted
 from extension load, so `/reload` or a restart resets the counter; the first reminder
 is on call 20. It uses Pi's `context_with_system` hook without adding saved conversation messages
