@@ -1,20 +1,21 @@
 # Goal and scope
-- Stop creating deployment symlinks. Give users ordinary local config files they can customize.
-- Update unchanged managed copies; preserve customized files and report newer defaults. Convert positively identified rig links without following foreign links.
+- Add a short recurring Pi reminder to look back at the agreed goal, stay focused, and avoid overengineering.
 
 # Excluded
-- Pi JSON merge changes, new per-app mergers, live home changes, new tests/probes, unrelated installation behavior.
+- Goal tracking, new settings, extra agent workflows, provider-specific payload rewriting, unrelated cleanup, live home changes.
+- New tests, probes, or diagnostic scripts; use existing checks and manual review.
 
 # Implementation details
-- Replace shared asset linking with byte copies and a small prior-default hash inventory outside checkout.
-- Existing ordinary files without history remain personal. Known rig file/directory links migrate with backups and checks; directory snapshots already exist.
-- Preserve known deletions. Do not auto-delete retired assets or follow foreign symlinks.
-- Update ownership/customization docs; existing hooks remain optional, not mandatory for customization.
+- User changed cadence: inject periodically, not on every call. User selected a fixed interval of 20 model calls, controlled by one constant; counter starts at extension load.
+- Use Pi's context_with_system hook to append one request-only system reminder on every twentieth invocation; preserve existing messages.
+- Add the extension to rig's explicit Pi deployment list and briefly document behavior and activation.
+- Consult coding-partner on the approach and final diff; run available relevant checks.
 
 # Requirements list and tracking
-- [x] Copy assets with safe updates and no new symlinks in setup/update.
-- [x] Convert known links, preserve custom files/deletions, retain Pi JSON behavior. Directory migration preflights baselines, publishes all copies, then records history.
-- [x] Update ownership docs; Node/Bash syntax and diff checks pass. Pi suite 41/43: existing headless mismatch plus obsolete Stow-loop assertion from prior orchestration change. Pi JSON implementation unchanged.
-- LSP reported no findings but could not confirm clean. No live home migration or runtime checks performed. Stop other config writers during migration; filesystem operations are not a global transaction.
-- Standalone legacy AeroSpace installer remains outside setup/update scope and still uses links.
-- [x] Independent review completed; both directory migration findings corrected and re-reviewed as aligned. Delivery branch ready for PR/merge.
+- [x] A short reminder asks the agent to revisit the goal and choose focused, non-overengineered work.
+- [x] Request hook appends the reminder every 20 calls without saving history or starting turns (manual review; no live model run).
+- [x] Extension added to deployment inventory; docs explain behavior and activation.
+- [x] Existing checks and independent review completed; limitations recorded. Coding-partner approved the counter/hook approach at interval 10; user then selected 20 (constant and docs updated, manually checked).
+- Checks: deployment script Node syntax and git diff whitespace pass. Node --check cannot parse this TypeScript extension even with --experimental-strip-types; do not claim TS syntax verification. Existing Pi suite: 41/43 pass; unchanged failures expect Playwright --headless and obsolete Stow cleanup loops. Unrelated fixes excluded.
+- Type-check limitation: worktree cannot resolve the globally installed Pi type import; resulting implicit-any warning. Installed API declarations reviewed instead; no new build setup.
+- Behavior is advisory, not enforced. A forced replacement system prompt can remove the reminder, including some subagent runtime paths; ordinary parent-session extensions inspected did not demonstrate this override. Some providers fold it into the leading prompt. No live deployment or model-behavior check performed.
