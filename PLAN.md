@@ -1,24 +1,21 @@
 # Goal and scope
-- Hide pi-lens's remaining below-editor widget, preserving its tools.
-- Add a short recurring Pi reminder to look back at the agreed goal, stay focused, and avoid overengineering.
+- Make selected Pi setup/update install declared packages before reporting success, including pinned packages on fresh homes.
+- Preserve private package declarations, resource filters and opt-outs.
 
 # Excluded
-- Goal tracking, new settings, extra agent workflows, provider-specific payload rewriting, unrelated cleanup, live home changes except the targeted pi-lens config deployment.
-- New tests, probes, or diagnostic scripts; use existing checks and manual review.
+- Copying undeclared personal skills/prompts or private credentials.
+- New installers, dependencies, tests or verification artifacts.
 
 # Implementation details
-- User changed cadence: inject periodically, not on every call. User selected a fixed interval of 20 model calls, controlled by one constant; counter starts at extension load.
-- Use Pi's context_with_system hook to append one request-only system reminder on every twentieth invocation; preserve existing messages.
-- Add the extension to rig's explicit Pi deployment list and briefly document behavior and activation.
-- Consult coding-partner on the approach and final diff; run available relevant checks.
+- Reuse the installed Pi package-manager API after settings sync: resolve missing/mismatched packages, then update only when upgrades are enabled. CLI update alone skips missing pinned npm packages.
+- Load the API from the selected Pi installation; use in-memory global settings so project configuration and private JSON are not rewritten. Fail on offline mode, install failures or missing packages.
+- Keep preview non-mutating and package actions global, independent of repository trust/config.
+- Update setup documentation and manually review control flow; run applicable existing checks only.
 
 # Requirements list and tracking
-- [x] A short reminder asks the agent to revisit the goal and choose focused, non-overengineered work.
-- [x] Request hook appends the reminder every 20 calls without saving history or starting turns (manual review; no live model run).
-- [x] Extension added to deployment inventory; docs explain behavior and activation.
-- [x] Existing checks and independent review completed; limitations recorded. Coding-partner approved the counter/hook approach at interval 10; user then selected 20 (constant and docs updated, manually checked).
-- Checks: deployment script Node syntax and git diff whitespace pass. Node --check cannot parse this TypeScript extension even with --experimental-strip-types; do not claim TS syntax verification. Existing Pi suite: 41/43 pass; unchanged failures expect Playwright --headless and obsolete Stow cleanup loops. Unrelated fixes excluded.
-- Type-check limitation: worktree cannot resolve the globally installed Pi type import; resulting implicit-any warning. Installed API declarations reviewed instead; no new build setup.
-- Behavior is advisory, not enforced. A forced replacement system prompt can remove the reminder, including some subagent runtime paths; ordinary parent-session extensions inspected did not demonstrate this override. Some providers fold it into the leading prompt. No live deployment or model-behavior check performed.
-- [x] Pi-lens: added widget.visible=false, retained ui.hideLspStatus=true; deployed only this config to home. Config comparison and diff check pass; coding-partner approved.
-- Pi-lens limitation: live terminal appearance unverified; /reload or restart required. No package removal or tool disabling.
+- [x] Fresh homes explicitly install all configured packages, including pinned ones (Pi resolver and inventory postcheck; source reviewed).
+- [x] Failed installs fail the Pi component with actionable output.
+- [x] Personal filters/opt-outs, preview and upgrade controls retain their contracts (in-memory global settings; preview passed).
+- [x] Documentation matches behavior; coding-partner final review found no material issues.
+- Verification: syntax, active LSP and diff checks clean; existing sync suite 41/43 pass. Both failures reproduce on unchanged main (stale headless MCP and removed shell cleanup expectations).
+- Known gaps: undeclared standalone resources remain outside deployment; no live fresh-user/network install exercised. API loading requires the selected Node/Bun Pi package's public ESM export. No new verification artifacts created.

@@ -29,9 +29,25 @@ and supply those variables in Pi's environment rather than committing credential
 
 Pi package installs use Bun through `"npmCommand": ["bun"]`. The `npm:`
 package prefixes identify registry sources and remain unchanged. Node.js is still
-required to run Pi. Pi resolves configured packages on startup/reload; rig does not
-implement another package installer. Bundled skills arrive through those packages;
-the empty root skills lock declares no separate skill installation.
+required to run Pi. After JSON sync, init/update use the selected Pi installation's
+public package-manager API to install missing packages, including pinned versions,
+and report installation failures as a failed Pi component. They then update packages
+unless `--brew-no-upgrade` is selected. No-upgrade retains compatible installed
+versions, but still installs missing packages and repairs npm versions that do not
+match their configured constraint. Pi owns downloading, source parsing and resource
+discovery; rig does not implement another package installer.
+
+Reconciliation reads the effective private settings without rewriting them and ignores
+project settings. Personal package removals and resource filters remain intact.
+`PI_OFFLINE` must be disabled, and `PI_CODING_AGENT_DIR` must be unset or point to
+`~/.pi/agent`, where rig deploys its configuration. A retained Pi executable must
+expose the public Node/Bun package API; unsupported wrappers fail with guidance.
+Preview only describes these actions. The narrow `sync-settings.mjs` command remains
+JSON-only. Restart/reload Pi after init/update to load the installed resources.
+
+Bundled prompts and skills arrive through the declared packages. Rig has no standalone
+prompt inventory, and the empty root skills lock declares no separate skill installation.
+Resources installed manually in another user's home are not copied.
 
 To disable a bundled resource, use Pi's package object filters (`skills`,
 `extensions`, `prompts`, or `themes`); an empty filter list disables that resource
