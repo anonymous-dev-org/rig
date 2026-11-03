@@ -10,7 +10,7 @@
 # Implementation details
 - Replace only the REMINDER string with the approved wording about goal/scope alignment and checking for a simpler approach.
 - Remove the stop-when-complete instruction and update the README summary.
-- Compare copies, check the diff, and obtain read-only coding-partner review.
+- Compare copies and check the diff.
 
 # Requirements list and tracking
 - [x] Approved wording appears in the worktree and installed extension; copies match.
