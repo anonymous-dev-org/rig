@@ -21,11 +21,8 @@ function merge(previous, local, next) {
 function fill(local, defaults) {
   if (!table(local) || !table(defaults)) return local;
   const result = Object.create(null);
-  for (const key of new Set([...Object.keys(local), ...Object.keys(defaults)])) {
-    if (!Object.hasOwn(local, key)) result[key] = defaults[key];
-    else if (Object.hasOwn(defaults, key)) result[key] = fill(local[key], defaults[key]);
-    else result[key] = local[key];
-  }
+  for (const key of new Set([...Object.keys(local), ...Object.keys(defaults)]))
+    result[key] = !Object.hasOwn(local, key) ? defaults[key] : Object.hasOwn(defaults, key) ? fill(local[key], defaults[key]) : local[key];
   return result;
 }
 function status(file) {
@@ -80,17 +77,15 @@ function run() {
     throw new Error('Usage: bun scripts/sync-toml.mjs aerospace|lazysql [--preview]');
   if (typeof globalThis.Bun?.TOML?.parse !== 'function' || typeof globalThis.Bun?.TOML?.stringify !== 'function')
     throw new Error('Bun with TOML.parse and TOML.stringify is required');
+  if (component === 'aerospace') throw new Error('AeroSpace publication awaits a supported offline semantic validator; existing installer remains authoritative');
   if (!process.env.HOME) throw new Error('HOME is required');
   const home = path.resolve(process.env.HOME);
   const config = path.resolve(process.env.XDG_CONFIG_HOME || path.join(home, '.config'));
-  const aerospace = component === 'aerospace';
-  const destination = aerospace ? path.join(home, '.aerospace.toml') : path.join(config, 'lazysql/config.toml');
-  const state = path.join(home, '.local/state/rig/toml', component);
-  const baseline = path.join(root, aerospace ? 'aerospace/.aerospace.toml' : 'lazysql/Library/Application Support/lazysql/config.example.toml');
-  const legacy = aerospace ? baseline : path.join(root, 'lazysql/Library/Application Support/lazysql/config.toml');
-  const oldHome = aerospace ? destination : path.join(home, 'Library/Application Support/lazysql/config.toml');
-  const inputPaths = aerospace ? [destination] : [...new Set([destination, oldHome, legacy])];
-  const alternates = aerospace ? [...new Set([path.join(home, '.config/aerospace/aerospace.toml'), path.join(config, 'aerospace/aerospace.toml')])] : [];
+  const destination = path.join(config, 'lazysql/config.toml');
+  const state = path.join(home, '.local/state/rig/toml/lazysql');
+  const baseline = path.join(root, 'lazysql/Library/Application Support/lazysql/config.example.toml');
+  const legacy = path.join(root, 'lazysql/Library/Application Support/lazysql/config.toml');
+  const oldHome = path.join(home, 'Library/Application Support/lazysql/config.toml');
   const history = path.join(state, 'baseline.toml');
   const pending = path.join(state, 'pending.json');
   const prepared = destination + '.rig-prepared';
@@ -99,10 +94,6 @@ function run() {
   for (const file of [destination, state, prepared]) if (within(file)) throw new Error('Private output cannot be inside checkout');
   const validatePaths = () => {
     for (const file of [baseline, legacy, history, pending, prepared, lock, state]) safe(file);
-    for (const file of alternates) {
-      safe(path.dirname(file));
-      if (status(file)) throw new Error(`Competing AeroSpace config; preserve/reconcile it manually before publication: ${file}`);
-    }
     for (const file of [destination, oldHome]) {
       safe(path.dirname(file));
       if (status(file)?.isSymbolicLink() && path.resolve(path.dirname(file), fs.readlinkSync(file)) !== legacy)
@@ -117,7 +108,7 @@ function run() {
   const nextSnapshot = capture(baseline);
   if (!nextSnapshot) throw new Error('Missing default TOML');
   const next = parse(text(nextSnapshot));
-  const inputs = inputPaths.map(file => [file, capture(file, true)]);
+  const inputs = [...new Set([destination, oldHome, legacy])].map(file => [file, capture(file, true)]);
   const journal = capture(pending);
   const copies = inputs.filter(([, snapshot]) => snapshot?.data);
   for (const [, snapshot] of copies) parse(text(snapshot));
@@ -126,28 +117,25 @@ function run() {
   const prior = capture(history);
   if (prior) parse(text(prior));
   if (status(prepared) && !journal) throw new Error('Orphan prepared file; inspect before retrying');
-  let record;
   if (journal) {
-    try { record = JSON.parse(text(journal)); } catch { throw new Error('Invalid recovery JSON; preserve the journal and inspect manually'); }
-    if (!table(record) || record.version !== 1 || record.destination !== destination || !Array.isArray(record.inputs) || typeof record.after !== 'string' || typeof record.baseline !== 'string' || !['preparing', 'ready'].includes(record.phase)) throw new Error('Invalid recovery record');
+    const record = JSON.parse(text(journal));
+    if (record.version !== 1 || record.destination !== destination || !Array.isArray(record.inputs) || typeof record.after !== 'string' || typeof record.baseline !== 'string' || !['preparing', 'ready'].includes(record.phase)) throw new Error('Invalid recovery record');
     parse(record.after); parse(record.baseline);
     if (!equal(record.inputs.map(([file]) => file), inputs.map(([file]) => file))) throw new Error('Recovery path mismatch');
   }
-  const localSnapshot = copies[0]?.[1] || (aerospace && inputs[0][1]?.link ? nextSnapshot : undefined);
+  const localSnapshot = copies[0]?.[1];
   const local = localSnapshot ? parse(text(localSnapshot)) : missing;
-  let effective = next;
-  if (local !== missing) effective = prior ? merge(parse(text(prior)), local, next) : fill(local, next);
+  const effective = local === missing ? next : prior ? merge(parse(text(prior)), local, next) : fill(local, next);
   const after = localSnapshot && equal(local, effective) ? text(localSnapshot) : Bun.TOML.stringify(effective);
   if (!equal(parse(after), effective)) throw new Error('TOML serialization changed values');
-  console.log(`${component}: ${destination}; private history/backups: ${state}`);
-  if (aerospace) console.warn('Publication validates TOML syntax/round-trip only, not AeroSpace semantics. No activation/reload is performed.');
+  console.log(`Lazysql: ${destination}; private history/backups: ${state}`);
   if (flag === '--preview') { console.log(journal ? 'Pending transaction requires recovery on apply' : 'Preview: personal edits/deletions and atomic arrays retained; changed TOML loses comments/formatting after private backup'); return; }
   fs.mkdirSync(state, { recursive: true, mode: 0o700 });
   validatePaths();
   const fd = fs.openSync(lock, 'wx', 0o600);
   try {
     check(pending, journal);
-    if (!journal) record = { version: 1, destination, phase: 'preparing', inputs, after, baseline: text(nextSnapshot) };
+    let record = journal ? JSON.parse(text(journal)) : { version: 1, destination, phase: 'preparing', inputs, after, baseline: text(nextSnapshot) };
     const guard = () => {
       validatePaths(); check(baseline, nextSnapshot); check(history, prior);
       for (const [file, snapshot] of record.inputs) check(file, snapshot, true);
@@ -157,7 +145,7 @@ function run() {
       if (!journal) {
         const backup = path.join(state, `snapshot-${Date.now()}-${process.pid}.json`);
         if (status(backup)) throw new Error('Backup collision');
-        write(backup, JSON.stringify({ inputs, baseline: nextSnapshot, history: prior }));
+        write(backup, JSON.stringify({ inputs }));
         write(pending, JSON.stringify(record));
       }
       fs.mkdirSync(path.dirname(destination), { recursive: true, mode: 0o700 });
@@ -182,7 +170,7 @@ function run() {
     }
     write(history, record.baseline);
     fs.unlinkSync(pending); durable(state);
-    console.log(`${component} publication complete (no app started or reloaded)`);
+    console.log('Lazysql publication complete (no app started)');
   } finally { fs.closeSync(fd); fs.unlinkSync(lock); }
 }
 try { run(); } catch (error) { console.error(`TOML sync failed: ${error.message}`); process.exitCode = 1; }
