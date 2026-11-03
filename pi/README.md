@@ -10,8 +10,9 @@ node /path/to/rig/pi/sync-settings.mjs
 
 It creates ordinary private `~/.pi/agent/settings.json` and `mcp.json` files,
 with history and recovery records under `~/.local/state/rig/pi/`, never in rig.
-Init/update call this same command before Stow; Stow excludes private configs,
-templates, this README and sync tooling. Fresh homes bootstrap both defaults.
+Init/update call this same command for selected Pi. An explicit asset list excludes
+private configs, templates, docs, sync tooling and browser captures from deployment.
+Fresh homes bootstrap both defaults.
 Existing settings without history gain missing defaults and missing packages,
 while retaining personal values and package declarations. Existing MCP without
 history recursively gains missing defaults, preserving personal servers and

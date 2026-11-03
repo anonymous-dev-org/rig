@@ -19,9 +19,10 @@
 - [x] Audit existing delivery and preserve personal configuration goal.
 - [x] Remove new TOML/macOS machinery from deliverable after scope reduction.
 - [x] Implement native hooks, independently reviewed commit 7e8c602; integrated as 653c878. Deployment remains pending.
-- [ ] Finish Pi package identity/filter/removal/adoption changes and docs; current existing suite 42/43 passing, sole failure is preexisting Playwright --headless expectation.
-- [ ] Integrate safe shared orchestration, selections, explicit assets and Brew controls. Worker active in rig-orchestration, revised scope relayed.
-- [ ] Review complete integration, document supported manual migration, run existing checks, deliver MR/merge.
+- [x] Finish Pi package identity/filter/removal/adoption changes and docs; existing suite 42/43 passing, sole failure is preexisting Playwright --headless expectation.
+- [x] Integrate safe shared orchestration, selections, explicit assets and Brew controls (180f648).
+- [x] Independent native and final Pi/orchestration reviews aligned; manual migration documented. Node/Bash/Zsh/Lua syntax and diff checks passed. LSP clean confirmation inconclusive with two advisory Pi warnings.
+- [ ] Deliver MR/merge.
 - Pi generic JSON merge retains existing atomic new-table behavior; package list is the scoped exception. No new regression tests permitted; package edge cases source-reviewed only.
 - Native caveats: existing XDG Git config must not become subordinate to shared credential resets; Kitty directories must remain user-owned, link files individually; preserve Zsh hooks and nvim-local.
 - Runtime behavior remains unverified; no live settings/installations changed. AeroSpace/Lazysql/macOS no longer receive automatic personal/default merging in this scope.
