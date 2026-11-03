@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
+import {createHash} from 'node:crypto';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
@@ -47,6 +48,22 @@ const manifests = {
   pi: ['.pi-lens/config.json', '.pi/agent/AGENTS.md', ...['coding-partner','planner','reviewer-api','reviewer-data','reviewer-quality','reviewer-requirements','reviewer-runtime','reviewer-security','reviewer-ui','reviewer','scout','worker'].map(name => `.pi/agent/agents/${name}.md`), ...['done-sound.ts','footer.ts','subagent/config.json','titlebar-spinner.ts'].map(name => `.pi/agent/extensions/${name}`), '.pi/agent/themes/rig.json']
 };
 let backupRoot;
+let inventoryFile;
+let inventory = {};
+const migrated = new Set();
+const hash = bytes => createHash('sha256').update(bytes).digest('hex');
+function record(dest, digest) {
+  if (preview) return;
+  inventory[dest] = digest;
+  const next = inventoryFile + '.next';
+  fs.writeFileSync(next, JSON.stringify(inventory, null, 2) + '\n', {flag:'wx', mode:0o600});
+  fs.renameSync(next, inventoryFile);
+}
+function snapshot(file, bytes) {
+  const backup = path.join(backupRoot, path.relative(path.parse(file).root, file));
+  fs.mkdirSync(path.dirname(backup), {recursive:true, mode:0o700});
+  fs.writeFileSync(backup, bytes, {flag:'wx', mode:0o600});
+}
 function inspectDirectory(component, prefix, dir) {
   for (const entry of fs.readdirSync(dir, {withFileTypes:true})) {
     const relative = path.join(prefix,entry.name);
@@ -66,6 +83,7 @@ function parents(component, relative) {
       if (target !== path.join(root, component, prefix) || !stat(target)?.isDirectory()) fail(`Foreign directory link ${dest}; migrate it manually or deselect ${component}.`);
       inspectDirectory(component, prefix, target);
       detached = true;
+      for (const file of manifests[component].filter(file => file.startsWith(prefix + path.sep))) migrated.add(destination(file));
       console.log(`Detach known rig directory link ${dest}; source stays unchanged, private snapshot retained.`);
       if (!preview) {
         const backup = path.join(backupRoot, component, prefix);
@@ -74,11 +92,22 @@ function parents(component, relative) {
         inspectDirectory(component, prefix, target);
         for (const file of manifests[component].filter(file => file.startsWith(prefix + path.sep))) {
           const suffix = path.relative(prefix,file);
-          if (!fs.readFileSync(path.join(target,suffix)).equals(fs.readFileSync(path.join(backup,suffix)))) fail(`Concurrent source edit: ${path.join(target,suffix)}. Directory link left intact.`);
+          if (Boolean(stat(path.join(target,suffix))) !== Boolean(stat(path.join(backup,suffix))) || (stat(path.join(target,suffix)) && !fs.readFileSync(path.join(target,suffix)).equals(fs.readFileSync(path.join(backup,suffix))))) fail(`Concurrent source edit: ${path.join(target,suffix)}. Directory link left intact.`);
         }
         if (!stat(dest)?.isSymbolicLink() || path.resolve(path.dirname(dest),fs.readlinkSync(dest)) !== target) fail(`Concurrent edit: ${dest}`);
         fs.unlinkSync(dest);
         fs.mkdirSync(dest, {mode:0o700});
+        for (const file of manifests[component].filter(file => file.startsWith(prefix + path.sep))) {
+          const saved = path.join(backup, path.relative(prefix, file));
+          const committed = spawnSync('git', ['show', `HEAD:${component}/${file}`], {cwd:root});
+          if (committed.status !== 0) fail(`Cannot identify prior default: ${file}`);
+          if (!stat(saved)) { record(destination(file), hash(committed.stdout)); continue; }
+          const local = destination(file);
+          safe(path.dirname(local));
+          fs.mkdirSync(path.dirname(local), {recursive:true, mode:0o700});
+          fs.copyFileSync(saved, local, fs.constants.COPYFILE_EXCL);
+          record(local, hash(committed.stdout));
+        }
       }
     }
   }
@@ -96,7 +125,11 @@ function adoptGit() {
   if (current?.isSymbolicLink()) {
     known = path.resolve(home, fs.readlinkSync(file)) === path.join(root,'git/.gitconfig');
     if (!known) fail(`Foreign ${file} link; preserve it and manually add the shared Git include, or deselect git.`);
-    prior = fs.existsSync(file) ? fs.readFileSync(file) : fs.readFileSync(path.join(root,'git/.config/git/rig.conf'));
+    const source = path.join(root, 'git/.gitconfig');
+    safe(source);
+    const fallback = path.join(root, 'git/.config/git/rig.conf');
+    safe(fallback);
+    prior = stat(source) ? fs.readFileSync(source) : fs.readFileSync(fallback);
   } else if (current) {
     if (!current.isFile()) fail(`Not a regular Git config: ${file}`);
     prior = fs.readFileSync(file);
@@ -110,33 +143,71 @@ function adoptGit() {
     fs.writeFileSync(path.join(backupRoot,'gitconfig'),prior,{flag:'wx',mode:0o600});
   }
   const next = file + '.rig-next';
-  fs.writeFileSync(next, Buffer.concat([Buffer.from(include), known ? Buffer.alloc(0) : prior]), {flag:'wx', mode:0o600});
+  fs.writeFileSync(next, Buffer.concat([Buffer.from(include), prior]), {flag:'wx', mode:0o600});
   const latest = stat(file);
-  if (Boolean(latest) !== Boolean(current) || (latest && (latest.isSymbolicLink() !== current.isSymbolicLink() || (known ? path.resolve(home, fs.readlinkSync(file)) !== path.join(root,'git/.gitconfig') : !fs.readFileSync(file).equals(prior))))) {
+  if (Boolean(latest) !== Boolean(current) || (latest && (latest.isSymbolicLink() !== current.isSymbolicLink() || (known ? path.resolve(home, fs.readlinkSync(file)) !== path.join(root,'git/.gitconfig') || (fs.existsSync(file) && !fs.readFileSync(file).equals(prior)) : !fs.readFileSync(file).equals(prior))))) {
     fs.unlinkSync(next);
     fail(`Concurrent Git config edit: ${file}`);
   }
   fs.renameSync(next,file);
 }
-function link(component, relative) {
+function deploy(component, relative) {
   const source = path.join(root, component, relative);
   const dest = destination(relative);
-  const detached = parents(component, relative);
-  if (!preview) safe(path.dirname(dest));
+  if (migrated.has(dest)) return;
+  safe(source);
   if (!stat(source)?.isFile()) fail(`Missing declared source ${source}`);
-  const current = preview && detached ? null : stat(dest);
-  if (current) {
-    if (current.isSymbolicLink() && path.resolve(path.dirname(dest), fs.readlinkSync(dest)) === source) return;
-    const message = `Conflict: ${dest}. Kept personal; manually compose with ${source} or deselect ${component}. Rig never executes old config to infer intent.`;
-    if (component === 'pi') { console.error(message); return false; }
-    fail(message);
+  const bytes = fs.readFileSync(source);
+  const digest = hash(bytes);
+  const detached = parents(component, relative);
+  if (detached) return;
+  safe(path.dirname(dest));
+  const current = stat(dest);
+  let prior;
+  let linked = false;
+  if (current?.isSymbolicLink()) {
+    if (path.resolve(path.dirname(dest), fs.readlinkSync(dest)) !== source) fail(`Foreign file link: ${dest}`);
+    linked = true;
+    prior = fs.readFileSync(source);
+  } else if (current) {
+    if (!current.isFile()) fail(`Not a regular file: ${dest}`);
+    prior = fs.readFileSync(dest);
   }
-  console.log(`link ${dest} -> ${source}`);
-  if (!preview) { fs.mkdirSync(path.dirname(dest), {recursive:true, mode:0o700}); fs.symlinkSync(source, dest); }
+  if (!current && inventory[dest]) {
+    console.log(`Keep local deletion ${dest}; default: ${source}`);
+    return;
+  }
+  if (prior && !linked && hash(prior) !== digest && hash(prior) !== inventory[dest]) {
+    console.log(`Keep customized ${dest}; review default: ${source}`);
+    return;
+  }
+  if (prior && !linked && hash(prior) === digest) { record(dest, digest); return; }
+  console.log(`${linked ? 'Detach known rig link' : 'Copy'} ${dest}; default: ${source}`);
+  if (preview) return;
+  fs.mkdirSync(path.dirname(dest), {recursive:true, mode:0o700});
+  if (linked) snapshot(dest, prior);
+  const next = dest + '.rig-next';
+  fs.writeFileSync(next, linked ? prior : bytes, {flag:'wx', mode:current && !linked ? current.mode & 0o777 : 0o600});
+  const latest = stat(dest);
+  if (Boolean(latest) !== Boolean(current) || (latest && (linked
+    ? !latest.isSymbolicLink() || path.resolve(path.dirname(dest), fs.readlinkSync(dest)) !== source || !fs.readFileSync(source).equals(prior)
+    : !latest.isFile() || !fs.readFileSync(dest).equals(prior)))) {
+    fs.unlinkSync(next);
+    fail(`Concurrent edit: ${dest}`);
+  }
+  fs.renameSync(next, dest);
+  if (linked) {
+    const committed = spawnSync('git', ['show', `HEAD:${component}/${relative}`], {cwd:root});
+    if (committed.status !== 0) fail(`Cannot identify prior default for ${dest}; local bytes preserved without history.`);
+    record(dest, hash(committed.stdout));
+  } else record(dest, digest);
 }
+
 try {
   if (!home || !path.isAbsolute(home)) fail('HOME must be an absolute path');
   if (!path.isAbsolute(configHome)) fail('XDG_CONFIG_HOME must be absolute');
+  safe(home);
+  safe(configHome);
   for (const dir of [home, configHome]) if (dir === root || dir.startsWith(root + path.sep)) fail('Private destinations must be outside rig');
   if (!['setup','update'].includes(mode)) fail('Usage: node scripts/rig.mjs setup|update [--preview] [--components brew,zsh,...] [--brew-no-upgrade|--brew-upgrade] [--brewfile /private/Brewfile] [--install-hooks] [--pi-migrate-from /checkout]');
   const valued = ['--components','--brewfile','--pi-migrate-from'];
@@ -149,6 +220,12 @@ try {
   safe(stateRoot);
   const stateFile = path.join(stateRoot, 'settings.json');
   safe(stateFile);
+  inventoryFile = path.join(stateRoot, 'copies.json');
+  safe(inventoryFile);
+  if (stat(inventoryFile)) {
+    inventory = JSON.parse(fs.readFileSync(inventoryFile, 'utf8'));
+    if (!inventory || typeof inventory !== 'object' || Array.isArray(inventory) || Object.entries(inventory).some(([file, digest]) => !path.isAbsolute(file) || typeof digest !== 'string' || !/^[a-f0-9]{64}$/.test(digest))) fail(`Invalid ${inventoryFile}`);
+  }
   let state = {components:names, brew:{skip:{}, noUpgrade:false}};
   if (stat(stateFile)) {
     state = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
@@ -202,8 +279,7 @@ try {
             if (!preview) run('brew', argv, {env});
           }
         } else {
-          let conflicts = 0;
-          for (const relative of manifests[component]) if (link(component, relative) === false) conflicts++;
+          for (const relative of manifests[component]) deploy(component, relative);
           if (component === 'git') adoptGit();
           if (component === 'pi') {
             if (!available('pi') || !state.brew.noUpgrade) {
@@ -214,7 +290,6 @@ try {
             else console.log('Pi JSON sync deferred: its CLI has no preview; no settings changed.');
             console.log('Start/reload Pi to reconcile configured packages through its supported startup behavior.');
           }
-          if (conflicts) fail(`${conflicts} personal assets preserved; remaining assets and JSON sync ${preview ? 'previewed/deferred' : 'completed'}. Resolve composition manually.`);
         }
       } catch (error) { failures.push(component); console.error(`${component}: ${error.message}`); }
     }

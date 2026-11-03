@@ -12,6 +12,7 @@ It creates ordinary private `~/.pi/agent/settings.json` and `mcp.json` files,
 with history and recovery records under `~/.local/state/rig/pi/`, never in rig.
 Init/update call this same command for selected Pi. An explicit asset list excludes
 private configs, templates, docs, sync tooling and browser captures from deployment.
+Direct agents, extensions, themes and instructions are ordinary local copies: edit them locally. Unchanged copies update; customized copies stay intact and report the default source path for manual adoption. Recorded deletions remain opt-outs. This copy policy does not change the JSON sync described below.
 Fresh homes bootstrap both defaults.
 Existing settings without history gain missing defaults and missing packages,
 while retaining personal values and package declarations. Existing MCP without
