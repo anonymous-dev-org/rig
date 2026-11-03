@@ -77,6 +77,9 @@ zstyle ':autocomplete:*' delay 0.05
 zstyle -e ':autocomplete:*:*' list-lines 'reply=( $(( LINES / 3 )) )'
 zstyle ':autocomplete:*' async yes
 
+# Private controls run after default styles, before plugin initialization.
+[[ -r "$HOME/.zshrc.pre" ]] && source "$HOME/.zshrc.pre"
+
 if [[ -r "$AUTOCOMPLETE_DIR/zsh-autocomplete.plugin.zsh" ]]; then
   source "$AUTOCOMPLETE_DIR/zsh-autocomplete.plugin.zsh"
 else
@@ -195,8 +198,8 @@ if [[ -n ${HOMEBREW_PREFIX:-} && -d "$HOMEBREW_PREFIX/opt/libpq/bin" ]]; then
   export PATH="$HOMEBREW_PREFIX/opt/libpq/bin:$PATH"
 fi
 
-# Machine-specific overrides (not tracked in repo)
-[[ -f ~/.zshrc.local ]] && source ~/.zshrc.local || true
-
 # bun completions
 [ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
+
+# Final machine-specific overrides (not tracked in repo)
+[[ -r "$HOME/.zshrc.local" ]] && source "$HOME/.zshrc.local"
