@@ -47,6 +47,7 @@
 - Before TOML implementation: confirm native layering/parser support and formatting behavior; if dependency or main approach changes, get approval. Before standalone skill implementation: identify actual source inventory, not the current machine's installed skills.
 
 # Requirements list and tracking
+- [x] Separate user-requested Kitty fix: added native `open-actions.conf` to launch file URLs with `nvim -- ${FILE_PATH}` in a new OS window; coding-partner approved, diff checked, merged locally and Stow-linked. Web URLs and Finder associations unchanged. All file URLs (including binaries/directories) go to Neovim; GUI click behavior not verified. This does not authorize the broader rollout above.
 - [x] Inventory every rig component and its setup/update/customization behavior; independent native-layer source audit read.
 - [x] Recommend safe first adoption/update behavior for all components; coding-partner's five findings and follow-up incorporated.
 - [x] Specify conflicts, removals, migration, installation boundaries and opt-outs.
