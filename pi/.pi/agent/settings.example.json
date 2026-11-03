@@ -31,9 +31,6 @@
       "claude-code-writer": {
         "disabled": true
       },
-      "coding-partner": {
-        "fast": false
-      },
       "delegate": {
         "fast": false
       },
