@@ -1,29 +1,20 @@
 # Goal and scope
-- Deliver new rig defaults without deleting personal settings or overriding explicit choices.
-- User approved trimming the broad rollout after questioning overengineering: Pi package/default updates, safe setup/update, native customization hooks, and Brew controls only.
+- Stop creating deployment symlinks. Give users ordinary local config files they can customize.
+- Update unchanged managed copies; preserve customized files and report newer defaults. Convert positively identified rig links without following foreign links.
 
 # Excluded
-- New AeroSpace/Lazysql TOML merging and macOS preference synchronization. Their prototype commits were reverted from delivery; isolated branches preserve the work.
-- Live installations/configuration changes, automatic package removal, new dependencies/frameworks, new tests/probes.
-- Invented standalone skills: the skills lock is empty; Pi packages supply bundled skills.
+- Pi JSON merge changes, new per-app mergers, live home changes, new tests/probes, unrelated installation behavior.
 
 # Implementation details
-- Keep Pi's existing JSON transaction engine. Merge packages by stable identity, preserve pins/filter objects/order/deletions, validate duplicates before staging, and report conflicting key paths without values. Other arrays remain atomic.
-- Use native Git includes, Zsh pre/final hooks, Kitty optional local.conf and Neovim private runtime/deferred hooks. Preserve unknown executable configs; require manual migration instead of sourcing or replacing them.
-- Shared setup/update must stop destructive adoption, persist component selection, protect dirty checkout before pull, preserve existing hooks, and deploy explicit assets rather than docs/runtime captures.
-- Keep Brewfile and native skip/no-upgrade controls. No unconditional Bun/Pi upgrade bypasses. Resolve runtime prerequisites before writes.
-- Leave existing AeroSpace/Lazysql/macOS configs untouched by automatic update; report manual adoption rather than adding a new sync engine.
-- Integrate latest main (Kitty file-link fix and Pi lens config), run existing checks and independent review, then deliver PR/merge as requested.
+- Replace shared asset linking with byte copies and a small prior-default hash inventory outside checkout.
+- Existing ordinary files without history remain personal. Known rig file/directory links migrate with backups and checks; directory snapshots already exist.
+- Preserve known deletions. Do not auto-delete retired assets or follow foreign symlinks.
+- Update ownership/customization docs; existing hooks remain optional, not mandatory for customization.
 
 # Requirements list and tracking
-- [x] Audit existing delivery and preserve personal configuration goal.
-- [x] Remove new TOML/macOS machinery from deliverable after scope reduction.
-- [x] Implement native hooks, independently reviewed commit 7e8c602; integrated as 653c878. Deployment remains pending.
-- [x] Finish Pi package identity/filter/removal/adoption changes and docs; existing suite 42/43 passing, sole failure is preexisting Playwright --headless expectation.
-- [x] Integrate safe shared orchestration, selections, explicit assets and Brew controls (180f648).
-- [x] Independent native and final Pi/orchestration reviews aligned; manual migration documented. Node/Bash/Zsh/Lua syntax and diff checks passed. LSP clean confirmation inconclusive with two advisory Pi warnings.
-- [ ] Deliver MR/merge.
-- Pi generic JSON merge retains existing atomic new-table behavior; package list is the scoped exception. No new regression tests permitted; package edge cases source-reviewed only.
-- Native caveats: existing XDG Git config must not become subordinate to shared credential resets; Kitty directories must remain user-owned, link files individually; preserve Zsh hooks and nvim-local.
-- Runtime behavior remains unverified; no live settings/installations changed. AeroSpace/Lazysql/macOS no longer receive automatic personal/default merging in this scope.
-- Preserved independent main changes: Kitty open-actions.conf opens file URLs via Neovim in a new OS window; Pi lens footer configuration remains managed. GUI click behavior was not verified by this rollout.
+- [x] Copy assets with safe updates and no new symlinks in setup/update.
+- [x] Convert known links, preserve custom files/deletions, retain Pi JSON behavior. Directory migration preflights baselines, publishes all copies, then records history.
+- [x] Update ownership docs; Node/Bash syntax and diff checks pass. Pi suite 41/43: existing headless mismatch plus obsolete Stow-loop assertion from prior orchestration change. Pi JSON implementation unchanged.
+- LSP reported no findings but could not confirm clean. No live home migration or runtime checks performed. Stop other config writers during migration; filesystem operations are not a global transaction.
+- Standalone legacy AeroSpace installer remains outside setup/update scope and still uses links.
+- [ ] Independent review and deliver.
