@@ -17,4 +17,4 @@
 - [x] Update ownership docs; Node/Bash syntax and diff checks pass. Pi suite 41/43: existing headless mismatch plus obsolete Stow-loop assertion from prior orchestration change. Pi JSON implementation unchanged.
 - LSP reported no findings but could not confirm clean. No live home migration or runtime checks performed. Stop other config writers during migration; filesystem operations are not a global transaction.
 - Standalone legacy AeroSpace installer remains outside setup/update scope and still uses links.
-- [ ] Independent review and deliver.
+- [x] Independent review completed; both directory migration findings corrected and re-reviewed as aligned. Delivery branch ready for PR/merge.
