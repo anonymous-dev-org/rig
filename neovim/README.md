@@ -1,6 +1,6 @@
 # Neovim customization
 
-The deployed `stdpath('config')` tree is shared source, not a private editing area. Keep personal code in a separate user-owned directory at `stdpath('config') .. '-local'` (normally `~/.config/nvim-local`; respects XDG_CONFIG_HOME and NVIM_APPNAME). Deployment must not link or replace this directory. Do not blindly source an old init.lua: executable migration requires an explicit user choice.
+Edit the ordinary local files in `stdpath('config')` directly. Optionally keep overrides in a separate user-owned directory at `stdpath('config') .. '-local'` (normally `~/.config/nvim-local`; respects XDG_CONFIG_HOME and NVIM_APPNAME). Deployment must not link or replace this directory. Do not blindly source an old init.lua: executable migration requires an explicit user choice.
 
 Startup order:
 
@@ -23,4 +23,4 @@ vim.g.rig_autocommands = false  -- Skip Config.new_autocmd rules and MiniMisc au
 
 Omit flags to retain defaults. These are coarse file-level controls, not a second plugin manager. MiniDeps itself still bootstraps; third-party plugin files already installed in native start packages may still load. Skipping setup does not delete plugin data, caches, tools or history. Mappings that invoke a disabled plugin must be replaced/removed privately. `rig_autocommands` covers rig's explicit rules and MiniMisc root/cursor/terminal setup, not autocommands internal to other enabled plugin setup calls (including format-on-save). Disable the owning setup file and configure selected plugins privately when you need to prevent those side effects entirely.
 
-Updates change shared source only. Remove private overrides/flags to reset on the next startup; detach the shared configuration through deployment to disable it entirely. Plugin/tool installation and MiniDeps updates are separate from repository updates and can perform downloads during normal startup; this change does not run Neovim or install anything during migration.
+Updates refresh unchanged copies; customized files stay intact with a reported default source path for manual adoption. Remove private overrides/flags to reset on the next startup; detach the shared configuration through deployment to disable it entirely. Plugin/tool installation and MiniDeps updates are separate from repository updates and can perform downloads during normal startup; this change does not run Neovim or install anything during migration.
