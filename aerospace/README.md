@@ -25,15 +25,70 @@ workspace routing or monitor-slot normalization.
 
 ## Install and safe legacy behavior
 
-Install/symlink `.aerospace.toml` to `~/.aerospace.toml` and the complete current
-`.config/aerospace/scripts/` directory to `~/.config/aerospace/scripts/`.
-A worktree alone does not change live symlink targets. After explicitly choosing
-to activate the update, validate and reload:
+The effective config is an ordinary private `~/.aerospace.toml`, not a link
+into rig. Preview or publish defaults without activating them:
 
 ```sh
-aerospace reload-config --dry-run --warnings-as-errors
-aerospace reload-config --warnings-as-errors
+bun scripts/sync-toml.mjs aerospace --preview
+bun scripts/sync-toml.mjs aerospace
+# Or publish and install the explicit helper manifest:
+bash scripts/install-aerospace.sh
 ```
+
+Publication checks TOML syntax and serialization round-trip **only**. A
+syntax-valid document can still fail AeroSpace's application-level validation.
+The installed CLI has no supported offline candidate-path validator:
+`reload-config --dry-run` validates the active discovery/launch path, not an
+arbitrary candidate. Publication and activation are therefore separate,
+explicit operations; the installer never starts or reloads AeroSpace.
+
+Before activation, confirm that the running app's config path is the intended
+private `~/.aerospace.toml` (not a repo source, alternate discovery file or custom
+launch override). Then validate natively; reload **only after success**:
+
+```sh
+aerospace config --config-path
+aerospace reload-config --dry-run --no-gui
+# Only if the preceding validation succeeds:
+aerospace reload-config --no-gui
+```
+
+Do not start/reload the app just to probe a candidate. A custom launch override
+requires manual reconciliation/relaunch. If native validation fails, leave the
+running app unchanged and fix the private file or restore its prior bytes from
+the snapshots below before attempting activation again.
+
+### Defaults, personal edits and recovery
+
+The publisher uses Bun's built-in TOML parser/writer. First adoption fills
+missing defaults while preserving personal values. Later three-way updates
+compare previous defaults, the personal file and new defaults: personal edits,
+unknown keys and deletions survive; arrays are atomic. Overlapping changes keep
+the personal value. Edit the private file, never the tracked template. Unchanged
+bytes are retained; changed values can remove comments/formatting, disclosed
+before publication with a byte-exact private backup first. Dates/times,
+nonfinite numbers and other non-plain values fail closed rather than undergoing
+lossy JSON coercion.
+
+History, snapshots and recovery intent live in
+`~/.local/state/rig/toml/aerospace` with restrictive permissions. Snapshots are
+JSON records: `inputs` contain original bytes encoded as base64 or original link
+identity; `baseline` retains source bytes and `history` retains the prior
+baseline. Keep these private. A recognized `~/.aerospace.toml` link to this
+checkout's `aerospace/.aerospace.toml` is explicitly detached by publication,
+without modifying the tracked file. Foreign links, directory symlinks and
+competing default/XDG config paths are refused; preserve and reconcile those
+manually first. Concurrent input edits abort publication.
+
+A private journal and sibling prepared file support rerunning interrupted
+publication. Do not discard them to force a retry. Inspect a stale `lock` before
+removing it manually. A consumed prepared file proves publication; subsequent
+personal edits are never overwritten during recovery. Prior file bytes/history
+are retained in snapshots for manual rollback if native validation fails. This
+is not an automatic semantic rollback: publication is not activation.
+
+Deselecting AeroSpace stops management without deleting personal configuration.
+Reset values explicitly by editing the private file to the template values.
 
 This repository change does **not** reload the live config, move windows, or
 rename/migrate workspaces. Existing `n-g2`, `e2-g3`, etc. remain usable via
@@ -161,19 +216,19 @@ its installed single-instance handler focuses the new session's OS window.
 
 `./init.sh` (select AeroSpace) and `./update.sh` both call
 `bash scripts/install-aerospace.sh`. You can also run that helper directly.
-It installs only the config and an explicit helper manifest, never tests/docs.
-Conflicting files or links receive unique timestamped `.backup-*` siblings;
-unrelated config files stay in place. Competing default/XDG `aerospace.toml`
-files are backed up individually. Folded directory links are detached before
-writes so installation cannot overwrite their source through HOME.
+It publishes the private config through `sync-toml.mjs` and installs only the
+explicit helper manifest, never tests/docs. Existing helpers must be absent or
+links to the exact current source; ordinary files/foreign links are preserved
+and reported as conflicts. Directory links are refused, never detached or
+traversed for writes. Only exact links to this checkout's retired helpers are
+removed. Helpers and config are independent operations, not a global
+transaction: a helper failure after publication is reported and can be retried.
 
-The installer never starts/restarts AeroSpace. Missing CLI or a stopped app
-produces a deferred-reload warning; launch it manually and rerun the installer.
-For a running app, reload/parse failures and an active config path other than
-the installed repo config are fatal. A custom `--config-path` launch override
-must be removed manually before relaunching. A worktree alone does not change
-an existing installation's symlink targets. Run isolated installer checks with
-`bash scripts/install-aerospace.test.sh` (temporary HOME and mocked CLI).
+The installer does not start, restart, query or reload AeroSpace. Activation and
+native validation are the explicit commands described above. Historical mocked
+installer tests describe the former symlink/reload behavior and are not a
+validation of this new publication contract. No live installation or activation
+was performed during this implementation.
 
 The current config does **not** start this helper. Starting it manually is an
 explicit opt-in and can overwrite manual/accordion layouts. To opt in:
