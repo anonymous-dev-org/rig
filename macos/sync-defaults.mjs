@@ -20,6 +20,8 @@ const defaults = [
   ['com.apple.dock', 'wvous-br-modifier', 'int', 0],
   ['NSGlobalDomain', 'AppleInterfaceStyle', 'string', 'Dark'],
 ];
+// Move removed defaults here with their domain, key, type, and last shipped value.
+const retired = [];
 const id = ([domain, key]) => `${domain}/${key}`;
 const absent = { present: false };
 function run(command, args) {
@@ -77,7 +79,7 @@ function parseHistory(text) {
   try { value = JSON.parse(text); } catch { throw new Error('Invalid history JSON; restore a trusted history.json backup before retrying.'); }
   if (!value || value.version !== 1 || !value.entries || typeof value.entries !== 'object' || Array.isArray(value.entries)) throw new Error('Invalid history; restore a trusted history.json backup before retrying.');
   for (const [key, entry] of Object.entries(value.entries)) {
-    if (!defaults.some(item => id(item) === key)) throw new Error(`History contains retired/unknown key ${key}; reconcile it manually before retrying.`);
+    if (![...defaults, ...retired].some(item => id(item) === key)) throw new Error(`History contains unknown key ${key}; reconcile it manually before retrying.`);
     if (!entry || typeof entry.managed !== 'boolean' || (entry.managed && (!entry.applied || entry.applied.present !== true || typeof entry.applied.type !== 'string' || typeof entry.applied.value !== 'string'))) throw new Error(`Invalid history entry: ${key}`);
   }
   return value.entries;
@@ -120,14 +122,30 @@ function main() {
         console.log(`Preserve ${key}${before.present ? '' : ' (absent/opt-out)'}`);
       }
     }
-    for (const change of changes) console.log(`${preview ? 'Would set' : 'Will set'} ${id(change.entry)} = ${change.entry[3]}`);
+    for (const entry of retired) {
+      const key = id(entry);
+      const previous = history[key];
+      if (!previous) continue;
+      if (previous.managed) {
+        const before = read(entry);
+        if (equal(before, previous.applied)) changes.push({ entry, before, desired: absent });
+        else console.log(`Preserve ${key}${before.present ? '' : ' (absent/opt-out)'}`);
+      } else console.log(`Preserve ${key} (personal)`);
+      delete entries[key];
+    }
+    for (const change of changes) {
+      const action = change.desired.present ? `set ${id(change.entry)} = ${change.entry[3]}` : `delete ${id(change.entry)}`;
+      console.log(`${preview ? 'Would' : 'Will'} ${action}`);
+    }
     if (preview) return;
     if (load(historyFile) !== original) throw new Error('History changed concurrently; retry.');
     // Journal before any preference write; never guess after an interrupted operation.
     publish(pendingFile, { version: 1, history: original, changes });
     for (const { entry, before, desired } of changes) {
       if (!equal(read(entry), before)) throw new Error(`Concurrent preference edit: ${id(entry)}. Pending journal retained.`);
-      const result = run('/usr/bin/defaults', ['write', entry[0], entry[1], `-${entry[2]}`, String(entry[3])]);
+      const result = run('/usr/bin/defaults', desired.present
+        ? ['write', entry[0], entry[1], `-${entry[2]}`, String(entry[3])]
+        : ['delete', entry[0], entry[1]]);
       if (result.status !== 0) throw new Error(`Write failed for ${id(entry)}: ${result.stderr.trim()}. Pending journal retained.`);
       if (!equal(read(entry), desired)) throw new Error(`Write verification failed: ${id(entry)}. Pending journal retained.`);
     }
