@@ -25,3 +25,4 @@
 - Pi generic JSON merge retains existing atomic new-table behavior; package list is the scoped exception. No new regression tests permitted; package edge cases source-reviewed only.
 - Native caveats: existing XDG Git config must not become subordinate to shared credential resets; Kitty directories must remain user-owned, link files individually; preserve Zsh hooks and nvim-local.
 - Runtime behavior remains unverified; no live settings/installations changed. AeroSpace/Lazysql/macOS no longer receive automatic personal/default merging in this scope.
+- Preserved independent main changes: Kitty open-actions.conf opens file URLs via Neovim in a new OS window; Pi lens footer configuration remains managed. GUI click behavior was not verified by this rollout.
