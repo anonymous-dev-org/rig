@@ -1,21 +1,5 @@
 #!/bin/bash
+# Shared orchestration owns controls and prerequisite checks. No bootstrap side effects.
 set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-
-# Install Homebrew if missing
-if ! command -v brew &>/dev/null; then
-  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-  # Add brew to PATH for the rest of this script
-  if [[ -f /opt/homebrew/bin/brew ]]; then
-    eval "$(/opt/homebrew/bin/brew shellenv)"
-  elif [[ -f /usr/local/bin/brew ]]; then
-    eval "$(/usr/local/bin/brew shellenv)"
-  fi
-fi
-
-# Install everything from Brewfile
-brew bundle --file="$SCRIPT_DIR/Brewfile"
-
-# Install Pi with Bun, without dependency lifecycle scripts.
-bun add --global --ignore-scripts @earendil-works/pi-coding-agent
+exec "$SCRIPT_DIR/../init.sh" --components brew "$@"

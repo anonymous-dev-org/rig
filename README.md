@@ -1,0 +1,60 @@
+# rig
+
+Shared defaults live in this checkout; personal settings and state stay outside it. Do not edit linked shared files for personal changes.
+
+## Setup and update
+
+Put Node on the **parent shell PATH** first. Selected `brew` also requires Homebrew; selected `pi` requires Bun. Rig checks these before changing config. It does not run runtime bootstrap installers.
+
+```sh
+./init.sh --preview
+./init.sh
+./update.sh --preview
+./update.sh
+```
+
+Fresh setup selects `brew,neovim,zsh,kitty,git,pi`. AeroSpace, Lazysql and macOS configuration are deliberately **untouched**: adoption/update is manual, not a new merger or preference engine. Homebrew may still install their apps from the shared Brewfile.
+
+There are no prompts: inspect preview before applying. `--yes` remains accepted but never overrides conflicts. Update requires prior setup selections, refuses a dirty checkout (including untracked files), pulls with `--ff-only`, then re-executes the new orchestrator. Preview does not fetch/pull: it describes the current checkout, not remote changes.
+
+Use `--components` to **replace the full selection**, stored privately in `~/.local/state/rig/orchestration/settings.json`:
+
+```sh
+./init.sh --components zsh,git,pi --preview
+./init.sh --components zsh,git,pi
+./init.sh --components '' # stop future management; remove nothing
+```
+
+Both entrypoints accept:
+
+- `--preview`: report actions/conflicts without writing state or installing packages. Pi JSON sync has no preview CLI, so its action is listed but not run.
+- `--components <comma-separated-list>`: select from `brew,neovim,zsh,kitty,git,pi`.
+- `--brew-no-upgrade` / `--brew-upgrade`: persist the shared package upgrade preference, including the selected Pi CLI.
+- `--brewfile <absolute-private-file>`: add an existing trusted private Brewfile outside rig.
+- `--pi-migrate-from <checkout>`: forward Pi's explicit legacy migration flag.
+- `--install-hooks`: explicitly set this checkout's local `core.hooksPath=.githooks`. A different existing hooks path is preserved and requires a manual composition choice; this flag never replaces it.
+
+Unknown flags fail. Components report independent failures and partial success; rerun after resolving errors. Selection persistence is not a global transaction. Deselecting a component stops management, **not** active includes, existing links or installed apps. Disable active behavior through native controls or explicit detachment. No package cleanup/uninstall is performed.
+
+## Adoption and customization
+
+Explicit file inventories replace Stow traversal. Docs, tests, examples and Pi browser captures are not deployed. Foreign files/links cause conflicts, not deletion or adoption into Git. Rig never executes unknown config to infer intent. Manually review/merge existing executable config, keep a private backup, and either move the conflicting entrypoint aside to adopt rig or deselect it. Do not blindly move old executable config into a startup hook.
+
+Known rig directory links can become real directories containing explicit file links, with private snapshots under `~/.local/state/rig/orchestration/backups/`. Unknown content inside an old linked directory blocks detachment until manually migrated, so personal additions are not silently deactivated. Foreign directory links also require manual migration. Known file links already pointing at this checkout stay unchanged. Links from another checkout are treated as foreign. Keep this checkout in place and treat it as read-only; dirty protection does not merge personal edits made through old links.
+
+- **Git:** private `~/.gitconfig` includes deployed `git/rig.conf` before personal settings. Known old rig `.gitconfig` links migrate to a private include entrypoint. Unknown ordinary config is not rewritten. Existing XDG `git/config` blocks automatic activation because shared credential resets must not follow existing private credentials: place the include manually in the earliest config before private settings. Review [Git credential ordering and combined ignores](git/README.md). Shared ignore conflicts refuse; private patterns need an explicitly combined private file. Remove the include to disable; remove personal overrides to reset.
+- **Zsh:** private `~/.zshrc.pre` and final `~/.zshrc.local`; see [Zsh](zsh/README.md). Detach shared `.zshrc` to disable it.
+- **Kitty:** private `local.conf` beside deployed file links; see [Kitty](kitty/README.md). Detach shared config to disable; retain private files.
+- **Neovim:** private `pre.lua`, `deferred.lua` and native `after/` resources in the sibling `nvim-local` directory; see [Neovim](neovim/README.md). Plugin/tool downloads remain Neovim-owned. Detach shared config to disable; retain caches and hooks.
+- **Pi:** [Pi settings migration and resource controls](pi/README.md). Direct agents/extensions/themes/instructions have a separate explicit inventory; personal additions remain untouched. Personal leaf collisions are reported as partial success while other Pi assets and JSON sync continue; unsafe directory/path conflicts still stop Pi safely. Selected Pi installs a missing CLI with `bun add --global --ignore-scripts @earendil-works/pi-coding-agent`; existing CLI is retained in no-upgrade mode, otherwise that command can upgrade it. This is not a reproducible version lock. Start/reload Pi to reconcile configured packages through its supported startup behavior. `--pi-migrate-from` imports only the explicitly named checkout. Detach direct assets and deselect Pi to stop managing them, or use Pi-native resource exclusions/agent controls where supported. Keep personal instruction composition explicit.
+- **Skills:** the lock is empty. There is no invented standalone installer; Pi packages may supply skills.
+
+Paths under `.config` respect `XDG_CONFIG_HOME` (default `~/.config`); Zsh and Pi keep their existing HOME-based contracts. Reset individual personal overrides rather than deleting private state/history.
+
+## Brew controls
+
+[Brew controls](brew/README.md) persist native skip variables, optional private Brewfile and the no-upgrade choice. No separate Bun self-upgrade bypasses them. The selected Pi CLI follows the same upgrade preference, but is not a Brew formula and does not inherit formula-specific skips; deselect Pi to avoid CLI installation/updates.
+
+## Validation
+
+Use existing repository checks. Setup/update without preview are live commands. Preview can identify missing prerequisites and conflicts; it does not verify application startup, network installs or installed-version compatibility.
