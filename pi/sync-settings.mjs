@@ -6,18 +6,83 @@ import { isDeepStrictEqual as equal } from 'node:util';
 
 const missing = Symbol('missing');
 const isJsonObject = x => x !== missing && x !== null && typeof x === 'object' && !Array.isArray(x);
-export function merge(previous, local, next) {
+export function merge(previous, local, next, keys = []) {
   if (equal(previous, local)) return next;
   if (isJsonObject(previous) && isJsonObject(local) && isJsonObject(next)) {
     const result = {};
     for (const key of new Set([...Object.keys(previous), ...Object.keys(local), ...Object.keys(next)])) {
       const get = x => Object.hasOwn(x, key) ? x[key] : missing;
-      const value = merge(get(previous), get(local), get(next));
+      const value = merge(get(previous), get(local), get(next), [...keys, key]);
       if (value !== missing) Object.defineProperty(result, key, { value, enumerable: true, writable: true, configurable: true });
     }
     return result;
   }
+  if (!equal(previous, next) && !equal(local, next)) {
+    console.warn(`Overlapping JSON changes; personal value/deletion retained at key path: ${JSON.stringify(keys)}`);
+  }
   return local;
+}
+function packageIdentity(entry) {
+  let source = entry;
+  if (isJsonObject(entry)) source = entry.source;
+  if (typeof source !== 'string' || !source.trim()) throw new Error('Invalid Pi package source');
+  source = source.trim();
+  if (source.startsWith('npm:')) {
+    const name = source.slice(4).replace(/(?!^)@[^@/]*$/, '');
+    if (!name || name === '@' || name.includes(' ')) throw new Error('Invalid npm package source');
+    return `npm:${name}`;
+  }
+  if (source.startsWith('git:') || /^(https?|ssh|git):\/\//i.test(source)) {
+    let repo = source.replace(/^git:(?!\/\/)/, '').trim();
+    repo = repo.replace(/^git@([^:]+):/, 'https://$1/');
+    repo = repo.replace(/^github:/, 'https://github.com/').replace(/^gitlab:/, 'https://gitlab.com/').replace(/^bitbucket:/, 'https://bitbucket.org/');
+    if (!repo.includes('://')) {
+      if (/^[^/]+\/[^/]+(?:@.*)?$/.test(repo) && !repo.split('/')[0].includes('.')) repo = `github.com/${repo}`;
+      repo = `https://${repo}`;
+    }
+    let url;
+    try { url = new URL(repo); } catch { throw new Error('Invalid Git package source'); }
+    const repository = url.pathname.replace(/^\/+/, '').split('@')[0].replace(/\.git$/, '');
+    if (!url.hostname || repository.split('/').length < 2) throw new Error('Invalid Git package source');
+    return `git:${url.hostname}/${repository}`;
+  }
+  return source;
+}
+function packageMap(entries) {
+  if (!Array.isArray(entries)) throw new Error('Pi packages must be an array');
+  const result = new Map();
+  for (const entry of entries) {
+    const key = packageIdentity(entry);
+    if (result.has(key)) throw new Error(`Duplicate Pi package identity: ${key}`);
+    result.set(key, entry);
+  }
+  return result;
+}
+function mergeSettings(previous, local, next) {
+  if (![previous, local, next].every(isJsonObject) || !Array.isArray(local.packages)) return merge(previous, local, next);
+  const withoutPackages = value => Object.fromEntries(Object.entries(value).filter(([key]) => key !== 'packages'));
+  const result = merge(withoutPackages(previous), withoutPackages(local), withoutPackages(next));
+  const before = packageMap(previous.packages ?? []), current = packageMap(local.packages), incoming = packageMap(next.packages ?? []);
+  const packages = [];
+  for (const key of new Set([...current.keys(), ...incoming.keys()])) {
+    const get = map => {
+      if (!map.has(key)) return missing;
+      const entry = map.get(key);
+      return typeof entry === 'string' ? {source: entry} : entry;
+    };
+    const value = merge(get(before), get(current), get(incoming), ['packages', key]);
+    if (value !== missing) {
+      const stringForm = typeof current.get(key) === 'string' || !current.has(key);
+      packages.push(stringForm && Object.keys(value).length === 1 ? value.source : value);
+    }
+  }
+  return {...result, packages};
+}
+function adoptSettings(local, next) {
+  const result = fillMissing(local, next);
+  if (!Object.hasOwn(local, 'packages') || !Array.isArray(next.packages)) return result;
+  const current = packageMap(local.packages);
+  return {...result, packages:[...local.packages, ...next.packages.filter(entry => !current.has(packageIdentity(entry)))]};
 }
 function fileStatus(file) {
   try { return fs.lstatSync(file); } catch (e) { if (e.code === 'ENOENT') return null; throw e; }
@@ -35,7 +100,7 @@ function writeJsonAtomic(file, value, bytes) {
   const fd = fs.openSync(temp, 'wx', 0o600);
   try {
     try {
-      fs.writeFileSync(fd, bytes ?? (JSON.stringify(value, null, 2) + '\n')); fs.fsyncSync(fd);
+      fs.writeFileSync(fd, bytes ?? (`${JSON.stringify(value, null, 2)}\n`)); fs.fsyncSync(fd);
     } finally { fs.closeSync(fd); }
     fs.renameSync(temp, file); syncDirectory(path.dirname(file));
   } finally { if (fileStatus(temp)) fs.unlinkSync(temp); }
@@ -48,8 +113,11 @@ export function fillMissing(local, defaults) {
   if (!isJsonObject(local) || !isJsonObject(defaults)) return local;
   const result = {};
   for (const key of new Set([...Object.keys(local), ...Object.keys(defaults)])) {
-    const value = !Object.hasOwn(local, key) ? defaults[key]
-      : Object.hasOwn(defaults, key) ? fillMissing(local[key], defaults[key]) : local[key];
+    let value = defaults[key];
+    if (Object.hasOwn(local, key)) {
+      value = local[key];
+      if (Object.hasOwn(defaults, key)) value = fillMissing(local[key], defaults[key]);
+    }
     Object.defineProperty(result, key, {value, enumerable:true, writable:true, configurable:true});
   }
   return result;
@@ -82,11 +150,11 @@ function secureDirectory(dir) {
 const heldLocks = new Set();
 function validateSync({ baseline, settings, state, sourceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'), legacyRoot, adoption = 'preserve', home }, migrationSource) {
   if (home && path.resolve(home) !== path.resolve(settings)) throw new Error('Legacy migration is not available; use an ordinary home destination');
-  if (!['preserve', 'fill-missing'].includes(adoption)) throw new Error('Invalid adoption policy');
+  if (!['preserve', 'fill-missing', 'settings'].includes(adoption)) throw new Error('Invalid adoption policy');
   baseline = path.resolve(baseline); settings = path.resolve(settings); state = path.resolve(state);
   const history = path.join(state, 'baseline.json');
   const pending = path.join(state, 'pending.json');
-  const effectiveTemp = settings + '.rig-prepared';
+  const effectiveTemp = `${settings}.rig-prepared`;
   const lock = path.join(path.dirname(state), '.rig-sync.lock');
   const paths = [baseline, settings, state, history, pending, effectiveTemp, lock];
   const migrationLink = migrationSource && fileStatus(settings)?.isSymbolicLink();
@@ -117,6 +185,11 @@ function validateSync({ baseline, settings, state, sourceRoot = path.resolve(pat
     if (next === missing) throw new Error('Missing baseline');
     const local = read(settings), previous = read(history), journal = read(pending);
     const prepared = read(effectiveTemp);
+    if (adoption === 'settings') {
+      for (const value of [next, local, previous, prepared, journal?.before, journal?.after, journal?.baseline]) {
+        if (isJsonObject(value) && Object.hasOwn(value, 'packages')) packageMap(value.packages);
+      }
+    }
     if (journal !== missing && (journal.version !== 1 || !isJsonObject(journal.before) || !isJsonObject(journal.after) ||
         !isJsonObject(journal.baseline) || typeof journal.fresh !== 'boolean' || !['preparing', 'ready'].includes(journal.phase) || journal.effectiveTemp !== effectiveTemp || journal.destination !== settings))
       throw new Error('Invalid recovery record');
@@ -128,7 +201,8 @@ function validateSync({ baseline, settings, state, sourceRoot = path.resolve(pat
 }
 export function sync(options) {
   const {lockToken, adoption = 'preserve', interrupt} = options;
-  const {baseline, settings, state, history, pending, effectiveTemp, lock, paths, validate} = validateSync(options);
+  const reconcile = adoption === 'settings' ? mergeSettings : merge;
+  const {settings, state, history, pending, effectiveTemp, lock, paths, validate} = validateSync(options);
   fs.mkdirSync(path.dirname(state), {recursive:true, mode:0o700});
   let lockFd;
   const borrowed = heldLocks.has(lockToken) && lockToken.lock === lock;
@@ -149,13 +223,19 @@ export function sync(options) {
         if (local === missing) throw new Error('Missing committed recovery destination');
         check(); writeJsonAtomic(history, journal.baseline); fs.unlinkSync(pending); continue;
       }
-      const effective = journal !== missing
-        ? local === missing ? (journal.fresh ? journal.after : (() => {throw new Error('Missing recovery destination');})()) : merge(journal.before, local, journal.after)
-        : local === missing ? next : previous === missing ? (adoption === 'fill-missing' ? fillMissing(local, next) : local) : merge(previous, local, next);
-      const record = journal !== missing ? journal : {
+      let effective;
+      if (journal !== missing) {
+        if (local === missing && !journal.fresh) throw new Error('Missing recovery destination');
+        effective = local === missing ? journal.after : reconcile(journal.before, local, journal.after);
+      } else if (local === missing) effective = next;
+      else if (previous !== missing) effective = reconcile(previous, local, next);
+      else if (adoption === 'settings') effective = adoptSettings(local, next);
+      else if (adoption === 'fill-missing') effective = fillMissing(local, next);
+      else effective = local;
+      const record = journal === missing ? {
         version:1, phase:'preparing', before:local === missing ? effective : local, after:effective, baseline:next,
         fresh:local === missing, effectiveTemp, destination:settings
-      };
+      } : journal;
       check();
       // Publish immutable merge intent first. Preparing + absent sibling is retryable;
       // ready + consumed sibling is committed. Never rebase the intent on recovery.
@@ -187,16 +267,17 @@ export function sync(options) {
 }
 // Explicit migration only. The receipt retains every input byte and identity; the
 // existing sync engine owns all merging/recovery in the external workspace.
-export function migrateSettings({ baseline, settings, state, migrateFrom, lockToken, sourceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'), interrupt }) {
+export function migrateSettings({ baseline, settings, state, migrateFrom, lockToken, adoption = 'preserve', sourceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'), interrupt }) {
   if (!migrateFrom) throw new Error('Explicit migration source required');
+  if (!['preserve', 'fill-missing', 'settings'].includes(adoption)) throw new Error('Invalid adoption policy');
   [baseline, settings, state, migrateFrom, sourceRoot] = [baseline, settings, state, migrateFrom, sourceRoot].map(x => path.resolve(x));
   const oldSettings = path.join(migrateFrom, 'pi/.pi/agent/settings.json');
   const oldState = path.join(migrateFrom, '.local/pi-settings');
   const sources = [oldSettings, ...['baseline.json', 'pending.json', 'effective.json'].map(x => path.join(oldState, x))];
-  const migration = state + '.migration';
+  const migration = `${state}.migration`;
   const receiptFile = path.join(migration, 'receipt.json');
   const workspace = path.join(migration, 'effective.json');
-  const prepared = settings + '.rig-migration-prepared';
+  const prepared = `${settings}.rig-migration-prepared`;
   const lock = path.join(path.dirname(state), '.rig-sync.lock');
   const outputPaths = [settings, state, migration, prepared, lock];
   const encode = s => s && {...s, data:s.data.toString('base64')};
@@ -226,7 +307,7 @@ export function migrateSettings({ baseline, settings, state, migrateFrom, lockTo
     }
     if (fileStatus(migration)) for (const name of fs.readdirSync(migration))
       if (!['receipt.json','effective.json','effective.json.rig-prepared'].includes(name)) throw new Error('Unexpected migration file');
-    for (const file of [receiptFile, workspace, workspace+'.rig-prepared', path.join(state,'baseline.json'), path.join(state,'pending.json')]) safePath(file);
+    for (const file of [receiptFile, workspace, `${workspace}.rig-prepared`, path.join(state,'baseline.json'), path.join(state,'pending.json')]) safePath(file);
   };
   validatePaths();
   const nextGuard = snapshot(baseline); readJsonObject(baseline, nextGuard);
@@ -241,6 +322,12 @@ export function migrateSettings({ baseline, settings, state, migrateFrom, lockTo
   if ((receipt === missing || !['published','complete'].includes(receipt.phase)) &&
       journal !== missing && local === missing && (effective === missing || !journal.fresh)) throw new Error('Missing legacy recovery destination');
   const homeBefore = homeSnapshot();
+  if (adoption === 'settings') {
+    const homeValue = homeBefore.kind === 'file' ? readJsonObject(settings, decode(homeBefore.value)) : missing;
+    for (const value of [readJsonObject(baseline, nextGuard), homeValue, ...values, journal?.before, journal?.after, journal?.baseline]) {
+      if (isJsonObject(value) && Object.hasOwn(value, 'packages')) packageMap(value.packages);
+    }
+  }
   if (receipt === missing) {
     if (fileStatus(state) || (fileStatus(migration) && fs.readdirSync(migration).length) || fileStatus(prepared)) throw new Error('Conflicting external state');
     if (homeBefore.kind === 'file' && homeBefore.value && sourceGuards[0] && !decode(homeBefore.value).data.equals(sourceGuards[0].data)) throw new Error('Differing ordinary settings copies');
@@ -276,11 +363,13 @@ export function migrateSettings({ baseline, settings, state, migrateFrom, lockTo
       // Initial materialization is idempotent, but never replaces differing data.
       const seed = (file, value, bytes) => {
         const before = snapshot(file);
-        const data = bytes ?? Buffer.from(JSON.stringify(value,null,2)+'\n');
+        const data = bytes ?? Buffer.from(`${JSON.stringify(value,null,2)}\n`);
         if (before && !before.data.equals(data)) throw new Error('Conflicting migration staging data');
         if (!before) writeJsonAtomic(file,value,data);
       };
-      const initial = local !== missing ? sourceGuards[0].data : homeBefore.kind === 'file' && homeBefore.value ? decode(homeBefore.value).data : null;
+      let initial = null;
+      if (local !== missing) initial = sourceGuards[0].data;
+      else if (homeBefore.kind === 'file' && homeBefore.value) initial = decode(homeBefore.value).data;
       if (initial) seed(workspace,null,initial);
       else if (fileStatus(workspace)) throw new Error('Conflicting migration workspace');
       if ((journal === missing || effective === missing) && fileStatus(path.join(state,'pending.json'))) throw new Error('Conflicting migration journal');
@@ -289,8 +378,8 @@ export function migrateSettings({ baseline, settings, state, migrateFrom, lockTo
       else if (previous !== missing) seed(path.join(state,'baseline.json'),previous,sourceGuards[1].data);
       if (journal !== missing) {
         if (effective !== missing) {
-          seed(workspace+'.rig-prepared',effective,sourceGuards[3].data);
-          seed(path.join(state,'pending.json'),{...journal,version:1,phase:'ready',effectiveTemp:workspace+'.rig-prepared',destination:workspace});
+          seed(`${workspace}.rig-prepared`,effective,sourceGuards[3].data);
+          seed(path.join(state,'pending.json'),{...journal,version:1,phase:'ready',effectiveTemp:`${workspace}.rig-prepared`,destination:workspace});
         }
         // Without effective.json the legacy publication was committed; the
         // seeded journal baseline advances history without reapplying intent.
@@ -299,7 +388,7 @@ export function migrateSettings({ baseline, settings, state, migrateFrom, lockTo
     }
     if (receipt.phase === 'staged') {
       checkSources();
-      sync({baseline,settings:workspace,state,sourceRoot,legacyRoot:migrateFrom,lockToken:token,interrupt});
+      sync({baseline,settings:workspace,state,sourceRoot,legacyRoot:migrateFrom,lockToken:token,adoption,interrupt});
       checkSources();
       if (!equal(homeSnapshot(),receipt.home)) throw new Error('Concurrent home edit detected');
       receipt.result = snapshot(workspace).data.toString('base64');
@@ -364,7 +453,7 @@ export function syncAll({home, sourceRoot = path.resolve(path.dirname(fileURLToP
       baseline:path.join(sourceRoot,`pi/.pi/agent/${name}.example.json`),
       settings:path.join(home,`.pi/agent/${name}.json`), state:path.join(root,name),
       sourceRoot, legacyRoot:migrateFrom, lockToken:token,
-      adoption:name === 'mcp' ? 'fill-missing' : 'preserve'
+      adoption:name === 'mcp' ? 'fill-missing' : 'settings'
     }));
     // Reuse the engine's nonmutating validation for every input, including
     // recovery and path trust, before migration or either publication.
@@ -372,7 +461,7 @@ export function syncAll({home, sourceRoot = path.resolve(path.dirname(fileURLToP
       // A resumed migration's engine journal belongs to its external workspace,
       // not the home destination. migrateSettings validates its receipt and home
       // publication inputs before mutating; still preflight that engine state.
-      const migration = config.state + '.migration';
+      const migration = `${config.state}.migration`;
       const receiptFile = path.join(migration,'receipt.json');
       if (i === 0 && migrateFrom && fileStatus(receiptFile)) {
         safePath(receiptFile); secureDirectory(migration);
@@ -382,8 +471,8 @@ export function syncAll({home, sourceRoot = path.resolve(path.dirname(fileURLToP
           throw new Error('Invalid migration receipt');
         if (receipt.phase === 'complete') validateSync(config);
         else {
-          safePath(config.settings + '.rig-prepared');
-          if (snapshot(config.settings + '.rig-prepared')) throw new Error('Orphan recovery file');
+          safePath(`${config.settings}.rig-prepared`);
+          if (snapshot(`${config.settings}.rig-prepared`)) throw new Error('Orphan recovery file');
           validateSync({...config, settings:path.join(migration,'effective.json')});
         }
       } else validateSync(config, i === 0 ? migrateFrom : undefined);

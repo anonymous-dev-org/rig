@@ -1,3 +1,5 @@
+if vim.g.rig_mini == false then return end
+
 -- ┌────────────────────┐
 -- │ MINI configuration │
 -- └────────────────────┘
@@ -194,39 +196,41 @@ now_if_args(function()
 	-- searches up the file tree until the first root marker ('.git' or 'Makefile')
 	-- and sets their parent directory as a current directory.
 	-- This is helpful when simultaneously dealing with files from several projects.
-	MiniMisc.setup_auto_root()
+	if vim.g.rig_autocommands ~= false then
+		MiniMisc.setup_auto_root()
 
-	-- Patch: MiniMisc.find_root() caches root directories but never rechecks
-	-- existence on cache hit. After deleting a worktree, the stale cached path
-	-- causes vim.fn.chdir() to throw E344. Override the autocommand to guard
-	-- against non-existent directories. Remove when fixed upstream.
-	local set_root = vim.schedule_wrap(function(data)
-		if data.buf ~= vim.api.nvim_get_current_buf() then
-			return
-		end
-		local root = MiniMisc.find_root(data.buf)
-		if root == nil then
-			return
-		end
-		if vim.fn.isdirectory(root) == 0 then
-			return
-		end
-		vim.fn.chdir(root)
-	end)
-	local augroup = vim.api.nvim_create_augroup("MiniMiscAutoRoot", {})
-	vim.api.nvim_create_autocmd("BufEnter", {
-		group = augroup,
-		nested = true,
-		callback = set_root,
-		desc = "Find root and change current directory (patched: skip deleted dirs)",
-	})
+		-- Patch: MiniMisc.find_root() caches root directories but never rechecks
+		-- existence on cache hit. After deleting a worktree, the stale cached path
+		-- causes vim.fn.chdir() to throw E344. Override the autocommand to guard
+		-- against non-existent directories. Remove when fixed upstream.
+		local set_root = vim.schedule_wrap(function(data)
+			if data.buf ~= vim.api.nvim_get_current_buf() then
+				return
+			end
+			local root = MiniMisc.find_root(data.buf)
+			if root == nil then
+				return
+			end
+			if vim.fn.isdirectory(root) == 0 then
+				return
+			end
+			vim.fn.chdir(root)
+		end)
+		local augroup = vim.api.nvim_create_augroup("MiniMiscAutoRoot", {})
+		vim.api.nvim_create_autocmd("BufEnter", {
+			group = augroup,
+			nested = true,
+			callback = set_root,
+			desc = "Find root and change current directory (patched: skip deleted dirs)",
+		})
 
-	-- Restore latest cursor position on file open
-	MiniMisc.setup_restore_cursor()
+		-- Restore latest cursor position on file open
+		MiniMisc.setup_restore_cursor()
 
-	-- Synchronize terminal emulator background with Neovim's background to remove
-	-- possibly different color padding around Neovim instance
-	MiniMisc.setup_termbg_sync()
+		-- Synchronize terminal emulator background with Neovim's background to remove
+		-- possibly different color padding around Neovim instance
+		MiniMisc.setup_termbg_sync()
+	end
 end)
 
 -- Step two ===================================================================

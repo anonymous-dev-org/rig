@@ -1,3 +1,5 @@
+if vim.g.rig_plugins == false then return end
+
 -- ┌─────────────────────────┐
 -- │ Plugins outside of MINI │
 -- └─────────────────────────┘

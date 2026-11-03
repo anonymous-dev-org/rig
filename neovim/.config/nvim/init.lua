@@ -25,12 +25,8 @@
 -- - Inside config directory: `<Space>ff` (picker) or `<Space>ed` (explorer)
 -- - Navigate existing buffers with `[b`, `]b`, or `<Space>fb`.
 --
--- Config files are also meant to be customized. Initially it is a baseline of
--- a working config based on MINI. Modify it to make it yours. Some approaches:
--- - Modify already existing files in a way that keeps them consistent.
--- - Add new files in a way that keeps config consistent.
---   Usually inside 'plugin/' or 'after/'.
---
+-- Private customization hooks are documented in neovim/README.md.
+
 -- Documentation comments like this can be found throughout the config.
 -- Common conventions:
 --
@@ -41,6 +37,14 @@
 --   Unless said otherwise, it assumes that Normal mode is current.
 -- - "See 'path/to/file'" means see open file at described path and read it.
 -- - `:SomeCommand ...` or `:lua ...` means execute mentioned command.
+
+-- Keep private code outside the Stow-managed runtime tree.
+local private = vim.fn.stdpath('config') .. '-local'
+vim.opt.runtimepath:prepend(private)
+vim.opt.runtimepath:append(private .. '/after')
+if vim.fn.filereadable(private .. '/pre.lua') == 1 then
+  dofile(private .. '/pre.lua')
+end
 
 -- Add luarocks paths so plugins can find rocks installed via `luarocks --lua-version 5.1`
 local home = os.getenv('HOME')
@@ -83,6 +87,7 @@ _G.Config = {}
 -- - `:h nvim_create_autocmd()`
 local gr = vim.api.nvim_create_augroup('custom-config', {})
 _G.Config.new_autocmd = function(event, pattern, callback, desc)
+  if vim.g.rig_autocommands == false then return end
   local opts = { group = gr, pattern = pattern, callback = callback, desc = desc }
   vim.api.nvim_create_autocmd(event, opts)
 end

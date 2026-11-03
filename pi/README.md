@@ -10,19 +10,37 @@ node /path/to/rig/pi/sync-settings.mjs
 
 It creates ordinary private `~/.pi/agent/settings.json` and `mcp.json` files,
 with history and recovery records under `~/.local/state/rig/pi/`, never in rig.
-Init/update call this same command before Stow; Stow excludes private configs,
-templates, this README and sync tooling. Fresh homes bootstrap both defaults.
-Existing settings without history retain their existing values. Existing MCP
-without history recursively gains missing defaults, preserving personal servers
-and overrides. Subsequent runs use three-way history: local overrides and deliberate
-deletions survive default updates; arrays are atomic. Edit the home files, not the
+Init/update call this same command for selected Pi. An explicit asset list excludes
+private configs, templates, docs, sync tooling and browser captures from deployment.
+Fresh homes bootstrap both defaults.
+Existing settings without history gain missing defaults and missing packages,
+while retaining personal values and package declarations. Existing MCP without
+history recursively gains missing defaults, preserving personal servers and
+overrides. Subsequent runs use three-way history: local overrides and deliberate
+deletions survive default updates. Only the `packages` list merges by package
+identity: versions update independently of personal resource filters, personal
+pins and ordering survive, and removing a known package remains an opt-out.
+Ambiguous duplicate identities stop sync before publication. Other arrays remain
+atomic (a personal edit retains the whole list). Edit the home files, not the
 templates, for personal changes. Keep secrets out of rig; use Pi's environment
 variable references (for example `${SERVICE_API_KEY}` in server `env` values),
 and supply those variables in Pi's environment rather than committing credentials.
 
 Pi package installs use Bun through `"npmCommand": ["bun"]`. The `npm:`
 package prefixes identify registry sources and remain unchanged. Node.js is still
-required to run Pi.
+required to run Pi. Pi resolves configured packages on startup/reload; rig does not
+implement another package installer. Bundled skills arrive through those packages;
+the empty root skills lock declares no separate skill installation.
+
+To disable a bundled resource, use Pi's package object filters (`skills`,
+`extensions`, `prompts`, or `themes`); an empty filter list disables that resource
+kind. Keep the package `source` unchanged to continue receiving default version
+updates. Direct home assets are separate: use extension exclusions for extensions,
+`subagents.agentOverrides` for agents, and select a private theme in settings.
+Keep personal `AGENTS.md` and subagent configuration user-owned; package filters do
+not disable those files. Removing a personal scalar override resets it only after
+explicitly restoring the desired current default; deletion of a tracked default
+is otherwise preserved as an opt-out.
 
 The global `playwright` server runs exactly:
 

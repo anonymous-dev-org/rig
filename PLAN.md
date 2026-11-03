@@ -1,56 +1,29 @@
 # Goal and scope
-- Approved: audit and plan for all rig defaults, including skills, Brew, Pi resources/MCPs, app configs, helpers and macOS preferences. Implementation requires approval of this rollout.
-- Desired contract: new defaults arrive; unchanged defaults update; personal values/additions/pins and explicit opt-outs survive. Private files and state stay outside rig.
+- Deliver new rig defaults without deleting personal settings or overriding explicit choices.
+- User approved trimming the broad rollout after questioning overengineering: Pi package/default updates, safe setup/update, native customization hooks, and Brew controls only.
 
 # Excluded
-- Implementation, installs, live configuration changes, automatic package removal, universal text/code merging, and inventing new default skills/tools.
+- New AeroSpace/Lazysql TOML merging and macOS preference synchronization. Their prototype commits were reverted from delivery; isolated branches preserve the work.
+- Live installations/configuration changes, automatic package removal, new dependencies/frameworks, new tests/probes.
+- Invented standalone skills: the skills lock is empty; Pi packages supply bundled skills.
 
 # Implementation details
-## Current audit
-- `init.sh` deletes ordinary conflicting destination files before Stow; directory links need careful handling. Init component choices are not persisted. `update.sh` pulls/re-execs, runs Brew/Bun/Pi updates and restows all components regardless of initial selection.
-- Pi: `pi/sync-settings.mjs` already owns private home JSON and external history/recovery. Existing settings adoption preserves everything; MCP fills missing values. Arrays are atomic, so personal package-list changes prevent new rig packages arriving. Extensions/agents/themes/instructions remain Stow-linked source assets.
-- Brew: `brew/Brewfile` is a shared install/upgrade list. Both entry points run Bundle; update separately upgrades Bun and installs Pi. Personal packages aren't explicitly removed, but uninstalled defaults return without opt-outs.
-- Skills: `skills-lock.json` has no entries; no tracked standalone skills or install/update command. Pi packages can supply skills (including Ponytail). Do not imply session-local skills are shipped by rig.
-- AeroSpace: `scripts/install-aerospace.sh` backs up conflicts, links repo config/helpers, reloads a running app and requires active config to equal repo source. Backups prevent loss but do not preserve active personal settings.
-- Lazysql: init/update preserve or seed an ignored checkout-local TOML and Stow it; later template changes never merge. Private connections can live in checkout. Current path ignores XDG_CONFIG_HOME. Upstream project-local overrides do not provide global shared/personal layering; app UI writes settings.
-- macOS: `macos/defaults.sh` writes fixed typed preference values and restarts Dock/Finder. Init-only opt-in; reruns overwrite customizations; updates do not sync them.
-- Git/Zsh/Kitty/Neovim: Stow links expose tracked source to personal edits. Zsh already loads ~/.zshrc.local but plugin initialization precedes it and Bun completion follows it. Neovim uses native after/ paths but deferred MiniDeps callbacks and recurring autocommands defeat blanket last-wins promises; plugin/tool downloads are separate from rig updates. Kitty has a theme include but no personal include. Git has no personal include; credential helper reset/order and additive ignore patterns require native semantics.
-- Other assets: explicit helper/extension/theme/agent manifests should exclude docs, tests, snapshots and runtime files. `.githooks/pre-commit` is a repo-development asset; setup currently replaces core.hooksPath. Brew-only apps/tools have no app config in rig and should not acquire invented config management.
-
-## Policy and adoption
-- Persist component selections outside checkout; fresh setup defaults to the shipped set with explicit opt-outs. Updates respect prior choices. Separate required runtimes from optional tools; skipping a runtime must disable dependent components or produce an actionable error.
-- Shared source is read-only from the user's perspective. Native app includes/hooks load shared defaults before private customizations. Managed JSON/TOML files use prior-default history where native global layering is unavailable.
-- First adoption: snapshot existing data/links, identify old rig links, and preserve user settings. Unknown existing code/config is not silently rewritten or executed to discover intent; present a migration choice when safe composition is ambiguous. No destructive conflict deletion or Stow adoption of private content.
-- Config updates: local customization wins; report overlapping default changes. Removing an upstream default removes only an unchanged managed value. User deletion of a known managed entry remains an opt-out. Reset-to-default must be explicit.
-- Pi list merging is limited to packages: stable source identity across versions and string/object forms; preserve pins, filters, order and deliberate removals; reject ambiguous duplicate identities. Leave all other arrays atomic.
-- Deselection stops management, not installation removal or deletion of personal files. Remove retired assets only using prior inventory and positively identified rig ownership; handle directory/broken links and leave foreign links/files untouched. Disabling already active shared behavior requires its native disable control or explicit detachment, not merely deselection.
-- Installation absence alone is not proof of opt-out; require explicit dependency/resource exclusion. Removing an upstream dependency stops management but never uninstalls it automatically. Dependency transitive requirements can still install skipped optional packages; report that limitation.
-- Keep private configs, snapshots and history outside source with restrictive permissions. Validate before publishing; refuse unsafe paths/concurrent edits; keep previous working files on failure. Report partial success and rerunnable recovery instead of claiming a global transaction.
-- Protect modified tracked files before pull; do not stash/reset them automatically. Preserve previous revision/source data during migration. Persist which components were migrated; never infer unknown history as user consent.
-
-## Proposed rollout (approval required)
-1. Safety and orchestration: remove destructive adoption; persist component choices; shared init/update path and explicit install manifest; preview component actions/conflicts; stop on dirty checkout. Treat hook installation separately and preserve existing hooks.
-2. Native layers: retain user-owned Git entrypoint with shared include before personal settings; preserve credential-helper ordering and choose explicit combined ignore ownership. Reuse Zsh's local hook, adding only needed pre-plugin controls. Add final private Kitty include after confirming optional-file/mapping semantics. Use Neovim native runtime layers and ordered deferred hooks, with pre-setup controls for managed plugin/autocommand opt-outs. Never blindly source old executable configs. Keep personal files outside rig and don't purge plugin/cache/history data.
-3. Pi and skills: retain JSON transaction engine; add first-adoption missing defaults and identity-aware package updates/removals; preserve MCP overrides/disabled entries. Use Pi resource filters/exclusions for bundled extensions/skills; audit direct agents/themes/AGENTS.md ownership separately. Reconcile configured packages using Pi's supported commands/startup; don't create a second package manager. No standalone skill installer: none are declared. Direct Pi assets need resource-specific handling: supported extension exclusions, subagents.agentOverrides for agents, private theme selection, and explicit personal ownership/composition for AGENTS.md and extensions/subagent/config.json; package filters alone do not cover them.
-4. Brew: retain shared Brewfile plus optional private Brewfile; persist native HOMEBREW_BUNDLE_*_SKIP controls and upgrade choices in private settings read by both entry points. Avoid automatic cleanup; don't bypass preferences with unconditional Bun/Pi upgrades. Preserve personal package pins where supported; Brew is not a reproducible version lock.
-5. Non-layered configs: AeroSpace/Lazysql scoped TOML adoption and three-way updates after verifying installed-version support and choosing an existing parser/writer. Preserve unknown keys, comments where feasible, user arrays and Lazysql connections; detect concurrent app writes. Respect XDG paths; Lazysql project config takes precedence and replaces database arrays, while UI changes remain personal edits. Validate AeroSpace before publication/reload; adjust installer identity check for private effective config; never move windows/start apps for sync.
-6. macOS: explicit enabled component with a typed domain/key allowlist and prior applied values. Preserve user changes; distinguish absent from explicitly set preferences. Preview first adoption rather than overwrite existing preferences. Restart affected apps only with consent. No sweep of arbitrary preferences.
-7. Delivery: document one setup/update/customize/disable/reset workflow per component. Run existing checks and manual diff review; create no tests/probes under current instructions. Report checks lacking coverage and any runtime validation requiring user consent.
-
-- Resolve Node/Bun/Homebrew prerequisites and parent-process PATH before mutation; don't depend on child installer exports. Exclude tracked pi/.playwright-mcp/page-*.yml captures from deployment/public defaults; hook identifier checks do not establish absence of secrets.
-- Verification review must cover first adoption, personal/default overlapping edits, package pins/filters/deletions, component skips, retired/broken links, repeat runs, failure recovery and concurrent app writes, using existing checks/manual source review only.
-
-## Evidence and open implementation gates
-- Official Homebrew Bundle docs and manpage confirm Brewfile install/upgrade, native skip variables and cleanup as a separate destructive operation: https://docs.brew.sh/Brew-Bundle-and-Brewfile and https://docs.brew.sh/Manpage.
-- Upstream Lazysql README documents global paths, project-only overrides and UI writes: https://github.com/jorgerojas26/lazysql. AeroSpace guide describes its single config; no global include solution established by this audit.
-- Pi installed package/MCP documentation confirms startup package install retries and MCP startup connections. Runtime compatibility/network/browser availability are not verified.
-- Before TOML implementation: confirm native layering/parser support and formatting behavior; if dependency or main approach changes, get approval. Before standalone skill implementation: identify actual source inventory, not the current machine's installed skills.
+- Keep Pi's existing JSON transaction engine. Merge packages by stable identity, preserve pins/filter objects/order/deletions, validate duplicates before staging, and report conflicting key paths without values. Other arrays remain atomic.
+- Use native Git includes, Zsh pre/final hooks, Kitty optional local.conf and Neovim private runtime/deferred hooks. Preserve unknown executable configs; require manual migration instead of sourcing or replacing them.
+- Shared setup/update must stop destructive adoption, persist component selection, protect dirty checkout before pull, preserve existing hooks, and deploy explicit assets rather than docs/runtime captures.
+- Keep Brewfile and native skip/no-upgrade controls. No unconditional Bun/Pi upgrade bypasses. Resolve runtime prerequisites before writes.
+- Leave existing AeroSpace/Lazysql/macOS configs untouched by automatic update; report manual adoption rather than adding a new sync engine.
+- Integrate latest main (Kitty file-link fix and Pi lens config), run existing checks and independent review, then deliver PR/merge as requested.
 
 # Requirements list and tracking
-- [x] Separate user-requested Kitty fix: added native `open-actions.conf` to launch file URLs with `nvim -- ${FILE_PATH}` in a new OS window; coding-partner approved, diff checked, merged locally and Stow-linked. Web URLs and Finder associations unchanged. All file URLs (including binaries/directories) go to Neovim; GUI click behavior not verified. This does not authorize the broader rollout above.
-- [x] Inventory every rig component and its setup/update/customization behavior; independent native-layer source audit read.
-- [x] Recommend safe first adoption/update behavior for all components; coding-partner's five findings and follow-up incorporated.
-- [x] Specify conflicts, removals, migration, installation boundaries and opt-outs.
-- [x] Complete phased plan and independent review for user approval. Implementation is not approved; version-specific native semantics and TOML support remain explicit gates.
-- Existing debt: Pi check expects --headless although defaults intentionally omit it; baseline suite has that failure. New sync semantics would lack focused regression coverage under the no-new-tests constraint.
-- Limitation: no changes to implementation or private configs; no installation/runtime verification. Native-layer migration cannot safely infer arbitrary executable config intent. Full TOML parser/round-trip support remains an implementation gate.
+- [x] Audit existing delivery and preserve personal configuration goal.
+- [x] Remove new TOML/macOS machinery from deliverable after scope reduction.
+- [x] Implement native hooks, independently reviewed commit 7e8c602; integrated as 653c878. Deployment remains pending.
+- [x] Finish Pi package identity/filter/removal/adoption changes and docs; existing suite 42/43 passing, sole failure is preexisting Playwright --headless expectation.
+- [x] Integrate safe shared orchestration, selections, explicit assets and Brew controls (180f648).
+- [x] Independent native and final Pi/orchestration reviews aligned; manual migration documented. Node/Bash/Zsh/Lua syntax and diff checks passed. LSP clean confirmation inconclusive with two advisory Pi warnings.
+- [ ] Deliver MR/merge.
+- Pi generic JSON merge retains existing atomic new-table behavior; package list is the scoped exception. No new regression tests permitted; package edge cases source-reviewed only.
+- Native caveats: existing XDG Git config must not become subordinate to shared credential resets; Kitty directories must remain user-owned, link files individually; preserve Zsh hooks and nvim-local.
+- Runtime behavior remains unverified; no live settings/installations changed. AeroSpace/Lazysql/macOS no longer receive automatic personal/default merging in this scope.
+- Preserved independent main changes: Kitty open-actions.conf opens file URLs via Neovim in a new OS window; Pi lens footer configuration remains managed. GUI click behavior was not verified by this rollout.
