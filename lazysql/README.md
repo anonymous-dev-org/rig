@@ -21,13 +21,9 @@ its connection arrays replace rather than extend global arrays.
 First adoption preserves personal values and fills missing default keys.
 Subsequent runs compare the prior defaults with the personal file: unchanged
 values follow new defaults, personal edits and deletions survive, and unknown
-keys are retained. Arrays (including database connections) and scalar/table type
-changes are atomic. New tables merge into existing personal tables; retired
-tables lose only unchanged defaults. A deleted personal table stays deleted.
-Editing connections in Lazysql remains a personal edit, not a template edit.
-When both the user and defaults change a value, the personal value/deletion wins;
-preview and apply report overlapping key paths as JSON arrays of key names,
-never values.
+keys are retained. Arrays (including database connections) are atomic. Editing
+connections in Lazysql remains a personal edit, not a template edit. When both
+the user and defaults change a value, the personal value wins.
 
 Unchanged TOML bytes are retained. When values change, Bun serialization may
 remove comments and change formatting; the publisher warns and saves original

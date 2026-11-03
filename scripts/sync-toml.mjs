@@ -7,18 +7,13 @@ import { isDeepStrictEqual as equal } from 'node:util';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const missing = Symbol('missing');
 const table = value => value !== missing && value !== null && typeof value === 'object' && !Array.isArray(value);
-function merge(previous, local, next, overlaps, keys = []) {
+function merge(previous, local, next) {
   if (equal(previous, local)) return next;
-  if (!table(local) || (previous !== missing && !table(previous)) || (next !== missing && !table(next))) {
-    if (!equal(previous, next) && !equal(local, next)) overlaps.push(keys);
-    return local;
-  }
-  if (previous === missing) previous = Object.create(null);
-  if (next === missing) next = Object.create(null);
+  if (!table(previous) || !table(local) || !table(next)) return local;
   const result = Object.create(null);
   for (const key of new Set([...Object.keys(previous), ...Object.keys(local), ...Object.keys(next)])) {
     const get = value => Object.hasOwn(value, key) ? value[key] : missing;
-    const value = merge(get(previous), get(local), get(next), overlaps, [...keys, key]);
+    const value = merge(get(previous), get(local), get(next));
     if (value !== missing) result[key] = value;
   }
   return result;
@@ -69,17 +64,14 @@ function write(file, bytes) {
 }
 function parse(bytes) {
   const value = Bun.TOML.parse(bytes);
-  function normalize(item) {
-    if (typeof item === 'string' || typeof item === 'boolean' || (typeof item === 'number' && Number.isFinite(item))) return item;
-    if (Array.isArray(item)) return item.map(normalize);
-    if (table(item) && [Object.prototype, null].includes(Object.getPrototypeOf(item))) {
-      const result = Object.create(null);
-      for (const key of Object.keys(item)) result[key] = normalize(item[key]);
-      return result;
-    }
+  function validate(item) {
+    if (typeof item === 'string' || typeof item === 'boolean' || (typeof item === 'number' && Number.isFinite(item))) return;
+    if (Array.isArray(item)) { item.forEach(validate); return; }
+    if (table(item) && [Object.prototype, null].includes(Object.getPrototypeOf(item))) { Object.values(item).forEach(validate); return; }
     throw new Error('Unsupported TOML value: dates/times and nonfinite numbers are not managed; no files changed');
   }
-  return normalize(value);
+  validate(value);
+  return value;
 }
 function text(snapshot) { return Buffer.from(snapshot.data, 'base64').toString('utf8'); }
 function run() {
@@ -144,12 +136,10 @@ function run() {
   const localSnapshot = copies[0]?.[1] || (aerospace && inputs[0][1]?.link ? nextSnapshot : undefined);
   const local = localSnapshot ? parse(text(localSnapshot)) : missing;
   let effective = next;
-  const overlaps = [];
-  if (local !== missing) effective = prior ? merge(parse(text(prior)), local, next, overlaps) : fill(local, next);
+  if (local !== missing) effective = prior ? merge(parse(text(prior)), local, next) : fill(local, next);
   const after = localSnapshot && equal(local, effective) ? text(localSnapshot) : Bun.TOML.stringify(effective);
   if (!equal(parse(after), effective)) throw new Error('TOML serialization changed values');
   console.log(`${component}: ${destination}; private history/backups: ${state}`);
-  for (const keys of overlaps) console.warn(`Overlapping TOML changes; personal value/deletion retained at key path: ${JSON.stringify(keys)}`);
   if (aerospace) console.warn('Publication validates TOML syntax/round-trip only, not AeroSpace semantics. No activation/reload is performed.');
   if (flag === '--preview') { console.log(journal ? 'Pending transaction requires recovery on apply' : 'Preview: personal edits/deletions and atomic arrays retained; changed TOML loses comments/formatting after private backup'); return; }
   fs.mkdirSync(state, { recursive: true, mode: 0o700 });
