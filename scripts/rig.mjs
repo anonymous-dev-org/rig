@@ -2,7 +2,7 @@
 import fs from 'node:fs';
 import {createHash} from 'node:crypto';
 import path from 'node:path';
-import {fileURLToPath} from 'node:url';
+import {fileURLToPath, pathToFileURL} from 'node:url';
 import {spawnSync} from 'node:child_process';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -21,6 +21,33 @@ const fail = message => { throw new Error(message); };
 function run(command, argv, options = {}) {
   const result = spawnSync(command, argv, {cwd: root, stdio: 'inherit', ...options});
   if (result.error || result.status !== 0) fail(`${command} failed; correct the error and rerun (completed components remain applied).`);
+  return result.stdout;
+}
+async function reconcilePiPackages(piBin, noUpgrade) {
+  let sdk;
+  try {
+    const {findPackageJSON} = await import('node:module');
+    const manifestPath = findPackageJSON(pathToFileURL(fs.realpathSync(piBin)));
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+    if (manifest.name !== '@earendil-works/pi-coding-agent' || typeof manifest.exports?.['.']?.import !== 'string') fail('Unsupported Pi package entry');
+    sdk = await import(pathToFileURL(path.resolve(path.dirname(manifestPath), manifest.exports['.'].import)).href);
+  } catch {
+    fail(`Cannot load Pi's package-manager API from ${piBin}. Use a current Node/Bun Pi installation and rerun.`);
+  }
+  const {DefaultPackageManager, SettingsManager} = sdk;
+  const agentDir = path.join(home, '.pi/agent');
+  let settings;
+  try { settings = JSON.parse(fs.readFileSync(path.join(agentDir, 'settings.json'), 'utf8')); }
+  catch { fail(`Cannot read Pi settings at ${agentDir}/settings.json. Correct the file and rerun.`); }
+  const settingsManager = SettingsManager.inMemory(settings, {projectTrusted:false});
+  const manager = new DefaultPackageManager({cwd: agentDir, agentDir, settingsManager});
+  manager.setProgressCallback(event => { if (event.message) console.log(event.message); });
+  const {installFailures} = await manager.resolve();
+  if (installFailures.length) fail(`Pi package installation failed: ${installFailures.map(item => `${item.source}: ${item.message}`).join('; ')}. Correct the error and rerun.`);
+  if (!noUpgrade) await manager.update();
+  const missing = manager.listConfiguredPackages().filter(pkg => !pkg.installedPath);
+  if (missing.length) fail(`Pi packages still missing: ${missing.map(pkg => pkg.source).join(', ')}. Correct the error and rerun.`);
+  console.log('Pi configured packages installed. Restart/reload Pi to load their extensions, prompts and skills.');
 }
 function stat(file) { try { return fs.lstatSync(file); } catch (error) { if (error.code === 'ENOENT') return null; throw error; } }
 function safe(file) {
@@ -246,7 +273,11 @@ try {
   for (const [key, val] of Object.entries(state.brew.skip)) if (!/^HOMEBREW_BUNDLE_[A-Z_]+_SKIP$/.test(key) || typeof val !== 'string') fail('Invalid Brew skip controls');
   if (state.brew.file !== undefined && (typeof state.brew.file !== 'string' || !path.isAbsolute(state.brew.file) || !stat(state.brew.file)?.isFile() || state.brew.file.startsWith(root + path.sep))) fail('Private Brewfile must be an existing absolute path outside rig');
   if (state.components.includes('brew')) executable('brew');
-  if (state.components.includes('pi')) executable('bun');
+  if (state.components.includes('pi')) {
+    executable('bun');
+    if (/^(1|true|yes)$/i.test(process.env.PI_OFFLINE || '')) fail('Unset PI_OFFLINE before installing Pi packages, or deselect pi.');
+    if (process.env.PI_CODING_AGENT_DIR && path.resolve(process.env.PI_CODING_AGENT_DIR) !== path.join(home, '.pi/agent')) fail('Rig deploys Pi to ~/.pi/agent. Unset PI_CODING_AGENT_DIR or deselect pi.');
+  }
   console.log(`${preview ? 'Preview' : 'Apply'} ${mode}: ${state.components.join(', ') || '(none)'}.`);
   console.log('AeroSpace, Lazysql and macOS config are untouched: adopt/update them manually. No standalone skills installer is declared.');
   if (mode === 'update') {
@@ -288,13 +319,21 @@ try {
           for (const relative of manifests[component]) deploy(component, relative);
           if (component === 'git') adoptGit();
           if (component === 'pi') {
+            let piBin;
             if (!available('pi') || !state.brew.noUpgrade) {
               console.log('bun add --global --ignore-scripts @earendil-works/pi-coding-agent (selected Pi; shared upgrade control applies)');
-              if (!preview) run('bun', ['add','--global','--ignore-scripts','@earendil-works/pi-coding-agent']);
-            } else console.log('Existing Pi CLI retained by no-upgrade choice.');
+              if (!preview) {
+                run('bun', ['add','--global','--ignore-scripts','@earendil-works/pi-coding-agent']);
+                piBin = path.join(run('bun', ['pm','--global','bin'], {stdio:'pipe', encoding:'utf8'}).trim(), 'pi');
+              }
+            } else {
+              console.log('Existing Pi CLI retained by no-upgrade choice.');
+              if (!preview) piBin = run('/bin/sh', ['-c','command -v pi'], {stdio:'pipe', encoding:'utf8'}).trim();
+            }
             if (!preview) run(process.execPath, ['pi/sync-settings.mjs', ...(value('--pi-migrate-from') ? ['--migrate-from', value('--pi-migrate-from')] : [])]);
             else console.log('Pi JSON sync deferred: its CLI has no preview; no settings changed.');
-            console.log('Start/reload Pi to reconcile configured packages through its supported startup behavior.');
+            console.log(`Reconcile global Pi packages (missing/pinned packages included; upgrades ${state.brew.noUpgrade ? 'disabled' : 'enabled'}).`);
+            if (!preview) await reconcilePiPackages(piBin, state.brew.noUpgrade);
           }
         }
       } catch (error) { failures.push(component); console.error(`${component}: ${error.message}`); }
