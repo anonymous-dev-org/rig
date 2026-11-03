@@ -56,6 +56,23 @@ already be available; this sync does not install packages or browsers. The brows
 profile does not preserve login sessions after closing; it is **not** an OS/network
 security sandbox. Do not expose untrusted pages to privileged secrets casually.
 
+## Goal reminder
+
+The `goal-reminder.ts` extension adds a short instruction every 20 model calls:
+look back at the user's current goal, keep the next action focused, choose the
+simplest solution that meets the requirements, and stop when the goal is met.
+Change `REMINDER_INTERVAL` in the extension to adjust the cadence. Calls are counted
+from extension load, so `/reload` or a restart resets the counter; the first reminder
+is on call 20. It uses Pi's `context_with_system` hook without adding saved conversation messages
+or starting extra turns. Pi handles the provider's system/developer role mapping;
+providers without mid-conversation system messages fold it into the leading prompt.
+An extension that forces a replacement `before_agent_start.systemPrompt` can remove
+the reminder. This is advisory, not enforcement or a separate goal tracker.
+
+Rig setup/update deploys it to `~/.pi/agent/extensions/goal-reminder.ts` when Pi is
+selected; the JSON-only `sync-settings.mjs` command does not deploy extensions.
+After deployment, use `/reload` or restart Pi to activate it.
+
 ## Explicit legacy migration
 
 From this new worktree, explicitly name the **MAIN checkout**, not this worktree:
