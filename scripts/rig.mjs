@@ -86,6 +86,7 @@ function parents(component, relative) {
       for (const file of manifests[component].filter(file => file.startsWith(prefix + path.sep))) migrated.add(destination(file));
       console.log(`Detach known rig directory link ${dest}; source stays unchanged, private snapshot retained.`);
       if (!preview) {
+        const deletions = new Set(manifests[component].filter(file => file.startsWith(prefix + path.sep) && inventory[destination(file)] && !stat(destination(file))));
         const backup = path.join(backupRoot, component, prefix);
         fs.mkdirSync(path.dirname(backup), {recursive:true,mode:0o700});
         fs.cpSync(target, backup, {recursive:true, dereference:false, errorOnExist:true, force:false});
@@ -99,13 +100,13 @@ function parents(component, relative) {
         fs.mkdirSync(dest, {mode:0o700});
         for (const file of manifests[component].filter(file => file.startsWith(prefix + path.sep))) {
           const saved = path.join(backup, path.relative(prefix, file));
-          const committed = spawnSync('git', ['show', `HEAD:${component}/${file}`], {cwd:root});
-          if (committed.status !== 0) fail(`Cannot identify prior default: ${file}`);
-          if (!stat(saved)) { record(destination(file), hash(committed.stdout)); continue; }
+          if (deletions.has(file) || !stat(saved)) continue;
           const local = destination(file);
           safe(path.dirname(local));
           fs.mkdirSync(path.dirname(local), {recursive:true, mode:0o700});
           fs.copyFileSync(saved, local, fs.constants.COPYFILE_EXCL);
+          const committed = spawnSync('git', ['show', `HEAD:${component}/${file}`], {cwd:root});
+          if (committed.status !== 0) fail(`Cannot identify prior default for ${local}; local bytes preserved without history.`);
           record(local, hash(committed.stdout));
         }
       }
