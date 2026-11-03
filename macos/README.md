@@ -61,25 +61,10 @@ If interrupted:
    Inspect/remove any leftover `*.tmp` file after backing it up; it is never used
    automatically. Preview again before applying.
 
-## Retiring a default
-
-To remove a shipped default, move its complete typed entry from `defaults` to the
-fixed `retired` list in `sync-defaults.mjs`; do not simply delete it from the
-allowlist. The retired list is currently empty. Keep retired entries so users
-upgrading from older versions can reconcile their history.
-
-For a known retired key with history, sync deletes the preference only if it is
-still managed and exactly matches its recorded applied value and native type.
-Personal values and deletions are preserved. Keys without history are untouched.
-Retirement uses the same prechecks, verification, and pending journal as writes;
-its history entry is dropped only after successful reconciliation. Preview reports
-proposed deletions without changing preferences or history. Restarts still require
-`--restart`.
-
-If history names a genuinely unknown key (in neither list), sync stops. Reconcile
-that key manually, then remove its history entry; unknown preferences are never
-automatically read or deleted. Corrupt history must be restored from a trusted
-backup or explicitly moved aside for conservative first adoption.
+If history names a retired/unknown key, sync stops. Reconcile that key manually,
+then remove its history entry to acknowledge retirement. It is not deleted from
+macOS automatically. Corrupt history must be restored from a trusted backup or
+explicitly moved aside for conservative first adoption.
 
 ## Limits and verification
 
