@@ -95,6 +95,9 @@
   "packages": [
     "npm:pi-subagents@latest",
     "npm:pi-web-access",
+    "npm:pi-lens",
+    "npm:billion-context",
+    "git:github.com/DietrichGebert/ponytail",
     "npm:pi-fast@0.3.0"
   ]
 }

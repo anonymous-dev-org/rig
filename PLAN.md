@@ -1,19 +1,17 @@
 # Goal and scope
-- Make shared agent instructions proactive, goal-aligned, and simplicity-driven; align coding-partner advice.
+- Add pi-lens, billion-context, and Ponytail to Rig's shared Pi defaults, per the user's successive links and clarification: “to the rig project pi config”.
 
 # Excluded
-- Runtime enforcement, tooling changes, unrelated agent rewrites, and deployment changes.
+- Installing packages, changing private home settings, replacing agent instructions, or changing other defaults.
 
 # Implementation details
-- Add a recurring two-question decision check.
-- Replace routine stopping with investigation, a concrete recommendation, and in-scope action.
-- Consult coding-partner on material uncertainty; retain user approval for scope changes and real authorization boundaries.
-- Manually review the instruction diff and obtain coding-partner feedback.
+- Add `npm:pi-lens`, `npm:billion-context`, and `git:github.com/DietrichGebert/ponytail` to `pi/.pi/agent/settings.example.json`.
+- Use Ponytail's documented Pi Git source; billion-context's published manifest declares its Pi extension.
+- Manually review the diff, run `git diff --check`, and obtain coding-partner review.
 
 # Requirements list and tracking
-- [x] Shared instructions explicitly repeat goal/scope and simplest-sufficient-solution checks at decision points.
-- [x] Ordinary obstacles lead to bounded investigation and in-scope action, not routine permission requests.
-- [x] Uncertainty triggers a concrete proposal and coding-partner consultation; genuine blockers include a recommended next step.
-- [x] Coding-partner guidance supports proactive resolution without scope expansion or recursive consultation.
-- [x] Diff manually checked; final coding-partner review aligned with no material findings; git diff --check passed.
-- Limitation: written instructions guide model behavior but cannot guarantee compliance.
+- [x] Shared defaults include `npm:pi-lens` and `npm:billion-context` once each; prior reviews approved.
+- [x] Shared defaults include the documented Ponytail source once.
+- [x] Private settings, installed packages, and existing agent instructions remain unchanged.
+- [x] Independent review passed with no material issues; updated `git diff --check` passed.
+- Limitation: defaults only; packages are not installed or activated here. Loaded billion-context changes context management and can start a local proxy; Ponytail injects coding guidance. Runtime compatibility is not verified.
