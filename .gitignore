@@ -19,6 +19,7 @@ lazysql/Library/Application Support/lazysql/config.toml
 !/pi/.pi/agent/agents/
 !/pi/.pi/agent/extensions/
 !/pi/.pi/agent/themes/
+!/pi/.pi/agent/skills/
 
 *.local
 *.sqlite*

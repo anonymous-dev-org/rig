@@ -1,22 +1,22 @@
-# Goal and scope
-- Apply the reminder wording explicitly approved by the user, who requested “ok update it”.
-- Update the repository extension, installed copy, and matching documentation.
-- User additionally requested removal of the coding-partner agent and its AGENTS.md requirements; remove its dedicated settings too, in repository and installed configuration.
+# Goal
+- Store all 58 official pstack skills unchanged in `pi/.pi/agent/skills/` in Rig rather than Lira.
+- Preserve bundled files and modes; include upstream license and pinned provenance.
+- Exclude platform adaptation, deployment changes, agents, and automations.
+- Approved scope update: allow the two upstream example-bearing skill files through the machine-specific-value hook; commit and push to main.
 
-# Excluded
-- Changes to the 20-call interval or injection behavior.
-- New tests, dependencies, or verification artifacts.
+# Approach
+- Copy the already verified upstream skill tree at `6b0300214a09fd6029cfb7077043125758cd1fd2`.
+- Keep provenance and license in `pi/vendor/pstack/`.
+- Compare the import with upstream and independently review scope.
 
-# Implementation details
-- Replace only the REMINDER string with the approved wording about goal/scope alignment and checking for a simpler approach.
-- Remove the stop-when-complete instruction and update the README summary.
-- Compare copies and check the diff.
+# Definition of done
+- All 535 skill files match upstream; existing Rig assets remain unchanged.
+- Limitation: this stores the skills only; Rig's explicit deployment list does not currently deploy standalone skills. Cursor-specific instructions remain unchanged.
+- Preserve upstream blank EOF line in `automate-me/SKILL.md` despite Git whitespace warning.
 
-# Requirements list and tracking
-- [x] Approved wording appears in the worktree and installed extension; copies match.
-- [x] Interval and injection logic unchanged; documentation matches.
-- [x] Diff whitespace check passes.
-- [x] Reminder review completed with no material issues.
-- [x] Removed agent definition, dedicated settings, and consultation requirements; general delegation guidance preserved. Search found no remaining references in worktree Pi files or installed instructions/settings/agents; instruction copies match and diff check passes.
-- User authorized opening a pull request and merging into main.
-- Limitation: live injection not tested; reload or restart required.
+# Todos
+- [x] Update main and create task worktree.
+- [x] Copy skills, license, and provenance; recursive diff matches all upstream files.
+- [x] Independent review confirms all 535 files, six executable modes, license, and revision match. Fixed reviewer finding by adding the shared skills directory to Git ignore exceptions; all files staged.
+- [x] Add approved hook exceptions for `recall/SKILL.md` and `make-bot-ui/SKILL.md`; shell syntax check passes, upstream bytes remain unchanged.
+- [ ] Commit and push main; check resulting CI. No runtime execution or deployment changes.

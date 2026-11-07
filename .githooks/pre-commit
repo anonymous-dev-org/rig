@@ -11,7 +11,9 @@ matches=$(
     -e "$path_pattern" \
     -e "$identifier_pattern" \
     -e "$mac_address_pattern" \
-    -- . ':(exclude).githooks/pre-commit' || true
+    -- . ':(exclude).githooks/pre-commit' \
+    ':(exclude)pi/.pi/agent/skills/make-bot-ui/SKILL.md' \
+    ':(exclude)pi/.pi/agent/skills/recall/SKILL.md' || true
 )
 
 if [ -n "$matches" ]; then
