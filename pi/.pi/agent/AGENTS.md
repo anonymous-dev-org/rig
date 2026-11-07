@@ -37,14 +37,14 @@ Write `PLAN.md` as brief working notes, not a report. Use short bullets and dire
 
 Use these sections in order:
 
-1. **Goal and scope** — the objective and included work.
-2. **Excluded** — work outside the scope.
-3. **Implementation details** — the approach and concrete steps.
-4. **Requirements list and tracking** — requirements as `- [ ]` items, each with an observable completion condition, plus progress updates.
+1. **Goal** — the objective, included work, and scope exclusions.
+2. **Approach** — the approach and concrete steps.
+3. **Definition of done** — observable completion conditions for the overall goal.
+4. **Todos** — tasks as `- [ ]` items, each with its requirements and observable completion criteria, plus progress updates.
 
-Mark an item `- [x]` as soon as its completion condition is met; leave partial work unchecked. Record approved plan or scope changes.
+Mark a todo `- [x]` as soon as all its requirements and completion criteria are met; leave partial work unchecked. Record approved plan or scope changes.
 
-In **Requirements list and tracking**, note technical debt left by the implementation and shortcomings of the implemented solution as they arise. Keep each note brief: issue, impact, and remaining work.
+In **Definition of done**, note technical debt left by the implementation and shortcomings of the implemented solution as they arise. Keep each note brief: issue, impact, and remaining work.
 
 ## 5. Implement, verify, and finish
 
