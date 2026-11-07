@@ -1,22 +1,20 @@
 # Goal
-- Store all 58 official pstack skills unchanged in `pi/.pi/agent/skills/` in Rig rather than Lira.
-- Preserve bundled files and modes; include upstream license and pinned provenance.
-- Exclude platform adaptation, deployment changes, agents, and automations.
-- Approved scope update: allow the two upstream example-bearing skill files through the machine-specific-value hook; commit and push to main.
+- Remove Ponytail from Rig defaults and local Pi; deploy all 58 imported pstack skills and supporting files.
+- Preserve upstream content; exclude rewriting Cursor workflows or installing their external dependencies.
 
 # Approach
-- Copy the already verified upstream skill tree at `6b0300214a09fd6029cfb7077043125758cd1fd2`.
-- Keep provenance and license in `pi/vendor/pstack/`.
-- Compare the import with upstream and independently review scope.
+- Include the complete vendored skills tree in existing copy deployment; preserve executable bits for new assets.
+- Remove the Ponytail package default and local installation; copy skills into the ordinary home skills directory.
+- Verify with existing checks, deployed/import comparison, and independent read-only review; retain the existing pinned upstream import.
 
 # Definition of done
-- All 535 skill files match upstream; existing Rig assets remain unchanged.
-- Limitation: this stores the skills only; Rig's explicit deployment list does not currently deploy standalone skills. Cursor-specific instructions remain unchanged.
-- Preserve upstream blank EOF line in `automate-me/SKILL.md` despite Git whitespace warning.
+- All 535 pstack files are copied with matching bytes and executable permissions; future Pi setup/update includes skills.
+- Ponytail no longer configured locally or by default; unrelated personal resources preserved.
+- Limitation: Cursor-specific instructions and external dependencies remain unchanged; installed does not mean every workflow runs in Pi. Upstream's 57 explicit-invocation flags remain intact; use `/skill:name`.
+- Existing test debt: two sync tests fail on both main and this branch (obsolete headless expectation and cleanup-loop assumption); unrelated fixes deferred.
 
 # Todos
-- [x] Update main and create task worktree.
-- [x] Copy skills, license, and provenance; recursive diff matches all upstream files.
-- [x] Independent review confirms all 535 files, six executable modes, license, and revision match. Fixed reviewer finding by adding the shared skills directory to Git ignore exceptions; all files staged.
-- [x] Add approved hook exceptions for `recall/SKILL.md` and `make-bot-ui/SKILL.md`; shell syntax check passes, upstream bytes remain unchanged.
-- [x] Commit `9da503e` pushed to main; GitHub Actions lists no runs. No runtime execution or deployment changes.
+- [x] Pull main and create ignored task worktree; inspect deployment and Pi discovery docs.
+- [x] Update deployment, package defaults, and documentation.
+- [x] Remove local Ponytail with `pi remove`; copy all 535 files into the previously empty home skills directory. Recursive diff matches; all 58 entrypoints and six executable files present. `pi list` confirms Ponytail absent.
+- [x] Syntax, LSP, whitespace and deployment preview checks pass. Existing sync suite: 41 pass, two baseline failures reproduced on main. Independent review found no actionable regressions. No new verification artifacts created; no skill workflows executed.

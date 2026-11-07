@@ -6,4 +6,4 @@
 - Upstream MIT license: [LICENSE](LICENSE).
 - Excludes plugin registration, agent definitions, automations, and other plugin directories.
 
-This is a literal import, not a Pi port. Cursor-specific paths, commands, models, and dependencies remain unchanged. Rig's current explicit deployment list does not deploy these standalone skills; no home configuration or deployment behavior was changed by this import.
+This is a literal import, not a Pi port. Cursor-specific paths, commands, models, and dependencies remain unchanged. Rig setup/update copies the complete skill tree to `~/.pi/agent/skills/` when Pi is selected, preserving executable bits on new files. Local customizations and recorded deletions follow Rig's normal copy policy. Reload Pi after deployment; its skill discovery needs no additional package declaration.

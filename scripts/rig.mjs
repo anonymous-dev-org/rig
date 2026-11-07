@@ -220,7 +220,7 @@ function deploy(component, relative) {
   fs.mkdirSync(path.dirname(dest), {recursive:true, mode:0o700});
   if (linked) snapshot(dest, prior);
   const next = dest + '.rig-next';
-  fs.writeFileSync(next, linked ? prior : bytes, {flag:'wx', mode:current && !linked ? current.mode & 0o777 : 0o600});
+  fs.writeFileSync(next, linked ? prior : bytes, {flag:'wx', mode:current && !linked ? current.mode & 0o777 : 0o600 | (fs.statSync(source).mode & 0o111)});
   const latest = stat(dest);
   if (Boolean(latest) !== Boolean(current) || (latest && (linked
     ? !latest.isSymbolicLink() || path.resolve(path.dirname(dest), fs.readlinkSync(dest)) !== source || !fs.readFileSync(source).equals(prior)
@@ -279,7 +279,7 @@ try {
     if (process.env.PI_CODING_AGENT_DIR && path.resolve(process.env.PI_CODING_AGENT_DIR) !== path.join(home, '.pi/agent')) fail('Rig deploys Pi to ~/.pi/agent. Unset PI_CODING_AGENT_DIR or deselect pi.');
   }
   console.log(`${preview ? 'Preview' : 'Apply'} ${mode}: ${state.components.join(', ') || '(none)'}.`);
-  console.log('AeroSpace, Lazysql and macOS config are untouched: adopt/update them manually. No standalone skills installer is declared.');
+  console.log('AeroSpace, Lazysql and macOS config are untouched: adopt/update them manually. Vendored skills are copied with Pi.');
   if (mode === 'update') {
     const dirty = spawnSync('git', ['status','--porcelain','--untracked-files=normal'], {cwd:root, encoding:'utf8'});
     if (dirty.status !== 0 || dirty.stdout.trim()) fail('Checkout is dirty. Commit or move changes yourself before updating; rig will not stash/reset them.');
@@ -316,6 +316,13 @@ try {
             if (!preview) run('brew', argv, {env});
           }
         } else {
+          if (component === 'pi') {
+            const skillsRoot = path.join(root, 'pi/.pi/agent/skills');
+            safe(skillsRoot);
+            manifests.pi.push(...fs.readdirSync(skillsRoot, {recursive:true})
+              .filter(file => !fs.lstatSync(path.join(skillsRoot, file)).isDirectory())
+              .map(file => `.pi/agent/skills/${file}`));
+          }
           for (const relative of manifests[component]) deploy(component, relative);
           if (component === 'git') adoptGit();
           if (component === 'pi') {

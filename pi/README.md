@@ -11,8 +11,9 @@ node /path/to/rig/pi/sync-settings.mjs
 It creates ordinary private `~/.pi/agent/settings.json` and `mcp.json` files,
 with history and recovery records under `~/.local/state/rig/pi/`, never in rig.
 Init/update call this same command for selected Pi. An explicit asset list excludes
-private configs, templates, docs, sync tooling and browser captures from deployment.
-Direct agents, extensions, themes and instructions are ordinary local copies: edit them locally. Unchanged copies update; customized copies stay intact and report the default source path for manual adoption. Recorded deletions remain opt-outs. This copy policy does not change the JSON sync described below.
+private configs, templates, repository docs, sync tooling and browser captures from
+deployment; the vendored skills tree includes all its supporting files.
+Direct agents, extensions, themes, instructions and vendored skills are ordinary local copies: edit them locally. Unchanged copies update; customized copies stay intact and report the default source path for manual adoption. Recorded deletions remain opt-outs. This copy policy does not change the JSON sync described below.
 Fresh homes bootstrap both defaults.
 Existing settings without history gain missing defaults and missing packages,
 while retaining personal values and package declarations. Existing MCP without
@@ -45,9 +46,21 @@ expose the public Node/Bun package API; unsupported wrappers fail with guidance.
 Preview only describes these actions. The narrow `sync-settings.mjs` command remains
 JSON-only. Restart/reload Pi after init/update to load the installed resources.
 
-Bundled prompts and skills arrive through the declared packages. Rig has no standalone
-prompt inventory, and the empty root skills lock declares no separate skill installation.
-Resources installed manually in another user's home are not copied.
+Package-provided prompts and skills arrive through the declared packages. Rig also
+copies the complete vendored `pi/.pi/agent/skills/` tree into `~/.pi/agent/skills/`,
+including supporting files and executable bits on new files. Pi discovers these
+skills automatically after reload; no skills installer or package entry is needed.
+The empty root skills lock does not govern this copy deployment. Rig has no
+standalone prompt inventory. Resources from another user's home are not copied.
+
+The [pstack import](vendor/pstack/README.md) contains 58 unchanged upstream skills.
+Upstream marks 57 with `disable-model-invocation: true`: invoke them explicitly
+with `/skill:name` (for example `/skill:architect` or `/skill:poteto-mode`). Only
+`setup-pstack` is advertised for automatic selection. These flags are preserved.
+Cursor-specific commands, models, paths and external dependencies are not ported
+or installed by copying them. Ponytail is no longer a default package. Existing
+unmodified declarations tracked in sync history are removed by JSON sync; if a personal declaration is
+retained, remove it explicitly with `pi remove git:github.com/DietrichGebert/ponytail`.
 
 To disable a bundled resource, use Pi's package object filters (`skills`,
 `extensions`, `prompts`, or `themes`); an empty filter list disables that resource
