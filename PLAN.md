@@ -19,4 +19,4 @@
 - [x] Copy skills, license, and provenance; recursive diff matches all upstream files.
 - [x] Independent review confirms all 535 files, six executable modes, license, and revision match. Fixed reviewer finding by adding the shared skills directory to Git ignore exceptions; all files staged.
 - [x] Add approved hook exceptions for `recall/SKILL.md` and `make-bot-ui/SKILL.md`; shell syntax check passes, upstream bytes remain unchanged.
-- [ ] Commit and push main; check resulting CI. No runtime execution or deployment changes.
+- [x] Commit `9da503e` pushed to main; GitHub Actions lists no runs. No runtime execution or deployment changes.
