@@ -55,6 +55,8 @@ Once the plan is written, own the work through implementation and verification u
 - **Significant deviation:** a change to the agreed scope, requirements, completion conditions, or main implementation approach. Pause the affected work, explain the recommended change and its impact, and get explicit user approval. After approval, update `PLAN.md` before resuming that work. Routine implementation adjustments that preserve these boundaries do not need approval.
 - **Genuine blocker:** after bounded investigation, if no supported path meets the goal within the current scope and authority, state the exact constraint, evidence, and alternatives attempted or ruled out. Recommend the smallest next step and ask the specific question or permission needed to unlock it—not an open-ended request for direction. Continue independent, safe, in-scope work where possible; do not claim blocked requirements are complete.
 
+Break Bash commands into smaller commands when a long timeout is expected. A command requiring a timeout longer than 3 minutes (180 seconds) must be split into smaller commands unless there is no feasible way to do so.
+
 Verify with existing checks or manual review. Never create tests, probes, diagnostic scripts, or other verification artifacts, even temporarily. This includes one-off probes that create no files.
 
 When all completion conditions are met, stop implementation. Review the recorded technical debt and shortcomings, explain their impact, and recommend improvements where worthwhile. Let the user decide whether to authorize follow-up refactoring, optimization, or abstraction work; do not start it automatically.
