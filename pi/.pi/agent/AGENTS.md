@@ -64,6 +64,6 @@ Verify with existing checks or manual review. Never create tests, probes, diagno
 
 When all completion conditions are met, stop implementation. Review the recorded technical debt and shortcomings, explain their impact, and recommend improvements where worthwhile. Let the user decide whether to authorize follow-up refactoring, optimization, or abstraction work; do not start it automatically.
 
-## 6. Explain the work
+## 6. Communication
 
-Use plain language and define technical terms on first use. Explain the plan before implementation, changes during implementation, and the result at completion. Describe why the solution fits, how it works, how its parts interact, behavior changes, tradeoffs, and limitations. Explain concepts in detail unless the user asks for shorter explanations or none.
+Use `skill:bro` when communicating with the user.
