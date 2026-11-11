@@ -15,6 +15,8 @@ private configs, templates, repository docs, sync tooling and browser captures f
 deployment; the vendored skills tree includes all its supporting files.
 Direct agents, extensions, themes, instructions and vendored skills are ordinary local copies: edit them locally. Unchanged copies update; customized copies stay intact and report the default source path for manual adoption. Recorded deletions remain opt-outs. This copy policy does not change the JSON sync described below.
 Rig also deploys `~/.config/billion-context/billion-context.json` with ACP's Pi subagent delegation disabled (`"pi": {"subagents": false}`). This keeps billion-context compression while leaving child-agent orchestration to `pi-subagents`.
+Pi auto-compaction is disabled by default (`"compaction": {"enabled": false}`),
+leaving compression to billion-context. Manual `/compact` remains available.
 
 Fresh homes bootstrap both defaults.
 Existing settings without history gain missing defaults and missing packages,

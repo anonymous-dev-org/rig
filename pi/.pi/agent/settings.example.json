@@ -4,6 +4,9 @@
   "defaultProvider": "openai",
   "defaultModel": "gpt-6.1-sol",
   "defaultThinkingLevel": "low",
+  "compaction": {
+    "enabled": false
+  },
   "pi-fast": {
     "enabledByDefault": true
   },
