@@ -97,6 +97,7 @@
     "npm:pi-web-access",
     "npm:pi-lens",
     "npm:billion-context",
-    "npm:pi-fast@0.3.0"
+    "npm:pi-fast@0.3.0",
+    "npm:pi-sub-anthropic"
   ]
 }
