@@ -84,6 +84,16 @@ function adoptSettings(local, next) {
   const current = packageMap(local.packages);
   return {...result, packages:[...local.packages, ...next.packages.filter(entry => !current.has(packageIdentity(entry)))]};
 }
+// Repo-owned values win; arrays are atomic (argv/order can be meaningful).
+// Package declarations are the exception: retain only additional identities,
+// never local pins or resource filters on a repository-owned declaration.
+export function enforceDefaults(local, defaults, {packages = false} = {}) {
+  const result = fillMissing(defaults, local);
+  if (!packages || !Array.isArray(defaults.packages)) return result;
+  const incoming = packageMap(defaults.packages);
+  const current = packageMap(local.packages ?? []);
+  return {...result, packages:[...incoming.values(), ...[...current].filter(([key]) => !incoming.has(key)).map(([, entry]) => entry)]};
+}
 function fileStatus(file) {
   try { return fs.lstatSync(file); } catch (e) { if (e.code === 'ENOENT') return null; throw e; }
 }
@@ -200,7 +210,7 @@ function validateSync({ baseline, settings, state, sourceRoot = path.resolve(pat
   return {baseline, settings, state, history, pending, effectiveTemp, lock, paths, validate};
 }
 export function sync(options) {
-  const {lockToken, adoption = 'preserve', interrupt} = options;
+  const {lockToken, adoption = 'preserve', interrupt, enforce = false} = options;
   const reconcile = adoption === 'settings' ? mergeSettings : merge;
   const {settings, state, history, pending, effectiveTemp, lock, paths, validate} = validateSync(options);
   fs.mkdirSync(path.dirname(state), {recursive:true, mode:0o700});
@@ -220,14 +230,16 @@ export function sync(options) {
       const {next, local, previous, journal, prepared, guards} = validate();
       const check = () => { for (const file of paths) safePath(file); for (const [file, before] of guards) unchanged(file, before); };
       if (journal !== missing && journal.phase === 'ready' && prepared === missing) {
-        if (local === missing) throw new Error('Missing committed recovery destination');
+        if (local === missing && !enforce) throw new Error('Missing committed recovery destination');
         check(); writeJsonAtomic(history, journal.baseline); fs.unlinkSync(pending); continue;
       }
       let effective;
       if (journal !== missing) {
-        if (local === missing && !journal.fresh) throw new Error('Missing recovery destination');
+        // Enforced sync can restore a deleted destination from the pending intent.
+        if (local === missing && !journal.fresh && !enforce) throw new Error('Missing recovery destination');
         effective = local === missing ? journal.after : reconcile(journal.before, local, journal.after);
-      } else if (local === missing) effective = next;
+      } else if (enforce) effective = enforceDefaults(local === missing ? {} : local, next, {packages:adoption === 'settings'});
+      else if (local === missing) effective = next;
       else if (previous !== missing) effective = reconcile(previous, local, next);
       else if (adoption === 'settings') effective = adoptSettings(local, next);
       else if (adoption === 'fill-missing') effective = fillMissing(local, next);
@@ -453,7 +465,7 @@ export function syncAll({home, sourceRoot = path.resolve(path.dirname(fileURLToP
       baseline:path.join(sourceRoot,`pi/.pi/agent/${name}.example.json`),
       settings:path.join(home,`.pi/agent/${name}.json`), state:path.join(root,name),
       sourceRoot, legacyRoot:migrateFrom, lockToken:token,
-      adoption:name === 'mcp' ? 'fill-missing' : 'settings'
+      adoption:name === 'mcp' ? 'fill-missing' : 'settings', enforce:true
     }));
     // Reuse the engine's nonmutating validation for every input, including
     // recovery and path trust, before migration or either publication.

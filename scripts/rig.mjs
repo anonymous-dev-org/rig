@@ -4,6 +4,7 @@ import {createHash} from 'node:crypto';
 import path from 'node:path';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 import {spawnSync} from 'node:child_process';
+import {enforceDefaults} from '../pi/sync-settings.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const home = process.env.HOME;
@@ -77,7 +78,6 @@ const manifests = {
 let backupRoot;
 let inventoryFile;
 let inventory = {};
-const migrated = new Set();
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 function record(dest, digest) {
   if (preview) return;
@@ -110,17 +110,9 @@ function parents(component, relative) {
       if (target !== path.join(root, component, prefix) || !stat(target)?.isDirectory()) fail(`Foreign directory link ${dest}; migrate it manually or deselect ${component}.`);
       inspectDirectory(component, prefix, target);
       detached = true;
-      for (const file of manifests[component].filter(file => file.startsWith(prefix + path.sep))) migrated.add(destination(file));
-      console.log(`Detach known rig directory link ${dest}; source stays unchanged, private snapshot retained.`);
+      console.log(`Detach known rig directory link ${dest}, then enforce repo defaults; source stays unchanged, private snapshot retained.`);
       if (!preview) {
         const files = manifests[component].filter(file => file.startsWith(prefix + path.sep));
-        const baselines = new Map();
-        for (const file of files) {
-          const committed = spawnSync('git', ['show', `HEAD:${component}/${file}`], {cwd:root});
-          if (committed.status !== 0) fail(`Cannot identify prior default for ${file}; directory link left intact.`);
-          baselines.set(file, hash(committed.stdout));
-        }
-        const deletions = new Set(files.filter(file => inventory[destination(file)] && !stat(destination(file))));
         const backup = path.join(backupRoot, component, prefix);
         fs.mkdirSync(path.dirname(backup), {recursive:true,mode:0o700});
         fs.cpSync(target, backup, {recursive:true, dereference:false, errorOnExist:true, force:false});
@@ -134,13 +126,13 @@ function parents(component, relative) {
         fs.mkdirSync(dest, {mode:0o700});
         for (const file of files) {
           const saved = path.join(backup, path.relative(prefix, file));
-          if (deletions.has(file) || !stat(saved)) continue;
+          if (!stat(saved)) continue;
           const local = destination(file);
           safe(path.dirname(local));
           fs.mkdirSync(path.dirname(local), {recursive:true, mode:0o700});
           fs.copyFileSync(saved, local, fs.constants.COPYFILE_EXCL);
         }
-        for (const file of files) record(destination(file), baselines.get(file));
+        for (const file of files) deploy(component, file);
       }
     }
   }
@@ -187,11 +179,9 @@ function adoptGit() {
 function deploy(component, relative) {
   const source = path.join(root, component, relative);
   const dest = destination(relative);
-  if (migrated.has(dest)) return;
   safe(source);
   if (!stat(source)?.isFile()) fail(`Missing declared source ${source}`);
   const bytes = fs.readFileSync(source);
-  const digest = hash(bytes);
   const detached = parents(component, relative);
   if (detached) return;
   safe(path.dirname(dest));
@@ -206,21 +196,26 @@ function deploy(component, relative) {
     if (!current.isFile()) fail(`Not a regular file: ${dest}`);
     prior = fs.readFileSync(dest);
   }
-  if (!current && inventory[dest]) {
-    console.log(`Keep local deletion ${dest}; default: ${source}`);
-    return;
+  let effective = bytes;
+  if (relative.endsWith('.json')) {
+    const parse = (data, file) => {
+      let value;
+      try { value = JSON.parse(data.toString('utf8')); } catch { fail(`Invalid JSON: ${file}`); }
+      if (!value || typeof value !== 'object' || Array.isArray(value)) fail(`Expected JSON object: ${file}`);
+      return value;
+    };
+    const defaults = parse(bytes, source);
+    const merged = enforceDefaults(prior ? parse(prior, dest) : {}, defaults);
+    effective = Buffer.from(JSON.stringify(merged, null, 2) + '\n');
   }
-  if (prior && !linked && hash(prior) !== digest && hash(prior) !== inventory[dest]) {
-    console.log(`Keep customized ${dest}; review default: ${source}`);
-    return;
-  }
+  const digest = hash(effective);
   if (prior && !linked && hash(prior) === digest) { record(dest, digest); return; }
-  console.log(`${linked ? 'Detach known rig link' : 'Copy'} ${dest}; default: ${source}`);
+  console.log(`${linked ? 'Detach known rig link and enforce' : 'Enforce'} ${dest}; repo: ${source}`);
   if (preview) return;
   fs.mkdirSync(path.dirname(dest), {recursive:true, mode:0o700});
-  if (linked) snapshot(dest, prior);
+  if (prior) snapshot(dest, prior);
   const next = dest + '.rig-next';
-  fs.writeFileSync(next, linked ? prior : bytes, {flag:'wx', mode:current && !linked ? current.mode & 0o777 : 0o600 | (fs.statSync(source).mode & 0o111)});
+  fs.writeFileSync(next, effective, {flag:'wx', mode:current && !linked ? current.mode & 0o777 : 0o600 | (fs.statSync(source).mode & 0o111)});
   const latest = stat(dest);
   if (Boolean(latest) !== Boolean(current) || (latest && (linked
     ? !latest.isSymbolicLink() || path.resolve(path.dirname(dest), fs.readlinkSync(dest)) !== source || !fs.readFileSync(source).equals(prior)
@@ -229,11 +224,7 @@ function deploy(component, relative) {
     fail(`Concurrent edit: ${dest}`);
   }
   fs.renameSync(next, dest);
-  if (linked) {
-    const committed = spawnSync('git', ['show', `HEAD:${component}/${relative}`], {cwd:root});
-    if (committed.status !== 0) fail(`Cannot identify prior default for ${dest}; local bytes preserved without history.`);
-    record(dest, hash(committed.stdout));
-  } else record(dest, digest);
+  record(dest, digest);
 }
 
 try {

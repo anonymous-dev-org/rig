@@ -13,34 +13,32 @@ with history and recovery records under `~/.local/state/rig/pi/`, never in rig.
 `./sync.sh` calls this same command for selected Pi. An explicit asset list excludes
 private configs, templates, repository docs, sync tooling and browser captures from
 deployment. Disabled skills are retained in the repo and are not deployed.
-Direct principle skills, agents, extensions, themes and instructions are ordinary local copies: edit them locally. Unchanged copies update; customized copies stay intact and report the default source path for manual adoption. Recorded deletions remain opt-outs. This copy policy does not change the JSON sync described below.
+Direct principle skills, agents, extensions, themes and instructions are managed local copies. Every full sync restores repo bytes, including edits and deletions, with private backups of replaced files. Add personal resources in separate files outside the managed inventory. Managed JSON assets use the additive ownership policy below.
 Pi's built-in auto-compaction is enabled by default (`"compaction": {"enabled": true}`),
 using Pi's default token thresholds. Manual `/compact` remains available.
 Pi Lens and billion-context are no longer default packages, and rig no longer
 deploys their configuration files. This removes their tools and instructions from
 new sessions using the defaults.
 
-JSON sync removes unchanged package declarations tracked in its previous baseline
-and updates an unchanged `compaction.enabled` value to `true`. Personal package
-customizations and compaction overrides remain protected; settings adopted without
-history also retain existing values. If either package remains configured, remove
-it explicitly with `pi remove npm:pi-lens` and `pi remove npm:billion-context`,
-and enable auto-compaction through `/settings` if needed. Restart Pi afterward;
+JSON sync restores `compaction.enabled` to `true`, including on existing installs.
+Packages no longer in repo defaults remain local additions. To stop loading the
+removed packages, remove them explicitly with `pi remove npm:pi-lens` and
+`pi remove npm:billion-context`. Restart Pi afterward;
 start a new session for a clean comparison of startup token usage.
 Old home configuration files and downloaded packages are not deleted by this
 repo change; configuration files alone do not load the removed extensions.
 
-Fresh homes bootstrap both defaults.
-Existing settings without history gain missing defaults and missing packages,
-while retaining personal values and package declarations. Existing MCP without
-history recursively gains missing defaults, preserving personal servers and
-overrides. Subsequent runs use three-way history: local overrides and deliberate
-deletions survive default updates. Only the `packages` list merges by package
-identity: versions update independently of personal resource filters, personal
-pins and ordering survive, and removing a known package remains an opt-out.
-Ambiguous duplicate identities stop sync before publication. Other arrays remain
-atomic (a personal edit retains the whole list). Edit the home files, not the
-templates, for personal changes. Keep secrets out of rig; use Pi's environment
+Every sync enforces both templates, with or without prior history. Repository
+keys win recursively, including changed/deleted values; local-only keys and
+additional MCP servers remain. Arrays are replaced as a whole by repo arrays,
+not concatenated, because commands and argument order must remain valid.
+Pi's `packages` list is special: repository declarations come first and win by
+package identity; additional personal package identities remain. Local pins,
+filters and deletions cannot replace or disable a repo package declaration.
+Ambiguous duplicate identities stop sync before publication. Values and packages
+no longer defined by the repo remain local additions; sync does not uninstall them.
+Add personal keys/packages to home files, not the templates. Existing recovery
+journals finish safely before a fresh enforcement pass applies current defaults. Keep secrets out of rig; use Pi's environment
 variable references (for example `${SERVICE_API_KEY}` in server `env` values),
 and supply those variables in Pi's environment rather than committing credentials.
 
@@ -55,7 +53,8 @@ match their configured constraint. Pi owns downloading, source parsing and resou
 discovery; rig does not implement another package installer.
 
 Reconciliation reads the effective private settings without rewriting them and ignores
-project settings. Personal package removals and resource filters remain intact.
+project settings. Repository packages are restored by the preceding JSON sync;
+local-only package declarations and their filters remain intact.
 `PI_OFFLINE` must be disabled, and `PI_CODING_AGENT_DIR` must be unset or point to
 `~/.pi/agent`, where rig deploys its configuration. A retained Pi executable must
 expose the public Node/Bun package API; unsupported wrappers fail with guidance.
@@ -77,18 +76,16 @@ prompt inventory. Resources from another user's home are not copied.
 
 Cursor-specific commands, models, paths and external dependencies in the archived
 skills are not ported or installed. Ponytail is no longer a default package. Existing
-unmodified declarations tracked in sync history are removed by JSON sync; if a personal declaration is
-retained, remove it explicitly with `pi remove git:github.com/DietrichGebert/ponytail`.
+declarations no longer present in the repo remain local additions; remove them explicitly with `pi remove git:github.com/DietrichGebert/ponytail`.
 
-To disable a bundled resource, use Pi's package object filters (`skills`,
-`extensions`, `prompts`, or `themes`); an empty filter list disables that resource
-kind. Keep the package `source` unchanged to continue receiving default version
-updates. Direct home assets are separate: use extension exclusions for extensions,
-`subagents.agentOverrides` for agents, and select a private theme in settings.
-Keep personal `AGENTS.md` and subagent configuration user-owned; package filters do
-not disable those files. Removing a personal scalar override resets it only after
-explicitly restoring the desired current default; deletion of a tracked default
-is otherwise preserved as an opt-out.
+Pi package object filters (`skills`, `extensions`, `prompts`, or `themes`) may
+customize additional personal package declarations. Repo package declarations,
+repo-defined agent controls and the managed theme are restored on sync; they
+cannot be opted out through edits to managed settings. Keep personal instructions
+and resources in separate unlisted files. Deselect Pi to stop future management;
+this does not remove installed resources or disable already active configuration.
+Application/project-local controls may still change runtime behavior; rig does not
+police them.
 
 The global `playwright` server runs exactly:
 
