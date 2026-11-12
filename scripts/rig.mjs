@@ -279,7 +279,7 @@ try {
     if (process.env.PI_CODING_AGENT_DIR && path.resolve(process.env.PI_CODING_AGENT_DIR) !== path.join(home, '.pi/agent')) fail('Rig deploys Pi to ~/.pi/agent. Unset PI_CODING_AGENT_DIR or deselect pi.');
   }
   console.log(`${preview ? 'Preview' : 'Apply'} ${mode}: ${state.components.join(', ') || '(none)'}.`);
-  console.log('AeroSpace, Lazysql and macOS config are untouched: adopt/update them manually. Vendored skills are copied with Pi.');
+  console.log('AeroSpace, Lazysql and macOS config are untouched: adopt/update them manually. Principle skills are copied with Pi; other vendored skills are disabled.');
   if (stat(stateFile)) {
     const dirty = spawnSync('git', ['status','--porcelain','--untracked-files=normal'], {cwd:root, encoding:'utf8'});
     if (dirty.status !== 0 || dirty.stdout.trim()) fail('Checkout is dirty. Commit or move changes yourself before syncing; rig will not stash/reset them.');
