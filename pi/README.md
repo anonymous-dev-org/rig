@@ -106,6 +106,51 @@ already be available; this sync does not install packages or browsers. The brows
 profile does not preserve login sessions after closing; it is **not** an OS/network
 security sandbox. Do not expose untrusted pages to privileged secrets casually.
 
+## Compaction overflow recovery
+
+The managed `compaction-fallback.ts` extension handles manual `/compact` and
+automatic compaction. It first calls Pi's native compaction helper with the active
+model and configured provider authentication. If a summary request is rejected
+because its input is too large, it splits the older history into smaller chunks
+and updates a rolling summary in chronological order. A chunk that still does not
+fit is split again. Recent messages keep Pi's original retention boundary.
+
+Tool calls and their results stay together where possible. A single oversized
+message/group is split as serialized text, so it does not disappear from the
+summary input. Native serialization still truncates large tool results and omits
+thinking, as ordinary Pi compaction does. Previous summaries, custom instructions,
+split-turn context and cumulative read/modified file lists are preserved.
+Intermediate summaries remain in memory; Pi saves one final checkpoint only after
+all chunks succeed. Cancellation, empty summaries, output truncation, tool-call
+responses and non-overflow errors do not publish a partial checkpoint.
+
+Recovery summaries request at most 8192 output tokens and retain the selected
+thinking level; reasoning-heavy models may exhaust that allowance and fail safely.
+Use a lower thinking level and retry if this happens. There are at most 64 model
+requests per compaction, including the initial native attempt and configured
+transient retries. A single text chunk stops shrinking below roughly 1024
+characters. If the previous summary/instructions alone are too large, or the
+provider cannot accept a minimal request, recovery stops with a notification and
+leaves history intact. It is not a guarantee against provider outages or silent
+provider-side input truncation. Multiple successful chunks may cost more and lose
+more detail than a single summary. Branch-navigation summaries are unchanged.
+
+Rig's full Pi sync deploys this extension; JSON-only `sync-settings.mjs` does not.
+Use `/reload` or restart Pi after deployment, then retry `/compact`. For an isolated
+trial without installing it globally, start Pi with:
+
+```sh
+pi -e /path/to/rig/pi/.pi/agent/extensions/compaction-fallback.ts
+```
+
+The extension uses Pi's public model registry rather than a custom provider client.
+It does not patch the installed application or edit session files. Compaction is
+marked extension-provided, including when the first native attempt succeeds.
+Do not combine it with another extension that replaces compaction: Pi allows a
+later handler to override the result. Recognized overflow errors are handled both
+as provider error responses and thrown exceptions. Unrecognized exceptions stop
+safely; they are not automatically retried as smaller chunks.
+
 ## Goal reminder
 
 The `goal-reminder.ts` extension adds a short instruction every 20 model calls:

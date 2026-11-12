@@ -1,10 +1,16 @@
-## Overview
-- Bring the reminder text in `pi/.pi/agent/extensions/goal-reminder.ts` in line with the rewritten `pi/.pi/agent/AGENTS.md`.
-- Why: the old text told the agent every 20 model calls that its solution "looks overengineered", whether or not that was true, and did not say to keep going afterwards.
-- In scope: the reminder text and its description in `pi/README.md`. Out of scope: the 20-call interval and how the reminder is delivered.
+# Overview
+- Make Pi compaction recover from context-overflow errors without dropping history or saving partial summaries.
+- Managed extension using public Pi APIs; installed application and main checkout are untouched. Local main was already current with origin/main; .local/ is ignored.
+- Scope: manual and automatic compaction, not branch-navigation summaries. Outages, silent provider truncation, and impossible minimum requests cannot be guaranteed recoverable.
+- No global deployment or paid provider calls performed. Activate by explicitly loading the extension, or by full Pi sync after integration.
 
-## Todos
-- [x] Reminder matches the new instructions
-  - **Requirement** — neutral wording, same two questions as section 1 of `AGENTS.md`, carry on if on track, no stopping, asking, or mentioning the check.
-  - **Definition of done** — text and README updated; only the string constant changed in the extension.
-  - Shortcoming: the counter still runs on model calls from extension load, not per task, so a reminder can land in the middle of a simple conversation. Harmless with the neutral wording.
+# Todos
+- [x] Deliver overflow recovery with bounded incremental summarization.
+  - Requirement: native first; split oversized history, carry summaries forward; preserve recent boundary, file tracking, usage, cancellation and custom instructions; publish only one complete checkpoint.
+  - Definition of done: native helpers exercised offline, real extension loader smoke-tested, strict TypeScript and syntax checks pass, no new existing-test failures, independent review complete, working version committed.
+  - Verified 19 temporary offline cases: normal success, recursive overflow, single oversized message, split-turn prefix/previous summary, auth/rate-limit/server failures, empty/truncated/tool/aborted output, mid-fallback cancellation, minimum chunk/request cap, cumulative file lists, thrown overflow/unrelated exception, malformed checkpoint details, configured transient retry. Temporary checks are removed, not added to the repository.
+  - Real Pi offline RPC startup loaded the extension successfully. Strict TypeScript, script syntax and diff whitespace checks pass.
+  - Existing settings suite: 41 pass, 2 fail identically on untouched main (obsolete Playwright --headless expectation and removed init.sh reference). Left outside scope.
+  - Decision: managed extension, since this repository contains configuration rather than Pi source. Added to the explicit full-sync deployment manifest; JSON-only sync remains unchanged.
+  - Review: reviewer agent was disabled; available delegate completed read-only design/final reviews. Addressed thrown overflow and malformed persisted file data findings.
+  - Limits: 64 requests, roughly 1024-character minimum text chunks, 8192 recovery output tokens. High reasoning levels may exhaust output allowance; lower thinking and retry. Other compaction-replacing extensions can override this handler; avoid combining them. Unrecognized thrown provider exceptions fail safely rather than retrying. Multi-pass summaries may cost more and lose detail.
