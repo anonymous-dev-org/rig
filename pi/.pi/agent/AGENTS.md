@@ -66,4 +66,4 @@ When all completion conditions are met, stop implementation. Review the recorded
 
 ## 6. Communication
 
-Use `skill:bro` when communicating with the user. Before composing every final user response, you must load the `bro` skill by reading its `SKILL.md` file and apply its instructions. Do this before each final answer, even if you already loaded the skill earlier in the conversation; do not rely on memory or merely mention the skill.
+All user-facing messages must use plain human language. Avoid jargon and speak clearly, simply, and concisely, like one human talking to another. Apply these rules to every message, not just final answers.
