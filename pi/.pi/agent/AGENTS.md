@@ -1,13 +1,25 @@
 # Working instructions
 
-## 1. Goal, scope, and decision mantra
+## 1. Stay on the goal
 
-Before planning, each implementation step, when an obstacle, uncertainty, or added complexity appears, and before declaring completion, always ask yourself:
+The most common way work goes wrong here is drift: a side problem shows up, solving it reveals another, and an hour later the effort is going into something the user never asked for while the real goal has not moved. Each step looked reasonable on its own, which is why it is hard to notice from the inside. So keep the goal in view and check your direction on purpose.
 
-- **Is this aligned with the agreed goal and scope?**
-- **Is this the simplest solution that meets all current requirements?**
+Two questions do the checking:
 
-Use these questions as an internal decision check, not a ritual to repeat in every reply. If either answer is no, correct the approach before proceeding. If unsure, inspect the available evidence to resolve material uncertainty rather than guessing or immediately handing the problem back to the user.
+- **Does this move the agreed goal forward?**
+- **Is this the simplest thing that meets the current requirements?**
+
+Ask them when planning, and before calling the work done. In between, step back and ask them again whenever you notice one of these signs:
+
+- you are fixing or improving something other than what was asked for;
+- you are on your third attempt at the same problem;
+- the solution is growing well beyond what the plan described;
+- you are building a tool, helper, or abstraction in order to do the task, rather than doing the task;
+- you could not explain in one sentence how the current step serves the goal.
+
+Stepping back means stopping the current line of work, rereading the goal in `PLAN.md`, and choosing again from there. Often the answer is a simpler route around the obstacle, or dropping the side problem altogether. If a side problem does not block the goal, leave it, note it in `PLAN.md`, and mention it in the final message. Stepping back is something you do yourself and then continue; it is not a reason to ask the user.
+
+These questions are a private check. Do not recite them in messages.
 
 Do only what the agreed goal and scope require. When something is ambiguous, read the code and context, pick the most likely meaning, note the assumption, and continue; section 5 lists the few cases that need the user first. Ideas that go beyond the goal belong in the final message as suggestions. Do not build them.
 
@@ -15,7 +27,9 @@ Do only what the agreed goal and scope require. When something is ambiguous, rea
 
 Make the code work correctly first, using the simplest solution that meets every current requirement. Keep code clear. Prefer existing code, then standard libraries, native platform features, installed dependencies, and minimal custom code.
 
-Do not build for hypothetical future needs. Add structure or settings, refactor, optimize, or introduce abstractions only when current requirements need them. Use the decision mantra to remove unnecessary complexity without dropping requirements or weakening correctness or safety.
+Do not build for hypothetical future needs. Add structure or settings, refactor, optimize, or introduce abstractions only when current requirements need them. Remove unnecessary complexity without dropping requirements or weakening correctness or safety.
+
+**Build complex work as a series of small working versions.** When a task is too large to hold in your head at once, do not build all of it together. Start with the smallest version that works from end to end, even if it handles only the main case. Verify it and commit it. Then add the next piece on top, verify, commit, and repeat. A working base is easy to build on and easy to review, and when something breaks the cause is in the last small step. Building everything at once produces a large amount of unverified code where a problem could be anywhere, and it invites structure designed for parts that do not exist yet. Move from one version to the next without waiting for the user, and say in the final message what each version added.
 
 ## 3. Worktree and delegation
 
@@ -40,7 +54,7 @@ Write `PLAN.md` as brief working notes, not a report. Use short bullets and dire
 Use these sections in order:
 
 1. **Overview** — a general description of what we want to achieve and why, the intended outcome, and the overall scope boundaries (included work and exclusions).
-2. **Todos** — `- [ ]` items written as clear goals, not just activities. For each todo, state:
+2. **Todos** — `- [ ]` items written as clear goals, not just activities. For complex work, each todo is one working version, ordered so each builds on the one before. For each todo, state:
    - **Requirement** — the behavior, deliverables, and constraints it must satisfy.
    - **Definition of done** — observable, verifiable conditions that establish completion.
    - Brief progress updates as needed.
