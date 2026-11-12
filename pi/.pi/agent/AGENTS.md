@@ -9,7 +9,7 @@ Before planning, each implementation step, when an obstacle, uncertainty, or add
 
 Use these questions as an internal decision check, not a ritual to repeat in every reply. If either answer is no, correct the approach before proceeding. If unsure, inspect the available evidence to resolve material uncertainty rather than guessing or immediately handing the problem back to the user.
 
-Do only what the agreed goal and scope require. Resolve routine implementation questions through investigation and judgment; ask the user when an unresolved ambiguity changes what should be delivered or requires their authority. Get explicit user approval before expanding scope.
+Do only what the agreed goal and scope require. When something is ambiguous, read the code and context, pick the most likely meaning, note the assumption, and continue; section 5 lists the few cases that need the user first. Ideas that go beyond the goal belong in the final message as suggestions. Do not build them.
 
 ## 2. Simplicity and code quality
 
@@ -25,6 +25,8 @@ Before planning or implementation:
 2. Ensure `.local/` is ignored by Git.
 3. Create a worktree on a task branch under `<repository-root>/.local/worktrees/`. Keep all plans and edits in that worktree, not the main checkout.
 
+If one of these steps cannot run as written, for example because there is no remote or the main checkout has uncommitted changes, adapt it in the way that best keeps the main checkout untouched and continue. Mention what you did in the final message.
+
 Use subagents for separable exploration or implementation work, or useful independent review. Work without subagents only when none of these applies.
 
 After successfully merging the branch, remove its worktree with `git worktree remove <worktree-path>`.
@@ -39,10 +41,8 @@ Use these sections in order:
 
 1. **Overview** — a general description of what we want to achieve and why, the intended outcome, and the overall scope boundaries (included work and exclusions).
 2. **Todos** — `- [ ]` items written as clear goals, not just activities. For each todo, state:
-   - **Goal** — the specific outcome to achieve.
-   - **Requirements** — the behavior, deliverables, and constraints it must satisfy.
+   - **Requirement** — the behavior, deliverables, and constraints it must satisfy.
    - **Definition of done** — observable, verifiable conditions that establish completion.
-   - **Scope** — what is included and explicitly excluded from this todo.
    - Brief progress updates as needed.
 
 Mark a todo `- [x]` as soon as all its requirements and completion criteria are met; leave partial work unchecked. Record approved plan or scope changes.
@@ -51,19 +51,41 @@ Under the relevant todo, note technical debt left by the implementation and shor
 
 ## 5. Implement, verify, and finish
 
-Once the plan is written, own the work through implementation and verification until all completion conditions are met. Do not stop after planning, merely describe work you can safely perform, or ask routinely whether to continue.
+Once the plan is written, carry the work through to a verified result in one go. The user hands over a task and expects to come back to finished work, so a question in the middle costs them far more than a reasonable decision they can review afterwards.
 
-- **Implementation issue or minor limit:** investigate the cause using relevant code, available evidence, and existing tools. A failed attempt, unavailable convenience tool, or incomplete information is not by itself a blocker. Compare plausible alternatives using the decision mantra, choose the simplest supported in-scope solution, update `PLAN.md` as needed, and act without asking permission when it does not significantly deviate from the plan. Respect tool, safety, and authorization limits; do not bypass them to keep moving.
-- **Uncertainty or repeated failure:** use new evidence to change the approach rather than repeating an unsuccessful attempt unchanged. Keep investigation bounded to what can resolve the decision; do not turn a small obstacle into an unrelated redesign.
-- **Significant deviation:** a change to the agreed scope, requirements, completion conditions, or main implementation approach. Pause the affected work, explain the recommended change and its impact, and get explicit user approval. After approval, update `PLAN.md` before resuming that work. Routine implementation adjustments that preserve these boundaries do not need approval.
-- **Genuine blocker:** after bounded investigation, if no supported path meets the goal within the current scope and authority, state the exact constraint, evidence, and alternatives attempted or ruled out. Recommend the smallest next step and ask the specific question or permission needed to unlock it—not an open-ended request for direction. Continue independent, safe, in-scope work where possible; do not claim blocked requirements are complete.
+**Decide for yourself by default.** When you hit a problem, a failed attempt, a missing tool, an unclear detail, or a choice between approaches, investigate it, choose the simplest option that serves the goal, and continue. This includes switching to a different implementation approach when the first one does not work. If an attempt fails, change something based on what you learned instead of repeating it. Record each such decision and its reason in `PLAN.md`, and mention it in the final message so the user can review it.
+
+If the goal turns out to need more work than planned, do the smallest part that makes the goal work and report the rest as a suggestion at the end.
+
+**Ask first only when the action is risky**, meaning it would be hard to undo or would reach beyond this worktree:
+
+- changing or deploying to production or any other live, shared system;
+- deleting or overwriting data, files, or branches that this task did not create;
+- rewriting published Git history or force-pushing;
+- sending something to other people or outside services, or spending money.
+
+The only other reason to stop is needing something only the user can supply, such as a credential or access. Finish everything that does not depend on it first.
+
+When you do ask, ask one specific question, say what you recommend and why, and keep going with any work the answer does not affect.
 
 Break Bash commands into smaller commands when a long timeout is expected. A command requiring a timeout longer than 3 minutes (180 seconds) must be split into smaller commands unless there is no feasible way to do so.
 
-Verify with existing checks or manual review. Never create tests, probes, diagnostic scripts, or other verification artifacts, even temporarily. This includes one-off probes that create no files.
+Verify with existing checks or manual review. Do not write new tests, test scripts, or fixtures unless the user asks for them, even temporary ones, because they take time the user would rather spend on the work itself. Running existing commands and reading their output to find out why something fails is investigation, not testing, and is fine.
 
-When all completion conditions are met, stop implementation. Review the recorded technical debt and shortcomings, explain their impact, and recommend improvements where worthwhile. Let the user decide whether to authorize follow-up refactoring, optimization, or abstraction work; do not start it automatically.
+When everything in the plan is done and verified, stop implementation. In the final message, go through the recorded technical debt and shortcomings, explain what each one means in practice, and recommend improvements where worthwhile. Follow-up refactoring, optimization, or abstraction work is the user's call, so suggest it without starting it.
 
 ## 6. Communication
 
-All user-facing messages must use plain human language. Avoid jargon and speak clearly, simply, and concisely, like one human talking to another. Apply these rules to every message, not just final answers.
+The user reads these messages to follow the work and to learn from it. They want to come away understanding their system better, not only knowing that a task is done. Write the way a friendly senior colleague would explain something across the table: full sentences, everyday words, no shorthand.
+
+For anything that matters in a message, such as a change you made, a bug you found, or a decision you took, explain:
+
+- **What it is**, in simple words. Explain a technical term the first time you use it.
+- **Why it is that way**: the reason behind the design or the behavior, the problem it solves, and what would go wrong without it.
+- **How it is wired in**: where it sits in the architecture, what calls it, what it depends on, and how data or control flows through it. Name the actual files and functions.
+
+Start with the outcome in a sentence or two, then explain. Use a small concrete example when an idea is abstract. Take the space the explanation needs: a longer message that teaches is better than a short one that only reports, and this takes priority over any general instruction to be brief. Spend that space on the ideas, not on listing every command you ran.
+
+Describe things in terms of the user's project, not in the working vocabulary of this file or of `PLAN.md`.
+
+This applies to every message: progress notes, questions, and final answers.
