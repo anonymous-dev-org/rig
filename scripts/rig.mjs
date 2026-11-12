@@ -7,12 +7,12 @@ import {spawnSync} from 'node:child_process';
 import {enforceDefaults} from '../pi/sync-settings.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const home = process.env.HOME;
+const home = process.env.HOME && path.normalize(process.env.HOME);
 const names = ['brew', 'neovim', 'zsh', 'kitty', 'git', 'pi'];
 const args = process.argv.slice(2);
 const mode = args.shift();
 const preview = args.includes('--preview');
-const configHome = process.env.XDG_CONFIG_HOME || (home && path.join(home, '.config'));
+const configHome = (process.env.XDG_CONFIG_HOME && path.normalize(process.env.XDG_CONFIG_HOME)) || (home && path.join(home, '.config'));
 function destination(relative) {
   if (relative === '.config') return configHome;
   return relative.startsWith('.config/') ? path.join(configHome, relative.slice(8)) : path.join(home, relative);
@@ -79,9 +79,10 @@ let backupRoot;
 let inventoryFile;
 let inventory = {};
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
-function record(dest, digest) {
+function record(dest, digest, component, defaults) {
   if (preview) return;
-  inventory[dest] = digest;
+  if (digest === undefined) delete inventory[dest];
+  else inventory[dest] = {hash:digest, component, defaults};
   const next = inventoryFile + '.next';
   fs.writeFileSync(next, JSON.stringify(inventory, null, 2) + '\n', {flag:'wx', mode:0o600});
   fs.renameSync(next, inventoryFile);
@@ -90,6 +91,48 @@ function snapshot(file, bytes) {
   const backup = path.join(backupRoot, path.relative(path.parse(file).root, file));
   fs.mkdirSync(path.dirname(backup), {recursive:true, mode:0o700});
   fs.writeFileSync(backup, bytes, {flag:'wx', mode:0o600});
+}
+function ownedBy(file, component) {
+  const roots = {
+    git:['.config/git/'], zsh:['.zshrc'], kitty:['.config/kitty/'],
+    neovim:['.config/nvim/'], pi:['.pi/agent/', '.pi-lens/config.json', '.config/billion-context/billion-context.json']
+  };
+  return roots[component].some(relative => relative.endsWith('/')
+    ? file.startsWith(path.resolve(destination(relative)) + path.sep) : file === destination(relative));
+}
+function retire(relative) {
+  const dest = destination(relative);
+  if (dest === root || dest.startsWith(root + path.sep)) fail(`Cannot retire repository source: ${dest}`);
+  safe(dest);
+  const current = stat(dest);
+  if (!current) { if (Object.hasOwn(inventory, dest)) record(dest); return; }
+  if (!current.isFile() || current.nlink !== 1) fail(`Cannot retire nonordinary file: ${dest}`);
+  const prior = fs.readFileSync(dest);
+  console.log(`Retire ${dest}; private backup retained.`);
+  if (preview) return;
+  snapshot(dest, prior);
+  safe(dest);
+  const latest = stat(dest);
+  if (!latest?.isFile() || latest.nlink !== 1 || latest.ino !== current.ino || latest.dev !== current.dev || latest.mtimeMs !== current.mtimeMs || !fs.readFileSync(dest).equals(prior)) fail(`Concurrent edit: ${dest}`);
+  fs.unlinkSync(dest);
+  record(dest);
+}
+function retireFiles(component) {
+  const active = new Set(manifests[component].map(destination));
+  const retired = new Set(Object.keys(inventory).filter(file => ownedBy(file, component) && !active.has(file)));
+  if (component === 'pi') {
+    const archive = path.join(root, 'pi/disabled-skills');
+    safe(archive);
+    for (const file of fs.readdirSync(archive, {recursive:true})) {
+      if (fs.lstatSync(path.join(archive, file)).isFile()) retired.add(destination(`.pi/agent/skills/${file}`));
+    }
+    for (const file of ['.pi/agent/skills/bro/SKILL.md', '.pi-lens/config.json', '.config/billion-context/billion-context.json']) retired.add(destination(file));
+  }
+  for (const file of retired) {
+    if (active.has(file)) continue;
+    const relative = file.startsWith(configHome + path.sep) ? `.config/${path.relative(configHome, file)}` : path.relative(home, file);
+    retire(relative);
+  }
 }
 function inspectDirectory(component, prefix, dir) {
   for (const entry of fs.readdirSync(dir, {withFileTypes:true})) {
@@ -179,6 +222,7 @@ function adoptGit() {
 function deploy(component, relative) {
   const source = path.join(root, component, relative);
   const dest = destination(relative);
+  if (dest === root || dest.startsWith(root + path.sep)) fail(`Cannot deploy into repository source: ${dest}`);
   safe(source);
   if (!stat(source)?.isFile()) fail(`Missing declared source ${source}`);
   const bytes = fs.readFileSync(source);
@@ -197,6 +241,7 @@ function deploy(component, relative) {
     prior = fs.readFileSync(dest);
   }
   let effective = bytes;
+  let defaults;
   if (relative.endsWith('.json')) {
     const parse = (data, file) => {
       let value;
@@ -204,12 +249,12 @@ function deploy(component, relative) {
       if (!value || typeof value !== 'object' || Array.isArray(value)) fail(`Expected JSON object: ${file}`);
       return value;
     };
-    const defaults = parse(bytes, source);
-    const merged = enforceDefaults(prior ? parse(prior, dest) : {}, defaults);
+    defaults = parse(bytes, source);
+    const merged = enforceDefaults(prior ? parse(prior, dest) : {}, defaults, {previous:inventory[dest]?.defaults ?? {}});
     effective = Buffer.from(JSON.stringify(merged, null, 2) + '\n');
   }
   const digest = hash(effective);
-  if (prior && !linked && hash(prior) === digest) { record(dest, digest); return; }
+  if (prior && !linked && hash(prior) === digest) { record(dest, digest, component, defaults); return; }
   console.log(`${linked ? 'Detach known rig link and enforce' : 'Enforce'} ${dest}; repo: ${source}`);
   if (preview) return;
   fs.mkdirSync(path.dirname(dest), {recursive:true, mode:0o700});
@@ -224,7 +269,7 @@ function deploy(component, relative) {
     fail(`Concurrent edit: ${dest}`);
   }
   fs.renameSync(next, dest);
-  record(dest, digest);
+  record(dest, digest, component, defaults);
 }
 
 try {
@@ -248,7 +293,7 @@ try {
   safe(inventoryFile);
   if (stat(inventoryFile)) {
     inventory = JSON.parse(fs.readFileSync(inventoryFile, 'utf8'));
-    if (!inventory || typeof inventory !== 'object' || Array.isArray(inventory) || Object.entries(inventory).some(([file, digest]) => !path.isAbsolute(file) || typeof digest !== 'string' || !/^[a-f0-9]{64}$/.test(digest))) fail(`Invalid ${inventoryFile}`);
+    if (!inventory || typeof inventory !== 'object' || Array.isArray(inventory) || Object.entries(inventory).some(([file, entry]) => !path.isAbsolute(file) || path.resolve(file) !== file || !/^[a-f0-9]{64}$/.test(typeof entry === 'string' ? entry : entry?.hash) || (typeof entry !== 'string' && (!entry || !names.includes(entry.component) || (entry.defaults !== undefined && (!entry.defaults || typeof entry.defaults !== 'object' || Array.isArray(entry.defaults))))))) fail(`Invalid ${inventoryFile}`);
   }
   let state = {components:names, brew:{skip:{}, noUpgrade:false}};
   if (stat(stateFile)) {
@@ -315,6 +360,7 @@ try {
               .map(file => `.pi/agent/skills/${file}`));
           }
           for (const relative of manifests[component]) deploy(component, relative);
+          retireFiles(component);
           if (component === 'git') adoptGit();
           if (component === 'pi') {
             let piBin;

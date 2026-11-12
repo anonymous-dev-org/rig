@@ -87,12 +87,23 @@ function adoptSettings(local, next) {
 // Repo-owned values win; arrays are atomic (argv/order can be meaningful).
 // Package declarations are the exception: retain only additional identities,
 // never local pins or resource filters on a repository-owned declaration.
-export function enforceDefaults(local, defaults, {packages = false} = {}) {
-  const result = fillMissing(defaults, local);
-  if (!packages || !Array.isArray(defaults.packages)) return result;
-  const incoming = packageMap(defaults.packages);
+function removeRetired(local, previous, defaults) {
+  if (!isJsonObject(local) || !isJsonObject(previous)) return local;
+  return Object.fromEntries(Object.entries(local).flatMap(([key, value]) => {
+    if (!Object.hasOwn(previous, key)) return [[key, value]];
+    if (!Object.hasOwn(defaults, key)) return [];
+    if (isJsonObject(value) && isJsonObject(previous[key]) && isJsonObject(defaults[key]))
+      value = removeRetired(value, previous[key], defaults[key]);
+    return [[key, value]];
+  }));
+}
+export function enforceDefaults(local, defaults, {packages = false, previous = {}, retiredPackages = []} = {}) {
+  const result = fillMissing(defaults, removeRetired(local, previous, defaults));
+  if (!packages) return result;
+  const incoming = packageMap(defaults.packages ?? []);
   const current = packageMap(local.packages ?? []);
-  return {...result, packages:[...incoming.values(), ...[...current].filter(([key]) => !incoming.has(key)).map(([, entry]) => entry)]};
+  const retired = new Set([...packageMap(previous.packages ?? []).keys(), ...retiredPackages.map(packageIdentity)]);
+  return {...result, packages:[...incoming.values(), ...[...current].filter(([key]) => !incoming.has(key) && !retired.has(key)).map(([, entry]) => entry)]};
 }
 function fileStatus(file) {
   try { return fs.lstatSync(file); } catch (e) { if (e.code === 'ENOENT') return null; throw e; }
@@ -210,7 +221,7 @@ function validateSync({ baseline, settings, state, sourceRoot = path.resolve(pat
   return {baseline, settings, state, history, pending, effectiveTemp, lock, paths, validate};
 }
 export function sync(options) {
-  const {lockToken, adoption = 'preserve', interrupt, enforce = false} = options;
+  const {lockToken, adoption = 'preserve', interrupt, enforce = false, retiredPackages = []} = options;
   const reconcile = adoption === 'settings' ? mergeSettings : merge;
   const {settings, state, history, pending, effectiveTemp, lock, paths, validate} = validateSync(options);
   fs.mkdirSync(path.dirname(state), {recursive:true, mode:0o700});
@@ -238,7 +249,7 @@ export function sync(options) {
         // Enforced sync can restore a deleted destination from the pending intent.
         if (local === missing && !journal.fresh && !enforce) throw new Error('Missing recovery destination');
         effective = local === missing ? journal.after : reconcile(journal.before, local, journal.after);
-      } else if (enforce) effective = enforceDefaults(local === missing ? {} : local, next, {packages:adoption === 'settings'});
+      } else if (enforce) effective = enforceDefaults(local === missing ? {} : local, next, {packages:adoption === 'settings', previous:previous === missing ? {} : previous, retiredPackages});
       else if (local === missing) effective = next;
       else if (previous !== missing) effective = reconcile(previous, local, next);
       else if (adoption === 'settings') effective = adoptSettings(local, next);
@@ -465,7 +476,8 @@ export function syncAll({home, sourceRoot = path.resolve(path.dirname(fileURLToP
       baseline:path.join(sourceRoot,`pi/.pi/agent/${name}.example.json`),
       settings:path.join(home,`.pi/agent/${name}.json`), state:path.join(root,name),
       sourceRoot, legacyRoot:migrateFrom, lockToken:token,
-      adoption:name === 'mcp' ? 'fill-missing' : 'settings', enforce:true
+      adoption:name === 'mcp' ? 'fill-missing' : 'settings', enforce:true,
+      retiredPackages:name === 'settings' ? ['npm:pi-lens', 'npm:billion-context', 'git:github.com/DietrichGebert/ponytail'] : []
     }));
     // Reuse the engine's nonmutating validation for every input, including
     // recovery and path trust, before migration or either publication.

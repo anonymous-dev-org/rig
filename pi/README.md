@@ -21,12 +21,12 @@ deploys their configuration files. This removes their tools and instructions fro
 new sessions using the defaults.
 
 JSON sync restores `compaction.enabled` to `true`, including on existing installs.
-Packages no longer in repo defaults remain local additions. To stop loading the
-removed packages, remove them explicitly with `pi remove npm:pi-lens` and
-`pi remove npm:billion-context`. Restart Pi afterward;
-start a new session for a clean comparison of startup token usage.
-Old home configuration files and downloaded packages are not deleted by this
-repo change; configuration files alone do not load the removed extensions.
+JSON sync removes previously repo-owned package identities absent from current
+defaults, even if their pins or filters changed locally. Pi Lens, billion-context
+and Ponytail declarations are explicitly retired even without prior sync history.
+Full Pi sync also backs up and removes the old managed Pi Lens and billion-context
+configuration files. Downloaded package caches are not uninstalled. Restart Pi
+afterward; start a new session for a clean comparison of startup token usage.
 
 Every sync enforces both templates, with or without prior history. Repository
 keys win recursively, including changed/deleted values; local-only keys and
@@ -35,8 +35,11 @@ not concatenated, because commands and argument order must remain valid.
 Pi's `packages` list is special: repository declarations come first and win by
 package identity; additional personal package identities remain. Local pins,
 filters and deletions cannot replace or disable a repo package declaration.
-Ambiguous duplicate identities stop sync before publication. Values and packages
-no longer defined by the repo remain local additions; sync does not uninstall them.
+Ambiguous duplicate identities stop sync before publication. Previous repo
+baselines identify removed fields and package identities, which are retired rather
+than kept as additions. Removing a repo-owned JSON object also removes local
+customizations inside it; unrelated local keys remain. Without previous baselines,
+only explicitly known retirements are removed.
 Add personal keys/packages to home files, not the templates. Existing recovery
 journals finish safely before a fresh enforcement pass applies current defaults. Keep secrets out of rig; use Pi's environment
 variable references (for example `${SERVICE_API_KEY}` in server `env` values),
@@ -67,16 +70,19 @@ The 24 `principle-*` [pstack skills](vendor/pstack/README.md) remain active in
 `disable-model-invocation: true` flags remain unchanged: invoke them explicitly
 with `/skill:principle-<name>`. The other 33 skills and their supporting
 files are retained in `pi/disabled-skills/`, outside Pi's discovery folders.
-Rig does not deploy the disabled skills. Existing copies in `~/.pi/agent/skills/` are left untouched; this is a
-repo-only change, not a home cleanup. To re-enable the archived skills, restore
+Full Pi sync backs up and removes the exact archived files from
+`~/.pi/agent/skills/`, including older installs without ownership history. Unlisted
+personal files are untouched; skill directories may remain empty. The former
+`bro/SKILL.md` is also retired because its rules now live in `AGENTS.md`. The narrow
+JSON command does not retire skill files. To re-enable archived skills, restore
 their folders to `pi/.pi/agent/skills/`; its deployment inventory is built from
 that active directory.
 The empty root skills lock does not control these files. Rig has no standalone
 prompt inventory. Resources from another user's home are not copied.
 
 Cursor-specific commands, models, paths and external dependencies in the archived
-skills are not ported or installed. Ponytail is no longer a default package. Existing
-declarations no longer present in the repo remain local additions; remove them explicitly with `pi remove git:github.com/DietrichGebert/ponytail`.
+skills are not ported or installed. Ponytail is no longer a default package;
+its former repo declaration is removed by JSON sync.
 
 Pi package object filters (`skills`, `extensions`, `prompts`, or `themes`) may
 customize additional personal package declarations. Repo package declarations,

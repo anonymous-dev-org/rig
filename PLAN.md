@@ -1,22 +1,22 @@
 ## Overview
-- Enforce repo-managed configuration on every sync. Users may add local settings but cannot remove or replace repo-defined settings through sync.
-- JSON keeps local-only keys; repo arrays are atomic because argv/order matters. Pi packages retain additional identities, but repo pins/filters win. Other managed files restore repo bytes with backups; additions belong in separate local files/hooks. Runtime overrides are not policed.
-- Keep selection controls, foreign-link refusal, concurrent-edit checks, recovery and manual-only components unchanged. No new verification artifacts.
-- Preserve concurrent main changes removing Pi Lens/billion-context defaults and enabling native compaction. Previously configured packages remain local additions; no uninstall.
-- Verified: existing Pi suite 41/43 passes; unchanged baseline failures expect obsolete `--headless` and absent `init.sh`. Syntax/diff checks pass; diagnostics match two existing warnings.
-- Limit: existing tests do not directly cover every new enforcement path; manual and independent review used. New tests excluded by project instructions.
+- Sync must apply repo removals as well as additions/updates. Retire previously managed files, JSON fields and package declarations; preserve unrelated user additions.
+- Bootstrap known retired skills from the archived inventory and known removed Pi configs/packages, even without old deployment history. Back up retired files outside discovery paths; do not uninstall package downloads or run live home sync automatically.
+- Keep selected-component boundaries, path/link refusal, preview, concurrency guards and recovery. No new tests/probes or verification artifacts.
 
 ## Todos
-- [x] Goal: JSON sync restores repo fields and entries.
-  - Requirements: settings/MCP and copied JSON keep local-only keys and extra package identities; repo values win; deleted keys/files return; validate before writing.
-  - Definition of done: manual and independent review plus existing checks, baseline failures distinguished.
-  - Scope: sync policy, not package uninstallation or runtime policing.
-  - Review fix: enforced recovery handles a deleted destination before applying current defaults; preserve-mode guards unchanged.
-- [x] Goal: managed assets restore safely on sync.
-  - Requirements: backups before replacement, restore deletions, enforce during known-link migration, retain unknown files, reject foreign links.
-  - Definition of done: deployment paths independently reviewed; existing checks run.
-  - Scope: explicit selected inventories only; manual components excluded.
-- [x] Goal: docs explain enforced configuration and additions.
-  - Requirements: remove conflicting opt-out/personal-wins guidance; explain backups, atomic arrays, restart and private hooks.
-  - Definition of done: independent review complete; limits recorded; concurrent main removal retained.
-  - Scope: affected sync/config docs only.
+- [x] Goal: retired managed resources disappear on sync.
+  - Verified: independent review, syntax checks and read-only Pi sync preview passed; home unchanged. Added the former bro skill and normalized destination guards.
+  - Requirements: previous deployment inventory drives future removals; explicit archived inventory handles existing 33 skills; removed Pi configs retired; private unknown files preserved; backup before removal.
+  - Definition of done: manual/independent review and existing checks pass apart from recorded baseline failures.
+  - Scope: selected managed files only; no recursive deletion of user directories.
+- [x] Goal: JSON deletions follow repo changes.
+  - Verified: ownership/recovery reviewed; existing suite 41/43 passes. Remaining failures are unchanged: stale Playwright --headless expectation and missing init.sh.
+  - Limit: legacy hash-only inventory cannot identify historical JSON fields; future syncs save repo baselines. Package downloads are not uninstalled.
+  - Requirements: use previous repo baselines to distinguish retired fields/packages from additions; track copied JSON defaults; migrate legacy hash inventory; handle known retired package identities without history.
+  - Definition of done: recovery/ownership paths reviewed and existing suite run.
+  - Scope: configured declarations, not downloaded package uninstallation.
+- [x] Goal: docs describe complete sync ownership accurately.
+  - Verified: docs and diff reviewed; retirement, backups and legacy-history limits documented.
+  - Requirements: explain retirement/backups and remaining local additions; remove stale no-removal statements.
+  - Definition of done: docs and diff reviewed; limitations recorded.
+  - Scope: affected sync docs only.
