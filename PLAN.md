@@ -1,10 +1,12 @@
 ## Overview
-- Keep the 24 principle-* skills active and deployed (user scope update). Disable the other 33 repo skills while preserving their files under pi/disabled-skills/. Stop deploying those archived skills; leave installed home copies untouched. Remove stale bro references. Package-provided skills are out of scope.
+- Ship the supported pi-lens static-tool workaround through rig's existing deployed config. Do not patch Pi/pi-lens or change sync's protection of personal edits.
+- Exact reported error remains unavailable; this avoids lazy-tool changes, not every possible schema error.
 
 ## Todos
-- [x] Goal: archive non-principle repo skills outside Pi discovery and deployment.
-  - Requirements: retain every skill and supporting file; keep principle skills active and deployed; remove bro references; update deployment, docs and existing hook exceptions for moved files.
-  - Definition of done: review move/content diff, existing syntax checks, and independent review pass.
-  - Scope: repo Pi skills, deployment inventory, affected docs and existing hook exceptions only; no home changes or new verification artifacts.
-  - Verified: 24 unchanged active principle skills, 33 archived skills; 510 renames preserve modes. Bro references removed. Syntax, LSP, diff checks and existing pre-commit hook pass. Independent review caught stale hook exceptions; updated and hook rerun successfully.
-  - Limit: existing home copies are intentionally untouched and may remain available.
+- [x] Goal: synced Pi defaults keep pi-lens tools active.
+  - Requirements: set tools.lazy=false in the deployed global config; document restart, context cost and existing-config behavior.
+  - Definition of done: review deployment handling and run existing relevant checks; independent review complete.
+  - Scope: config and documentation only; no new tests or verification artifacts, no personal home edits.
+  - Done: config updated, explicit deployment manifest/copy policy reviewed independently; changed-file diagnostics and diff whitespace clean.
+  - Checks: existing Pi suite has 41 passes, 2 failures; same failures reproduced on unchanged main (stale --headless expectation and missing init.sh).
+  - Limits: customized whole-file configs need manual adoption; more context used for tools. Runtime error not reproduced; no upstream lifecycle patch.

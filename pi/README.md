@@ -15,6 +15,18 @@ private configs, templates, repository docs, sync tooling and browser captures f
 deployment. Disabled skills are retained in the repo and are not deployed.
 Direct principle skills, agents, extensions, themes and instructions are ordinary local copies: edit them locally. Unchanged copies update; customized copies stay intact and report the default source path for manual adoption. Recorded deletions remain opt-outs. This copy policy does not change the JSON sync described below.
 Rig also deploys `~/.config/billion-context/billion-context.json` with ACP's Pi subagent delegation disabled (`"pi": {"subagents": false}`). This keeps billion-context compression while leaving child-agent orchestration to `pi-subagents`.
+Rig deploys `pi/.pi-lens/config.json` to `~/.pi-lens/config.json` with
+`"tools": {"lazy": false}`. This keeps all enabled pi-lens tools active from
+startup, avoiding lazy-tool activation changes that can cause tool-list mismatches
+after `/tree` navigation. It is a workaround, not a fix for every schema error,
+and uses more context for tool definitions. Restart Pi after syncing.
+The full `./sync.sh` deploys this config when Pi is selected; the narrow JSON-only
+command above does not.
+Customized local copies are preserved: if sync reports this config as customized,
+merge `tools.lazy: false` into the local file manually, keeping other settings.
+`PI_LENS_CONFIG_PATH`, if set, selects another global config; apply the setting there
+instead. To opt back into lazy activation, set `tools.lazy` to `true` locally.
+
 Pi auto-compaction is disabled by default (`"compaction": {"enabled": false}`),
 leaving compression to billion-context. Manual `/compact` remains available.
 
