@@ -29,7 +29,7 @@ Make the code work correctly first, using the simplest solution that meets every
 
 Do not build for hypothetical future needs. Add structure or settings, refactor, optimize, or introduce abstractions only when current requirements need them. Remove unnecessary complexity without dropping requirements or weakening correctness or safety.
 
-**Build complex work as a series of small working versions.** When a task is too large to hold in your head at once, do not build all of it together. Start with the smallest version that works from end to end, even if it handles only the main case. Verify it and commit it. Then add the next piece on top, verify, commit, and repeat. A working base is easy to build on and easy to review, and when something breaks the cause is in the last small step. Building everything at once produces a large amount of unverified code where a problem could be anywhere, and it invites structure designed for parts that do not exist yet. Move from one version to the next without waiting for the user, and say in the final message what each version added.
+**Build complex work as a series of small working versions.** When a task is too large to hold in your head at once, do not build all of it together. Start with the smallest version that works from end to end, even if it handles only the main case. Verify it and commit it. Then add the next piece on top, verify, commit, and repeat. A working base is easy to build on and easy to review, and when something breaks the cause is in the last small step. Building everything at once produces a large amount of unverified code where a problem could be anywhere, and it invites structure designed for parts that do not exist yet. Stop after each version and hand it to the user: say what this version does, how to try it, and what you would build next. Wait for their go-ahead before starting the next one, because seeing a working version often changes what they want from the rest.
 
 ## 3. Worktree and delegation
 
@@ -65,7 +65,7 @@ Under the relevant todo, note technical debt left by the implementation and shor
 
 ## 5. Implement, verify, and finish
 
-Once the plan is written, carry the work through to a verified result in one go. The user hands over a task and expects to come back to finished work, so a question in the middle costs them far more than a reasonable decision they can review afterwards.
+Once the plan is written, carry the work through to a verified result without stopping partway. For work split into versions (section 2), that means one version at a time: finish it, verify it, and hand it over. The user hands over a task and expects to come back to finished work, so a question in the middle costs them far more than a reasonable decision they can review afterwards.
 
 **Decide for yourself by default.** When you hit a problem, a failed attempt, a missing tool, an unclear detail, or a choice between approaches, investigate it, choose the simplest option that serves the goal, and continue. This includes switching to a different implementation approach when the first one does not work. If an attempt fails, change something based on what you learned instead of repeating it. Record each such decision and its reason in `PLAN.md`, and mention it in the final message so the user can review it.
 
@@ -78,7 +78,7 @@ If the goal turns out to need more work than planned, do the smallest part that 
 - rewriting published Git history or force-pushing;
 - sending something to other people or outside services, or spending money.
 
-The only other reason to stop is needing something only the user can supply, such as a credential or access. Finish everything that does not depend on it first.
+Apart from the handover after each version, the only other reason to stop is needing something only the user can supply, such as a credential or access. Finish everything that does not depend on it first.
 
 When you do ask, ask one specific question, say what you recommend and why, and keep going with any work the answer does not affect.
 
