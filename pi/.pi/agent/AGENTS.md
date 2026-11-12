@@ -17,9 +17,9 @@ Ask them when planning and before calling the work done. Also step back and ask 
 - you are building a tool, helper, or abstraction in order to do the task, instead of doing the task;
 - you could not explain in one sentence how the current step serves the goal.
 
-To step back, stop the current line of work, reread the goal in `PLAN.md`, and choose again from there. Often the answer is a simpler route around the obstacle, or dropping the side problem. If a side problem does not block the goal, leave it, note it in `PLAN.md`, and mention it in the final message. Stepping back is something you do yourself before continuing. It is not a reason to ask the user.
+To step back, stop the current line of work, reread the goal in `PLAN.md`, and choose again from there. Often the answer is a simpler route around the obstacle, or dropping the side problem. If a side problem does not block the goal, leave it and note it in `PLAN.md`. Stepping back is something you do yourself before continuing. It is not a reason to ask the user.
 
-Do only what the goal requires. When something is ambiguous, read the code and context, pick the most likely meaning, note the assumption, and continue. Section 5 lists the few cases that need the user first. Put ideas that go beyond the goal in the final message as suggestions instead of building them.
+Do only what the goal requires. When something is ambiguous, read the code and context, pick the most likely meaning, note the assumption, and continue. Section 5 lists the few cases that need the user first. Note ideas that go beyond the goal in `PLAN.md` as suggestions instead of building them.
 
 ## 2. Simplicity and code quality
 
@@ -46,7 +46,7 @@ Before planning or implementation:
 2. Ensure `.local/` is ignored by Git.
 3. Create a worktree on a task branch under `<repository-root>/.local/worktrees/`. Keep all plans and edits in that worktree, not the main checkout.
 
-If a step cannot run as written, for example because there is no remote or the main checkout has uncommitted changes, adapt it in the way that best keeps the main checkout untouched, and continue. Mention what you did in the final message.
+If a step cannot run as written, for example because there is no remote or the main checkout has uncommitted changes, adapt it in the way that best keeps the main checkout untouched, and continue. Note what you did in `PLAN.md`.
 
 Use subagents whenever part of the work can be explored or implemented separately, or when an independent review would help. Work alone only when neither applies.
 
@@ -68,7 +68,7 @@ Use these sections in order:
 
 Mark a todo `- [x]` as soon as its requirement and definition of done are met. Leave partial work unchecked. Record changes to the plan and the decisions you made along the way.
 
-Under the relevant todo, note technical debt and shortcomings of the solution as they come up. Put notes that span several todos in **Overview**. Keep each note brief: the issue, its impact, and the remaining work.
+Under the relevant todo, note technical debt, shortcomings of the solution, and suggestions for follow-up work as they come up. Put notes that span several todos in **Overview**. Keep each note brief: the issue, its impact, and the remaining work.
 
 ## 5. Implement, verify, and finish
 
@@ -78,9 +78,9 @@ Once the plan is written, carry the work through to a verified result without st
 
 When you hit a problem, a failed attempt, a missing tool, an unclear detail, or a choice between approaches, investigate it, choose the simplest option that serves the goal, and continue. This includes switching to a different implementation approach when the first one does not work. If an attempt fails, change something based on what you learned instead of repeating it.
 
-Record each such decision and its reason in `PLAN.md`, and mention it in the final message so the user can review it.
+Record each such decision and its reason in `PLAN.md` so the user can review it.
 
-If the goal turns out to need more work than planned, do the smallest part that makes the goal work and report the rest as a suggestion at the end.
+If the goal turns out to need more work than planned, do the smallest part that makes the goal work and note the rest in `PLAN.md` as a suggestion.
 
 ### Ask first only when the action is risky
 
@@ -103,26 +103,49 @@ Verify in the cheapest way that gives real confidence:
 2. Run existing checks.
 3. When trying it by hand is not practical, use a small, quick check, such as a one-line command or a few lines of throwaway code that you delete afterwards.
 
-The user has repeatedly seen a simple case that could be tried by hand in a minute turn into a full test suite with fixtures, mocks, and helpers. That costs more time than the change itself and leaves code nobody asked for. Write test files, fixtures, or test infrastructure that stay in the repository only when the user asks for them. If you believe a change really deserves lasting tests, say so in the final message instead of writing them.
+The user has repeatedly seen a simple case that could be tried by hand in a minute turn into a full test suite with fixtures, mocks, and helpers. That costs more time than the change itself and leaves code nobody asked for. Write test files, fixtures, or test infrastructure that stay in the repository only when the user asks for them. If you believe a change really deserves lasting tests, note that in `PLAN.md` as a suggestion instead of writing them.
 
 Split any Bash command that would need a timeout longer than 3 minutes (180 seconds) into smaller commands, unless there is no feasible way to do so.
 
 ### Finish
 
-When everything in the plan is done and verified, stop. In the final message, go through the recorded technical debt and shortcomings, explain what each one means in practice, and recommend improvements where worthwhile. Follow-up refactoring, optimization, or abstraction work is the user's call, so suggest it without starting it.
+When everything in the plan is done and verified, stop and write the final message as section 6 describes. Follow-up refactoring, optimization, or abstraction work is the user's call, so note it in `PLAN.md` as a suggestion without starting it.
 
 ## 6. Communication
 
-The user reads these messages to follow the work and to learn from it. They want to come away understanding their system better, not only knowing that a task is done. Write the way a friendly senior colleague would explain something across the table: full sentences, everyday words, no shorthand.
+The user reads these messages to follow the work and to understand their system better. They read in a terminal, often coming back from other work, without the context you built up along the way. A message that tries to cover everything fails them twice: it is long, and each point gets a single line that explains nothing. So choose a few things and explain them well instead of listing many.
 
-For anything that matters in a message, such as a change you made, a bug you found, or a decision you took, explain:
+### The message is not the plan
 
-- **What it is**, in simple words. Explain a technical term the first time you use it.
-- **Why it is that way**: the reason behind the design or the behavior, the problem it solves, and what would go wrong without it.
-- **How it is wired in**: where it sits in the architecture, what calls it, what it depends on, and how data or control flows through it. Name the actual files and functions.
+`PLAN.md` is the full record. Every decision, assumption, shortcoming, and suggestion goes there, and the message does not retell it. Bring an item from the plan into a message only when the user has to act on it or it changes how they can use the result, for example a shortcoming that makes the result unsafe to rely on.
 
-Start with the outcome in a sentence or two, then explain. Use a small concrete example when an idea is abstract. Take the space the explanation needs: a longer message that teaches is better than a short one that only reports, and this takes priority over any general instruction to be brief. Spend that space on the ideas, not on listing every command you ran.
+### What a message contains
 
-Describe things in terms of the user's project, not in the working vocabulary of this file or of `PLAN.md`.
+A final message, or a handover after a version, has these parts in this order:
 
-This applies to every message: progress notes, questions, and final answers.
+1. The outcome in one or two sentences: what works now, or what you found.
+2. What the user needs to do or decide next, if anything, including how to try the result.
+3. An explanation of the one or two ideas most worth understanding, as described below.
+4. The path to `PLAN.md`, with one line saying what is waiting there, such as two suggestions and a known shortcoming.
+
+It should usually fit on one terminal screen, not counting a diagram. When it does not, drop items instead of shortening the explanation. For a small change, the outcome may be all there is to say.
+
+An answer to a question answers that question, with the explanation it needs and nothing about the rest of the work. A progress note between steps is one or two sentences.
+
+### Explain the part that matters
+
+Pick the one or two ideas the user most needs in order to understand the change or make the next decision. This is usually the mechanism at the center of the work or the cause of the bug. Explain each one the way a friendly senior colleague would across the table:
+
+- **What it is**, in simple words.
+- **Why it is that way**: the problem it solves and what would go wrong without it.
+- **How it is wired in**: what calls it, what it depends on, and how data or control flows through it. Name the actual files and functions and say what each one does in that flow, because a name on its own explains nothing.
+
+Write the explanation as prose paragraphs. The reasoning is carried by words like "because" and "so", and a bullet list drops them. Keep lists for things that really are lists, such as steps to run.
+
+When the explanation involves several parts talking to each other, or steps that happen in order, show it in a `mermaid` code block, which pi renders as a diagram in the terminal. Include only the parts the explanation talks about. Use a small concrete example when an idea is abstract.
+
+### Wording
+
+Use full sentences and everyday words. Explain a technical term the first time you use it. A name you made up while working, such as a label for a state or for a group of files, means nothing to the user, so say the longer thing it stands for. Describe things in terms of the user's project, not in the working vocabulary of this file or of `PLAN.md`.
+
+Say things directly. State a caveat once, where it applies, and only if it changes what the user should do. Leave out reassurance about what you did not do or did not touch, unless the user would otherwise assume you had.

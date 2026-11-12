@@ -1,16 +1,11 @@
 # Overview
-- Make Pi compaction recover from context-overflow errors without dropping history or saving partial summaries.
-- Managed extension using public Pi APIs; installed application and main checkout are untouched. Local main was already current with origin/main; .local/ is ignored.
-- Scope: manual and automatic compaction, not branch-navigation summaries. Outages, silent provider truncation, and impossible minimum requests cannot be guaranteed recoverable.
-- No global deployment or paid provider calls performed. Activate by explicitly loading the extension, or by full Pi sync after integration.
+- Goal: agent messages come out short and explain the one or two ideas that matter, with a diagram for flows, instead of long item lists that retell the plan.
+- Cause found in the Lira session (gpt-6.1-sol, current AGENTS.md loaded): six lines in `pi/.pi/agent/AGENTS.md` each add required content to the final message, section 6 says longer is better, teaching is a per-item template, and diagrams are never mentioned.
+- Scope: `pi/.pi/agent/AGENTS.md` only. Not deployed to `~/.pi/agent` and not merged; both need the user's go-ahead.
+- Decision: technical debt and suggestions now live in `PLAN.md`; the message carries only items the user must act on, plus a one-line pointer saying what is waiting in the plan. This reverses the earlier rule to walk through all debt in the final message.
+- Not tested against a model: a faithful test is a full agent session on the user's subscription. The next real session is the test.
 
 # Todos
-- [x] Deliver overflow recovery with bounded incremental summarization.
-  - Requirement: native first; split oversized history, carry summaries forward; preserve recent boundary, file tracking, usage, cancellation and custom instructions; publish only one complete checkpoint.
-  - Definition of done: native helpers exercised offline, real extension loader smoke-tested, strict TypeScript and syntax checks pass, no new existing-test failures, independent review complete, working version committed.
-  - Verified 19 temporary offline cases: normal success, recursive overflow, single oversized message, split-turn prefix/previous summary, auth/rate-limit/server failures, empty/truncated/tool/aborted output, mid-fallback cancellation, minimum chunk/request cap, cumulative file lists, thrown overflow/unrelated exception, malformed checkpoint details, configured transient retry. Temporary checks are removed, not added to the repository.
-  - Real Pi offline RPC startup loaded the extension successfully. Strict TypeScript, script syntax and diff whitespace checks pass.
-  - Existing settings suite: 41 pass, 2 fail identically on untouched main (obsolete Playwright --headless expectation and removed init.sh reference). Left outside scope.
-  - Decision: managed extension, since this repository contains configuration rather than Pi source. Added to the explicit full-sync deployment manifest; JSON-only sync remains unchanged.
-  - Review: reviewer agent was disabled; available delegate completed read-only design/final reviews. Addressed thrown overflow and malformed persisted file data findings.
-  - Limits: 64 requests, roughly 1024-character minimum text chunks, 8192 recovery output tokens. High reasoning levels may exhaust output allowance; lower thinking and retry. Other compaction-replacing extensions can override this handler; avoid combining them. Unrecognized thrown provider exceptions fail safely rather than retrying. Multi-pass summaries may cost more and lose detail.
+- [x] Final message has one definition and teaching is a selection.
+  - Requirement: scattered "mention in the final message" lines point to `PLAN.md`; section 6 defines message contents per message type, asks for depth on one or two ideas in prose, asks for a mermaid diagram for flows, and covers hedging and coined labels; the "longer is better" override is gone.
+  - Definition of done: no instruction outside section 6 adds content to the final message; file reads consistently end to end; committed on `docs/agents-final-message`.
