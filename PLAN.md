@@ -1,22 +1,20 @@
+# PLAN
+
 ## Overview
-- Sync must apply repo removals as well as additions/updates. Retire previously managed files, JSON fields and package declarations; preserve unrelated user additions.
-- Bootstrap known retired skills from the archived inventory and known removed Pi configs/packages, even without old deployment history. Back up retired files outside discovery paths; do not uninstall package downloads or run live home sync automatically.
-- Keep selected-component boundaries, path/link refusal, preview, concurrency guards and recovery. No new tests/probes or verification artifacts.
+
+- Rewrite parts of `pi/.pi/agent/AGENTS.md` so the agent stops asking questions it could answer itself, and writes messages that teach.
+- Why: the current file describes stopping far more than continuing, and its communication section is three sentences of adjectives.
+- In scope: section 1 (last paragraph), section 3 (what to do if setup fails), section 5, section 6.
+- Out of scope: worktree and `PLAN.md` process, simplicity rules, subagent rules, installing the file into `~/.pi/agent/`.
+- Branch carries the user's uncommitted edit from main (todo fields reduced to Requirement + Definition of done).
 
 ## Todos
-- [x] Goal: retired managed resources disappear on sync.
-  - Verified: independent review, syntax checks and read-only Pi sync preview passed; home unchanged. Added the former bro skill and normalized destination guards.
-  - Requirements: previous deployment inventory drives future removals; explicit archived inventory handles existing 33 skills; removed Pi configs retired; private unknown files preserved; backup before removal.
-  - Definition of done: manual/independent review and existing checks pass apart from recorded baseline failures.
-  - Scope: selected managed files only; no recursive deletion of user directories.
-- [x] Goal: JSON deletions follow repo changes.
-  - Verified: ownership/recovery reviewed; existing suite 41/43 passes. Remaining failures are unchanged: stale Playwright --headless expectation and missing init.sh.
-  - Limit: legacy hash-only inventory cannot identify historical JSON fields; future syncs save repo baselines. Package downloads are not uninstalled.
-  - Requirements: use previous repo baselines to distinguish retired fields/packages from additions; track copied JSON defaults; migrate legacy hash inventory; handle known retired package identities without history.
-  - Definition of done: recovery/ownership paths reviewed and existing suite run.
-  - Scope: configured declarations, not downloaded package uninstallation.
-- [x] Goal: docs describe complete sync ownership accurately.
-  - Verified: docs and diff reviewed; retirement, backups and legacy-history limits documented.
-  - Requirements: explain retirement/backups and remaining local additions; remove stale no-removal statements.
-  - Definition of done: docs and diff reviewed; limitations recorded.
-  - Scope: affected sync docs only.
+
+- [x] Agent decides by itself unless the action is risky
+  - **Requirement** — one default (keep going, decide, record it); ask first only for risky actions (production, deleting, hard to undo) or things only the user can supply.
+  - **Definition of done** — section 5 no longer has the four issue categories; sections 1 and 5 contain no other approval or pause triggers.
+  - Decision to confirm with user: quick diagnostic commands are now allowed; writing tests and test scripts stays banned.
+- [x] Messages teach in plain words
+  - **Requirement** — section 6 describes the reader, asks for what / why / how it is wired into the architecture, and says depth wins over brevity.
+  - **Definition of done** — section 6 states all of that and applies to every message.
+- [ ] User reviews the draft and decides on merge and install

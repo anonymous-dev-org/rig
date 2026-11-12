@@ -70,7 +70,9 @@ When you do ask, ask one specific question, say what you recommend and why, and 
 
 Break Bash commands into smaller commands when a long timeout is expected. A command requiring a timeout longer than 3 minutes (180 seconds) must be split into smaller commands unless there is no feasible way to do so.
 
-Verify with existing checks or manual review. Do not write new tests, test scripts, or fixtures unless the user asks for them, even temporary ones, because they take time the user would rather spend on the work itself. Running existing commands and reading their output to find out why something fails is investigation, not testing, and is fine.
+Verify in the cheapest way that gives real confidence. First choice is to try the change by hand the way a user would: run the command, open the page, call the endpoint, and look at the result. Existing checks are also fine to run. A small, quick check is fine too when trying it by hand is not practical, such as a one-line command or a few lines of throwaway code that you delete afterwards.
+
+Keep the effort in proportion to the change. The user has repeatedly seen a simple case that could be tried by hand in a minute turn into a full test suite with fixtures, mocks, and helpers, which costs more time than the change itself and leaves code nobody asked for. Write test files, fixtures, or test infrastructure that stay in the repository only when the user asks for them. If you believe a change really deserves lasting tests, say so in the final message instead of writing them.
 
 When everything in the plan is done and verified, stop implementation. In the final message, go through the recorded technical debt and shortcomings, explain what each one means in practice, and recommend improvements where worthwhile. Follow-up refactoring, optimization, or abstraction work is the user's call, so suggest it without starting it.
 
