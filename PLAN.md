@@ -1,20 +1,11 @@
-# PLAN
-
 ## Overview
-
-- Rewrite parts of `pi/.pi/agent/AGENTS.md` so the agent stops asking questions it could answer itself, and writes messages that teach.
-- Why: the current file describes stopping far more than continuing, and its communication section is three sentences of adjectives.
-- In scope: section 1 (last paragraph), section 3 (what to do if setup fails), section 5, section 6.
-- Out of scope: worktree and `PLAN.md` process, simplicity rules, subagent rules, installing the file into `~/.pi/agent/`.
-- Branch carries the user's uncommitted edit from main (todo fields reduced to Requirement + Definition of done).
+- Review `pi/.pi/agent/AGENTS.md` for clear, simple wording and trim it where words do no work.
+- Why: the file is read at the start of every session, and its wording shapes how the agent behaves and writes.
+- In scope: wording, order, and layout of the existing rules. Out of scope: changing what any rule asks for.
+- Caveman (`caveman-compress`) checked and not applied: it rewrites prose into fragments and drops reasons and connecting words. This file relies on reasons and on a plain, human voice, and the saving would be about 600 tokens per session. Its lightest idea (cut filler, keep grammar) is applied by hand.
 
 ## Todos
-
-- [x] Agent decides by itself unless the action is risky
-  - **Requirement** — one default (keep going, decide, record it); ask first only for risky actions (production, deleting, hard to undo) or things only the user can supply.
-  - **Definition of done** — section 5 no longer has the four issue categories; sections 1 and 5 contain no other approval or pause triggers.
-  - Decision to confirm with user: quick diagnostic commands are now allowed; writing tests and test scripts stays banned.
-- [x] Messages teach in plain words
-  - **Requirement** — section 6 describes the reader, asks for what / why / how it is wired into the architecture, and says depth wins over brevity.
-  - **Definition of done** — section 6 states all of that and applies to every message.
-- [ ] User reviews the draft and decides on merge and install
+- [x] Wording is clear and simple, rules unchanged
+  - **Requirement** — shorter sentences, steps as lists, section 5 split under sub-headings, leftover approval wording removed.
+  - **Definition of done** — every rule in the old file is still present with the same meaning; word count lower.
+  - Open point for the user: the file never says who merges and pushes a finished branch.
