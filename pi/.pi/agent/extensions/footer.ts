@@ -37,8 +37,12 @@ export default function (pi: ExtensionAPI) {
           let limitText = limit == null ? "?" : `${limit}`;
           if (limit != null && limit >= 1_000_000) limitText = `${Number((limit / 1_000_000).toFixed(1))}M`;
           else if (limit != null && limit >= 1_000) limitText = `${Number((limit / 1_000).toFixed(1))}k`;
+          const tokens = usage?.tokens;
+          let tokensText = tokens == null ? "?" : `${tokens}`;
+          if (tokens != null && tokens >= 1_000_000) tokensText = `${Number((tokens / 1_000_000).toFixed(1))}M`;
+          else if (tokens != null && tokens >= 1_000) tokensText = `${Number((tokens / 1_000).toFixed(1))}k`;
           const percent = usage?.percent;
-          const context = `ctx ${percent == null ? "?" : percent.toFixed(0) + "%"}/${limitText}`;
+          const context = `ctx ${tokensText}/${limitText} (${percent == null ? "?" : percent.toFixed(0) + "%"})`;
           let contextColor: "dim" | "warning" | "error" = "dim";
           if (percent != null && percent > 90) contextColor = "error";
           else if (percent != null && percent > 70) contextColor = "warning";
