@@ -10,7 +10,7 @@ node /path/to/rig/pi/sync-settings.mjs
 
 It creates ordinary private `~/.pi/agent/settings.json` and `mcp.json` files,
 with history and recovery records under `~/.local/state/rig/pi/`, never in rig.
-Init/update call this same command for selected Pi. An explicit asset list excludes
+`./sync.sh` calls this same command for selected Pi. An explicit asset list excludes
 private configs, templates, repository docs, sync tooling and browser captures from
 deployment; the vendored skills tree includes all its supporting files.
 Direct agents, extensions, themes, instructions and vendored skills are ordinary local copies: edit them locally. Unchanged copies update; customized copies stay intact and report the default source path for manual adoption. Recorded deletions remain opt-outs. This copy policy does not change the JSON sync described below.
@@ -34,7 +34,7 @@ and supply those variables in Pi's environment rather than committing credential
 
 Pi package installs use Bun through `"npmCommand": ["bun"]`. The `npm:`
 package prefixes identify registry sources and remain unchanged. Node.js is still
-required to run Pi. After JSON sync, init/update use the selected Pi installation's
+required to run Pi. After JSON sync, every full sync uses the selected Pi installation's
 public package-manager API to install missing packages, including pinned versions,
 and report installation failures as a failed Pi component. They then update packages
 unless `--brew-no-upgrade` is selected. No-upgrade retains compatible installed
@@ -48,7 +48,7 @@ project settings. Personal package removals and resource filters remain intact.
 `~/.pi/agent`, where rig deploys its configuration. A retained Pi executable must
 expose the public Node/Bun package API; unsupported wrappers fail with guidance.
 Preview only describes these actions. The narrow `sync-settings.mjs` command remains
-JSON-only. Restart/reload Pi after init/update to load the installed resources.
+JSON-only. Restart/reload Pi after sync to load the installed resources.
 
 Package-provided prompts and skills arrive through the declared packages. Rig also
 copies the complete vendored `pi/.pi/agent/skills/` tree into `~/.pi/agent/skills/`,
@@ -104,7 +104,7 @@ providers without mid-conversation system messages fold it into the leading prom
 An extension that forces a replacement `before_agent_start.systemPrompt` can remove
 the reminder. This is advisory, not enforcement or a separate goal tracker.
 
-Rig setup/update deploys it to `~/.pi/agent/extensions/goal-reminder.ts` when Pi is
+Rig sync deploys it to `~/.pi/agent/extensions/goal-reminder.ts` when Pi is
 selected; the JSON-only `sync-settings.mjs` command does not deploy extensions.
 After deployment, use `/reload` or restart Pi to activate it.
 
@@ -125,7 +125,7 @@ migration guidance. Differing copies and unexpected links fail closed; do not
 force Stow to adopt or delete them. No real migration is implied by adding these
 tracked files.
 
-After migration, **do not run old main-checkout init/update/sync scripts** until
+After migration, **do not run old main-checkout deployment scripts** until
 these changes are integrated there: old scripts can recreate private checkout
 files. Use the new worktree's narrow command meanwhile.
 

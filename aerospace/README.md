@@ -159,8 +159,8 @@ its installed single-instance handler focuses the new session's OS window.
 
 ## Install / start / reload
 
-`./init.sh` (select AeroSpace) and `./update.sh` both call
-`bash scripts/install-aerospace.sh`. You can also run that helper directly.
+`./sync.sh` deliberately leaves AeroSpace untouched. To install it separately,
+run `bash scripts/install-aerospace.sh` directly.
 It installs only the config and an explicit helper manifest, never tests/docs.
 Conflicting files or links receive unique timestamped `.backup-*` siblings;
 unrelated config files stay in place. Competing default/XDG `aerospace.toml`

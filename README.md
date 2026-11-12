@@ -1,31 +1,29 @@
 # rig
 
-Shared defaults live in this checkout; personal settings and state stay outside it. Edit the deployed local files for personal changes, not this checkout. Setup/update create no deployment symlinks.
+Shared defaults live in this checkout; personal settings and state stay outside it. Edit the deployed local files for personal changes, not this checkout. Sync creates no deployment symlinks.
 
-## Setup and update
+## Sync
 
 Put Node on the **parent shell PATH** first. Selected `brew` also requires Homebrew; selected `pi` requires Bun. Rig checks these before changing config. It does not run runtime bootstrap installers.
 
 ```sh
-./init.sh --preview
-./init.sh
-./update.sh --preview
-./update.sh
+./sync.sh --preview
+./sync.sh
 ```
 
-Fresh setup selects `brew,neovim,zsh,kitty,git,pi`. AeroSpace, Lazysql and macOS configuration are deliberately **untouched**: adoption/update is manual, not a new merger or preference engine. Homebrew may still install their apps from the shared Brewfile. Legacy component install commands (including the AeroSpace helper) are excluded from this no-symlink workflow; do not use them for copy deployment.
+The first sync selects `brew,neovim,zsh,kitty,git,pi`. AeroSpace, Lazysql and macOS configuration are deliberately **untouched**: adoption/update is manual, not a new merger or preference engine. Homebrew may still install their apps from the shared Brewfile. Legacy component install commands (including the AeroSpace helper) are excluded from this no-symlink workflow; do not use them for copy deployment.
 
-There are no prompts: inspect preview before applying. `--yes` remains accepted but never overrides conflicts. Update requires prior setup selections, refuses a dirty checkout (including untracked files), pulls with `--ff-only`, then re-executes the new orchestrator. Preview does not fetch/pull: it describes the current checkout, not remote changes.
+There are no prompts: inspect preview before applying. `--yes` remains accepted but never overrides conflicts. Later syncs reuse saved selections, refuse a dirty checkout (including untracked files), pull with `--ff-only`, then re-execute the new orchestrator. The first sync needs no saved state and uses the current checkout. Preview does not fetch/pull: it describes the current checkout, not remote changes.
 
 Use `--components` to **replace the full selection**, stored privately in `~/.local/state/rig/orchestration/settings.json`:
 
 ```sh
-./init.sh --components zsh,git,pi --preview
-./init.sh --components zsh,git,pi
-./init.sh --components '' # stop future management; remove nothing
+./sync.sh --components zsh,git,pi --preview
+./sync.sh --components zsh,git,pi
+./sync.sh --components '' # stop future management; remove nothing
 ```
 
-Both entrypoints accept:
+Sync accepts:
 
 - `--preview`: report actions/conflicts without writing state or installing packages. Pi JSON sync has no preview CLI, so its action is listed but not run.
 - `--components <comma-separated-list>`: select from `brew,neovim,zsh,kitty,git,pi`.
@@ -58,4 +56,4 @@ Paths under `.config` respect `XDG_CONFIG_HOME` (default `~/.config`); Zsh and P
 
 ## Validation
 
-Use existing repository checks. Setup/update without preview are live commands. Preview can identify missing prerequisites and conflicts; it does not verify application startup, network installs or installed-version compatibility.
+Use existing repository checks. Sync without preview is a live command. Preview can identify missing prerequisites and conflicts; it does not verify application startup, network installs or installed-version compatibility.

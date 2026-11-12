@@ -242,7 +242,7 @@ try {
   safe(home);
   safe(configHome);
   for (const dir of [home, configHome]) if (dir === root || dir.startsWith(root + path.sep)) fail('Private destinations must be outside rig');
-  if (!['setup','update'].includes(mode)) fail('Usage: node scripts/rig.mjs setup|update [--preview] [--components brew,zsh,...] [--brew-no-upgrade|--brew-upgrade] [--brewfile /private/Brewfile] [--install-hooks] [--pi-migrate-from /checkout]');
+  if (mode !== 'sync') fail('Usage: ./sync.sh [--preview] [--components brew,zsh,...] [--brew-no-upgrade|--brew-upgrade] [--brewfile /private/Brewfile] [--install-hooks] [--pi-migrate-from /checkout]');
   const valued = ['--components','--brewfile','--pi-migrate-from'];
   for (let i = 0; i < args.length; i++) {
     if (valued.includes(args[i])) { if (args[++i] === undefined || args[i].startsWith('--')) fail('Missing option value'); }
@@ -264,7 +264,7 @@ try {
     state = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
     if (!state || !Array.isArray(state.components) || state.components.some(name => typeof name !== 'string') || !state.brew || typeof state.brew.noUpgrade !== 'boolean' || !state.brew.skip || typeof state.brew.skip !== 'object' || Array.isArray(state.brew.skip)) fail(`Invalid ${stateFile}`);
     parseList(state.components.join(','));
-  } else if (mode === 'update') fail('No persisted selections. Run ./init.sh --preview, then ./init.sh first.');
+  }
   if (value('--components') !== undefined) state.components = parseList(value('--components'));
   if (args.includes('--brew-no-upgrade')) state.brew.noUpgrade = true;
   if (args.includes('--brew-upgrade')) state.brew.noUpgrade = false;
@@ -280,9 +280,9 @@ try {
   }
   console.log(`${preview ? 'Preview' : 'Apply'} ${mode}: ${state.components.join(', ') || '(none)'}.`);
   console.log('AeroSpace, Lazysql and macOS config are untouched: adopt/update them manually. Vendored skills are copied with Pi.');
-  if (mode === 'update') {
+  if (stat(stateFile)) {
     const dirty = spawnSync('git', ['status','--porcelain','--untracked-files=normal'], {cwd:root, encoding:'utf8'});
-    if (dirty.status !== 0 || dirty.stdout.trim()) fail('Checkout is dirty. Commit or move changes yourself before updating; rig will not stash/reset them.');
+    if (dirty.status !== 0 || dirty.stdout.trim()) fail('Checkout is dirty. Commit or move changes yourself before syncing; rig will not stash/reset them.');
     console.log('git pull --ff-only (preview does not fetch or pull)');
     if (!preview && !process.env.RIG_AFTER_PULL) {
       run('git', ['pull','--ff-only']);

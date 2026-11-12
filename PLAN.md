@@ -1,15 +1,11 @@
 ## Overview
-- Add context percentage/limit, session cost, Fast mode, and working path to Pi's minimal single-line footer. Preserve branch, thinking, and model. No unrelated settings or new tests.
-- Layout: path + branch left; context, cost, Fast, thinking, model right. Abbreviate home and shorten path when space is tight.
+- Replace init/update with one sync.sh command for fresh and existing Macs. Preserve private selections, customization safety, upgrade controls, and missing Pi package installation.
+- Fresh sync uses defaults; subsequent sync retains update's clean-checkout fast-forward pull and re-exec. Preview never pulls or installs. No new tests or verification artifacts.
 
 ## Todos
-- [x] Goal: implement compact, accurate footer fields.
-  - Requirements: live Pi usage and extension Fast status; honest unknown context; current working path; terminal-width-safe rendering.
-  - Definition of done: source reviewed, existing checks/manual review completed, installed footer updated.
-  - Scope: footer source and installed copy only; no added monitoring or configuration.
-  - Verified: independent API/accounting inspection; manual width, lifecycle, and unknown-value review; diff whitespace check; installed copy matches source.
-  - Limits: workspace has no resolved Pi/Node type dependencies, so LSP is not authoritative. No interactive visual test during this active session. Cost reflects recorded usage, not subscription balance. Very narrow terminals truncate fields.
-- [x] Goal: finish delivery.
-  - Requirements: review diff, record limitations, merge task branch and remove worktree.
-  - Definition of done: clean repository and clear reload instructions.
-  - Scope: this task only.
+- [ ] Goal: unify the entrypoint and documented workflow.
+  - Requirements: remove init.sh/update.sh; sync bootstraps missing state and reuses existing state; preserve package reconciliation and no-upgrade installs; update active references.
+  - Definition of done: source/manual review, existing checks, independent review, merge and worktree cleanup.
+  - Scope: entrypoint, orchestrator and affected documentation; no installer redesign or changes to private opt-outs.
+  - Verified: shell/Node syntax and whitespace checks pass. Existing Pi suite: 41/43 pass both before and after; stale headless expectation and obsolete shell/Stow test fail on baseline too. Tests unchanged per no-new-tests constraint.
+  - Limits: no live installs; package reconciliation remains unconditional for selected Pi, including no-upgrade. Existing stale tests need separate maintenance.
