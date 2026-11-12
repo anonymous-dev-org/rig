@@ -1,11 +1,10 @@
 ## Overview
-- Review `pi/.pi/agent/AGENTS.md` for clear, simple wording and trim it where words do no work.
-- Why: the file is read at the start of every session, and its wording shapes how the agent behaves and writes.
-- In scope: wording, order, and layout of the existing rules. Out of scope: changing what any rule asks for.
-- Caveman (`caveman-compress`) checked and not applied: it rewrites prose into fragments and drops reasons and connecting words. This file relies on reasons and on a plain, human voice, and the saving would be about 600 tokens per session. Its lightest idea (cut filler, keep grammar) is applied by hand.
+- Bring the reminder text in `pi/.pi/agent/extensions/goal-reminder.ts` in line with the rewritten `pi/.pi/agent/AGENTS.md`.
+- Why: the old text told the agent every 20 model calls that its solution "looks overengineered", whether or not that was true, and did not say to keep going afterwards.
+- In scope: the reminder text and its description in `pi/README.md`. Out of scope: the 20-call interval and how the reminder is delivered.
 
 ## Todos
-- [x] Wording is clear and simple, rules unchanged
-  - **Requirement** — shorter sentences, steps as lists, section 5 split under sub-headings, leftover approval wording removed.
-  - **Definition of done** — every rule in the old file is still present with the same meaning; word count lower.
-  - Open point for the user: the file never says who merges and pushes a finished branch.
+- [x] Reminder matches the new instructions
+  - **Requirement** — neutral wording, same two questions as section 1 of `AGENTS.md`, carry on if on track, no stopping, asking, or mentioning the check.
+  - **Definition of done** — text and README updated; only the string constant changed in the extension.
+  - Shortcoming: the counter still runs on model calls from extension load, not per task, so a reminder can land in the middle of a simple conversation. Harmless with the neutral wording.

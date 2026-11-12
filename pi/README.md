@@ -109,10 +109,11 @@ security sandbox. Do not expose untrusted pages to privileged secrets casually.
 ## Goal reminder
 
 The `goal-reminder.ts` extension adds a short instruction every 20 model calls:
-step back and evaluate alignment with the agreed goal and scope, reconsider an
-overengineered solution, and use a simpler approach that meets all requirements
-without weakening correctness or safety. Avoid unrelated improvements and
-speculative abstractions.
+step back and ask the two questions from section 1 of `AGENTS.md` (does this
+move the goal forward, and is it the simplest thing that meets the current
+requirements). If yes, the agent carries on; if it has drifted, it returns to
+the goal or takes the simpler route. The check is private: the agent should not
+stop, ask the user, or mention it.
 Change `REMINDER_INTERVAL` in the extension to adjust the cadence. Calls are counted
 from extension load, so `/reload` or a restart resets the counter; the first reminder
 is on call 20. It uses Pi's `context_with_system` hook without adding saved conversation messages
