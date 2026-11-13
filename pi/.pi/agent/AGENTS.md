@@ -142,6 +142,15 @@ Choose the smallest search that can answer the current question. A search that t
 5. **Prune before traversal.** For filesystem searches, use `find ... -prune` or the search tool's directory exclusions to avoid irrelevant trees. `find -not -path` filters matches but does not prevent descent; piping results through `grep -v` excludes paths only after the work is done. `head` limits displayed output, not the work required to find matches.
 6. **Change failed searches rather than repeating them.** After a timeout, permission error, or truncated output, distinguish incomplete coverage from no matches. Narrow the root, prune irrelevant directories, or use a known index/location before retrying. Do not simply raise the timeout on a whole-home or sibling-worktree scan. Expand broadly only when the task genuinely requires that coverage.
 
+#### Batch independent reads without overfetching
+
+File reads are usually fast; returning to the model between each read can cost much more than the reads themselves.
+
+- Before reading, identify the small set of files or ranges already known to be necessary for the current question. Fetch independent reads together using the available batching tool, while retaining each result and checking individual failures. Continue using the designated file-read tool rather than replacing it with shell reads.
+- Read a coherent function or section with the surrounding context needed to understand it, rather than repeatedly requesting tiny adjacent fragments. Combine nearby ranges when useful, but respect output limits and do not fetch whole large files unnecessarily.
+- Keep reads sequential when one result determines the next path or range, or supplies instructions that govern subsequent work. Do not guess locations or preload unrelated files merely to reduce call count.
+- Reuse context already available when it remains valid. Batching does not override the freshness and reread rules for guarded edits, source changes, or session resets.
+
 #### Execute commands and observe completion
 
 - Batch small independent inspections when useful, but keep dependent operations in order and preserve each command's failure status. Do not rerun checks whose results are still valid.
