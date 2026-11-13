@@ -106,6 +106,19 @@ already be available; this sync does not install packages or browsers. The brows
 profile does not preserve login sessions after closing; it is **not** an OS/network
 security sandbox. Do not expose untrusted pages to privileged secrets casually.
 
+## Council advisors
+
+Council mode uses exactly two managed profiles: `council-astra` with
+`openai/gpt-6-astra` and `council-fable` with
+`pi-sub-anthropic/claude-fable-5-2`. Both start with fresh context and read-only
+tools, without inherited skills. The roster is pinned in the managed `AGENTS.md`;
+unavailable advisors/models require asking rather than substituting fallbacks.
+Provider authentication must already be available in Pi.
+
+Full Pi sync deploys these profiles and instructions; the JSON-only
+`sync-settings.mjs` command does not. Reload or restart Pi after deployment,
+then ask it to use council mode for a decision.
+
 ## Compaction overflow recovery
 
 The managed `compaction-fallback.ts` extension handles manual `/compact` and

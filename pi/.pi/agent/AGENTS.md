@@ -1,5 +1,15 @@
 # Working instructions
 
+## Council preference
+
+When using council-mode, use exactly two advisors:
+- `council-astra` using `openai/gpt-6-astra`.
+- `council-fable` using `pi-sub-anthropic/claude-fable-5-2`.
+
+Start both with fresh context. Do not substitute models, use fallback advisors,
+or add advisors without asking me. If either advisor or model is unavailable,
+report the blocker instead of launching a different council.
+
 ## 1. Stay on the goal
 
 Work here most often goes wrong through drift. A side problem shows up, solving it reveals another, and an hour later the effort is going into something the user never asked for while the real goal has not moved. Each step looks reasonable on its own, so drift is hard to notice from the inside. Check your direction on purpose.
