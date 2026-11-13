@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { constants, openSync, closeSync, fstatSync, readSync, writeSync, ftruncateSync, realpathSync } from "node:fs";
 import { homedir } from "node:os";
 import { resolve } from "node:path";
-import { type ExtensionAPI, withFileMutationQueue } from "@earendil-works/pi-coding-agent";
+import { type ExtensionAPI, createReadToolDefinition, detectSupportedImageMimeTypeFromFile, withFileMutationQueue } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import { Text } from "@earendil-works/pi-tui";
 
@@ -41,6 +41,7 @@ function load(fd: number) {
 }
 
 export default function lineFileTools(pi: ExtensionAPI) {
+	const stockRead = createReadToolDefinition(process.cwd());
 	const snapshots = new Map<string, string>();
 	// Deliberately fail closed rather than restoring snapshots from another branch.
 	let epoch = 0;
@@ -55,14 +56,16 @@ export default function lineFileTools(pi: ExtensionAPI) {
 	pi.registerTool({
 		name: "read",
 		label: "read (numbered lines)",
-		promptSnippet: "Read numbered lines using inclusive start/end; harness remembers file freshness.",
-		description: "Read a local UTF-8 file as numbered lines. start/end are inclusive, 1-based; defaults to lines 1–200. The harness privately remembers the full-file hash for edit. Maximum file 4 MiB and output 50 KiB; request a narrower range if needed. Text only.",
+		promptSnippet: "Read numbered text lines using inclusive start/end, or image attachments; harness remembers text-file freshness.",
+		promptGuidelines: stockRead.promptGuidelines,
+		outputSchema: stockRead.outputSchema,
+		description: "Read local UTF-8 text as numbered lines, or supported images (jpg, png, gif, webp, bmp) as attachments through stock Pi processing. For text, start/end are inclusive, 1-based; defaults to lines 1–200. The harness privately remembers the full-file hash for edit. Maximum text file 4 MiB and output 50 KiB; request a narrower range if needed. Image ranges are ignored; images do not establish an edit snapshot.",
 		parameters: Type.Object({
 			path: Type.String(),
 			start: Type.Optional(Type.Integer({ minimum: 1 })),
 			end: Type.Optional(Type.Integer({ minimum: 1 })),
 		}),
-		async execute(_id, { path, start = 1, end = start + 199 }, signal, _update, ctx) {
+		async execute(id, { path, start = 1, end = start + 199 }, signal, update, ctx) {
 			const target = filePath(ctx.cwd, path);
 			const startedEpoch = epoch;
 			return withFileMutationQueue(target, async () => {
@@ -71,6 +74,18 @@ export default function lineFileTools(pi: ExtensionAPI) {
 				if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start < 1 || end < start) throw new Error("Use positive integer start/end with end >= start.");
 				const fd = openSync(target, constants.O_RDONLY | constants.O_NONBLOCK);
 				try {
+					// Reject static directories/devices/FIFOs before the stock sniff opens a path.
+					if (!fstatSync(fd).isFile()) throw new Error("Only regular files are supported.");
+					const mime = await detectSupportedImageMimeTypeFromFile(target);
+					signal?.throwIfAborted();
+					if (epoch !== startedEpoch) throw new Error("Session state changed during read. Read the file again.");
+					if (mime) {
+						snapshots.delete(target);
+						const image = await stockRead.execute(id, { path: target }, signal, update, ctx);
+						signal?.throwIfAborted();
+						if (epoch !== startedEpoch) throw new Error("Session state changed during read. Read the file again.");
+						return image;
+					}
 					const { bytes, rows } = load(fd);
 					if (start > rows.length && !(rows.length === 0 && start === 1)) throw new Error(`Start is beyond EOF (${rows.length} lines).`);
 					const last = Math.min(end, rows.length);
@@ -78,7 +93,7 @@ export default function lineFileTools(pi: ExtensionAPI) {
 					const output = `[${rows.length} lines total; ${rows.length ? `showing ${start}–${last}` : "empty file"}]\n${text}`;
 					if (Buffer.byteLength(output) > 50 * 1024) throw new Error("Range exceeds 50 KiB. Read a narrower range.");
 					snapshots.set(target, hash(bytes));
-					return result(output);
+					return { ...result(output), structuredContent: output };
 				} finally { closeSync(fd); }
 			});
 		},
