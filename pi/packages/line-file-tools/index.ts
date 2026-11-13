@@ -4,6 +4,7 @@ import { homedir } from "node:os";
 import { resolve } from "node:path";
 import { type ExtensionAPI, withFileMutationQueue } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
+import { Text } from "@earendil-works/pi-tui";
 
 const MAX_BYTES = 4 * 1024 * 1024;
 const hash = (bytes: Buffer) => createHash("sha256").update(bytes).digest("hex");
@@ -85,11 +86,29 @@ export default function lineFileTools(pi: ExtensionAPI) {
 
 	pi.registerTool({
 		name: "edit",
-		label: "edit (line replacements)",
-		promptSnippet: "Replace existing lines using a line-number-to-text mapping; harness checks freshness.",
-		description: "Replace existing lines using changes: a mapping of 1-based line numbers to new single-line text (no newline characters). Read the file first. The harness checks its private hash and refuses edits if the file changed; reread on that error. All entries refer to the current file, apply together, and preserve line endings. Empty text blanks a terminated line; blanking an unterminated final line is refused. For insertions/deletions use a complete-file write. No hashes or old text required.",
-		parameters: Type.Object({ path: Type.String(), changes: Type.Record(Type.String(), Type.String()) }),
-		async execute(_id, { path, changes }, signal, _update, ctx) {
+		label: "edit (guarded lines)",
+		promptSnippet: "Replace lines with changes, or insert/delete/replace ranges with splices; harness checks freshness.",
+		description: "Read first. Supply exactly one of changes (1-based line-number to single-line text) or splices ([{start, deleteCount, lines}]). A splice replaces deleteCount lines starting at 1-based start with lines; count 0 inserts before start, empty lines deletes, start=total+1/count=0 appends. All coordinates refer to the pre-edit file; overlapping splices or duplicate starts are refused. Strings must contain no CR, LF or NUL. No hashes or old text required: harness refuses missing/stale snapshots. Changes preserve original terminators and cannot blank an unterminated final row. Splices use the first file terminator (else LF) for new rows; preserve final-newline presence except an empty final row needs a terminator. Empty files gain LF-terminated rows. After any splice changes row positions, reread before another edit (even when total line count stays equal).",
+		parameters: Type.Object({
+			path: Type.String(),
+			changes: Type.Optional(Type.Record(Type.String(), Type.String())),
+			splices: Type.Optional(Type.Array(Type.Object({
+				start: Type.Integer({ minimum: 1 }),
+				deleteCount: Type.Integer({ minimum: 0 }),
+				lines: Type.Array(Type.String()),
+			}), { minItems: 1 })),
+		}),
+		// Stock edit rendering expects oldText/newText and otherwise hides success text.
+		renderShell: "default",
+		renderCall(args, theme) {
+			return new Text(theme.fg("toolTitle", theme.bold("edit (lines) ")) + JSON.stringify(args.path ?? ""), 0, 0);
+		},
+		renderResult(output, _options, theme, context) {
+			const text = output.content.filter(item => item.type === "text").map(item => item.text).join("\n");
+			return new Text(theme.fg(context.isError ? "error" : "toolOutput", text), 0, 0);
+		},
+		async execute(_id, { path, changes, splices }, signal, _update, ctx) {
+			if ((changes === undefined) === (splices === undefined)) throw new Error("Provide exactly one of changes or splices.");
 			const target = filePath(ctx.cwd, path);
 			const startedEpoch = epoch;
 			return withFileMutationQueue(target, async () => {
@@ -104,16 +123,52 @@ export default function lineFileTools(pi: ExtensionAPI) {
 						snapshots.delete(target);
 						throw new Error("File changed since your last read or successful edit. No edits applied. Reread the file and reconsider the line numbers.");
 					}
-					const entries = Object.entries(changes);
-					if (!entries.length) throw new Error("Provide at least one line replacement.");
-					for (const [key, text] of entries) {
-						const line = Number(key);
-						if (!/^[1-9]\d*$/.test(key) || !Number.isSafeInteger(line) || line > rows.length) throw new Error(`Invalid line number: ${key}. File has ${rows.length} lines.`);
-						if (/[\r\n\0]/.test(text) || !text.isWellFormed()) throw new Error(`Line ${key}: replacement must be well-formed Unicode with no CR, LF, or NUL.`);
-						if (text === "" && rows[line - 1].eol === "") throw new Error(`Line ${key}: cannot blank an unterminated final line without deleting it. Use a complete-file write instead.`);
-						rows[line - 1].text = text;
+					let updatedRows = rows;
+					let positionsChanged = false;
+					let operationCount = 0;
+					if (changes !== undefined) {
+						const entries = Object.entries(changes);
+						if (!entries.length) throw new Error("Provide at least one line replacement.");
+						operationCount = entries.length;
+						for (const [key, text] of entries) {
+							const line = Number(key);
+							if (!/^[1-9]\d*$/.test(key) || !Number.isSafeInteger(line) || line > rows.length) throw new Error(`Invalid line number: ${key}. File has ${rows.length} lines.`);
+							if (/[\r\n\0]/.test(text) || !text.isWellFormed()) throw new Error(`Line ${key}: replacement must be well-formed Unicode with no CR, LF, or NUL.`);
+							if (text === "" && rows[line - 1].eol === "") throw new Error(`Line ${key}: cannot blank an unterminated final line without deleting it. Use splices instead.`);
+							rows[line - 1].text = text;
+						}
+					} else {
+						if (!splices?.length) throw new Error("Provide at least one splice.");
+						const ordered = [...splices].sort((a, b) => a.start - b.start);
+						const eol = rows.find(row => row.eol)?.eol ?? "\n";
+						const finalEol = rows.at(-1)?.eol ?? eol;
+						const segments: typeof rows[] = [];
+						let cursor = 0;
+						let previousStart = 0;
+						for (const { start, deleteCount, lines } of ordered) {
+							if (!Number.isSafeInteger(start) || start < 1 || start > rows.length + 1 || !Number.isSafeInteger(deleteCount) || deleteCount < 0 || deleteCount > rows.length - start + 1) throw new Error("Splice is outside the file. Use start 1..total+1 and a valid nonnegative deleteCount.");
+							if (start === previousStart || start - 1 < cursor) throw new Error("Splices overlap or share a start. Combine them into one splice.");
+							if (!deleteCount && !lines.length) throw new Error("An empty insertion is not an edit.");
+							for (const text of lines) {
+								if (/[\r\n\0]/.test(text) || !text.isWellFormed()) throw new Error("Splice lines must be well-formed Unicode with no CR, LF, or NUL.");
+							}
+							segments.push(rows.slice(cursor, start - 1), lines.map(text => ({ text, eol })));
+							cursor = start - 1 + deleteCount;
+							previousStart = start;
+							positionsChanged ||= lines.length !== deleteCount;
+						}
+						segments.push(rows.slice(cursor));
+						updatedRows = segments.flat();
+						for (let i = 0; i < updatedRows.length; i++) {
+							const row = updatedRows[i];
+							// Only an appended-after old final row can lack an interior separator.
+							if (i < updatedRows.length - 1) row.eol ||= eol;
+							else if (!finalEol && row.text !== "") row.eol = "";
+							else row.eol ||= eol;
+						}
+						operationCount = splices.length;
 					}
-					const updated = Buffer.from(bom + rows.map(row => row.text + row.eol).join(""));
+					const updated = Buffer.from(bom + updatedRows.map(row => row.text + row.eol).join(""));
 					if (updated.length > MAX_BYTES) throw new Error("Edited file would exceed 4 MiB.");
 					// Invalidate before any write, including failures/partial writes.
 					snapshots.delete(target);
@@ -124,8 +179,10 @@ export default function lineFileTools(pi: ExtensionAPI) {
 						offset += written;
 					}
 					ftruncateSync(fd, updated.length);
-					snapshots.set(target, hash(updated));
-					return result(`Replaced ${entries.length} line(s). Harness snapshot updated.`);
+					// Queued calls may still carry pre-splice coordinates. Require a new read
+					// after any positional change, including net-zero delete/insert batches.
+					if (!positionsChanged) snapshots.set(target, hash(updated));
+					return result(`Applied ${operationCount} ${changes !== undefined ? "line replacement(s)" : "splice(s)"}. ${rows.length} -> ${updatedRows.length} lines. ${positionsChanged ? "Line positions changed; read again before the next edit." : "Harness snapshot updated."}`);
 				} finally { closeSync(fd); }
 			});
 		},
