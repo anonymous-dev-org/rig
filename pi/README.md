@@ -106,6 +106,35 @@ already be available; this sync does not install packages or browsers. The brows
 profile does not preserve login sessions after closing; it is **not** an OS/network
 security sandbox. Do not expose untrusted pages to privileged secrets casually.
 
+## Numbered read and guarded edit
+
+Full Pi sync deploys `extensions/line-file-tools/index.ts` as the default `read`
+and `edit` implementation. Text reads return numbered lines with inclusive
+`start/end` ranges. Edits use a line-number mapping or `splices` for inserting,
+deleting and replacing ranges; the harness checks a private full-file hash,
+so the model supplies neither hashes nor repeated old text. Read again after
+position-changing edits or a freshness error. Stock `write` and `bash` remain
+available and are not protected by this check.
+
+Supported images go through Pi's stock image processing and return attachments;
+codemode receives the stock image object or a numbered text string. This is not
+full stock API compatibility: text is bounded to regular UTF-8 files up to 4 MiB
+and 50 KiB of output, and old `offset/limit` or `oldText/newText` scripts need
+updating. See [usage, limits and rollback](packages/line-file-tools/README.md).
+
+The JSON-only settings sync does not install this extension. After full sync,
+restart Pi in a new session; do not also load an explicit copy with `-e`.
+To try it before deployment:
+
+```sh
+pi --no-extensions -e /path/to/rig/pi/.pi/agent/extensions/line-file-tools/index.ts
+```
+
+For a temporary stock-tools session, run `pi --no-extensions` (all automatic
+extensions are disabled). To roll back just this extension, move its installed
+directory outside `~/.pi/agent/extensions/` and restart; preserve the moved copy
+without overwriting another path. Full sync restores managed files on the next run.
+
 ## Council advisors
 
 Council mode uses exactly two managed profiles: `council-astra` with
