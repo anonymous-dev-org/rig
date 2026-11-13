@@ -131,7 +131,9 @@ Split any Bash command that would need a timeout longer than 3 minutes (180 seco
 
 A long-running command is not automatically wasteful. Waiting for a required build, test, or deployment to finish is valid; optimize redundant work and delays in noticing completion, not away the verification itself.
 
-- Search known paths and file types first. Avoid whole-repository or whole-machine scans unless narrower searches cannot answer the question.
+- Search known paths and file types first. Use paths returned by tools, skill metadata, and known package locations before searching for their files. Expand the scope only when narrower searches cannot answer the question.
+- To discover applicable `AGENTS.md` instructions, check the current directory and its ancestors directly, then check the relevant subtree for more-specific instructions. Do not use recursive `find ..` to scan sibling worktrees for instructions.
+- Exclude irrelevant directories before traversing or reading them. With `find`, use `-prune`; with recursive search tools, use directory exclusions. `find -not -path` and piping results through `grep -v` only filter output, not traversal. `head` limits output, not the work needed to find matches. Exclude dependencies, generated files, and unrelated worktrees only when they are outside the required search scope.
 - Batch small independent inspections when useful, but keep dependent operations in order and preserve each command's failure status. Do not rerun checks whose results are still valid.
 - Before sleeping, check whether the exact job, pipeline, commit, or process being observed has already finished. Prefer a supported completion wait or bounded condition polling over a blind delay followed by a status check. Keep fixed delays when a settling or observation period is actually required.
 - Give polling an explicit deadline, bound individual status requests, and stop promptly on success or relevant failure. If the deadline expires, report unfinished work distinctly and return a nonzero status when the command is intended to verify success. A successful final sleep or log command must not turn an unfinished or failed job into success.
