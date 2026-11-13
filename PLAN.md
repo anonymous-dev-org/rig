@@ -1,11 +1,15 @@
 # Overview
-- Goal: agent messages come out short and explain the one or two ideas that matter, with a diagram for flows, instead of long item lists that retell the plan.
-- Cause found in the Lira session (gpt-6.1-sol, current AGENTS.md loaded): six lines in `pi/.pi/agent/AGENTS.md` each add required content to the final message, section 6 says longer is better, teaching is a per-item template, and diagrams are never mentioned.
-- Scope: `pi/.pi/agent/AGENTS.md` only. Not deployed to `~/.pi/agent` and not merged; both need the user's go-ahead.
-- Decision: technical debt and suggestions now live in `PLAN.md`; the message carries only items the user must act on, plus a one-line pointer saying what is waiting in the plan. This reverses the earlier rule to walk through all debt in the final message.
-- Not tested against a model: a faithful test is a full agent session on the user's subscription. The next real session is the test.
+- Goal: persist an exactly-two council roster in rig's managed Pi configuration: Astra 6 and Fable 5.2.
+- Scope: advisor profiles, managed instructions, and a short usage note. No home deployment or model requests.
+- Main was clean and up to date with origin/main; .local is ignored; changes isolated on config/council-models.
+- Exact model IDs verified against the current subagent model registry.
 
 # Todos
-- [x] Final message has one definition and teaching is a selection.
-  - Requirement: scattered "mention in the final message" lines point to `PLAN.md`; section 6 defines message contents per message type, asks for depth on one or two ideas in prose, asks for a mermaid diagram for flows, and covers hedging and coined labels; the "longer is better" override is gone.
-  - Definition of done: no instruction outside section 6 adds content to the final message; file reads consistently end to end; committed on `docs/agents-final-message`.
+- [x] Council configuration pins two independent read-only advisors.
+  - Requirement: council-astra uses openai/gpt-6-astra; council-fable uses pi-sub-anthropic/claude-fable-5-2; fresh context, no inherited skills; no substitutions without permission.
+  - Definition of done: profiles and instruction agree, deployment includes new profiles, diff checks and independent review pass; committed.
+  - Deployment uses an explicit manifest, not automatic discovery; added both profiles to scripts/rig.mjs.
+  - Verified: node --check scripts/rig.mjs, git diff --check, and throwaway assertions for both model IDs, fresh context, read-only allowlists, and manifest entries.
+  - Existing sync tests on unchanged main: 41/43 pass; failures expect the removed Playwright --headless flag and missing init.sh. Unrelated baseline debt, left unchanged.
+  - Independent scout review passed: profiles, roster and manifest agree. Reviewer had no command tool; parent performed diff, syntax and targeted checks.
+  - Activation: merge and full Pi sync followed by reload; narrow JSON sync does not deploy these assets. Changes committed on config/council-models; merge and deployment await approval.
