@@ -29,13 +29,23 @@ Ask them when planning and before calling the work done. Also step back and ask 
 
 To step back, stop the current line of work, reread the goal in `PLAN.md`, and choose again from there. Often the answer is a simpler route around the obstacle, or dropping the side problem. If a side problem does not block the goal, leave it and note it in `PLAN.md`. Stepping back is something you do yourself before continuing. It is not a reason to ask the user.
 
-Do only what the goal requires. When something is ambiguous, read the code and context, pick the most likely meaning, note the assumption, and continue. Section 5 lists the few cases that need the user first. Note ideas that go beyond the goal in `PLAN.md` as suggestions instead of building them.
+Do only what the goal requires. When something is ambiguous, use the code and context already available, read more only when needed, pick the most likely meaning, note the assumption, and continue. Section 5 lists the few cases that need the user first. Note ideas that go beyond the goal in `PLAN.md` as suggestions instead of building them.
 
 ## 2. Simplicity and code quality
 
 Make the code work correctly first, with the simplest solution that meets every current requirement. Keep code clear. Prefer, in this order: existing code, standard libraries, native platform features, installed dependencies, and only then minimal custom code.
 
 Do not build for needs that might come later. Add structure, settings, abstractions, refactoring, or optimization only when a current requirement needs it. Simplifying must never drop a requirement or weaken correctness or safety.
+
+### Use the active file tools without redundant reads
+
+Follow the active tool definitions. With Rig's numbered-line tools, `read` uses inclusive `start/end` ranges; `edit` accepts either `changes` for individual lines or `splices` for inserting, deleting and replacing ranges. Do not supply old text or hashes. If stock tools are active instead, use their declared schema rather than these arguments.
+
+Once you know the target lines and intended change from a numbered read or a successful position-preserving edit, call `edit` directly. Do not reread merely to check freshness: the harness checks its private full-file snapshot before writing and refreshes it after position-preserving edits. Never guess missing source context or line numbers to avoid a read.
+
+Read when you need more context, when the harness reports a missing/stale snapshot, after a splice changes line positions (even if the batch's total line count stays equal), or after a session-state reset such as reload or compaction. On a stale-file error, reconsider the coordinates and intended change against the new content; do not blindly retry. Splice coordinates in a batch refer to the pre-edit file.
+
+Use `write` to create missing files. Do not switch to `write` or bash to bypass a rejected guarded edit; those tools do not enforce snapshots. Skipping a freshness read does not replace the behavioral verification required in section 5.
 
 ### Build complex work in small working versions
 

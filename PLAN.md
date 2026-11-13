@@ -6,6 +6,10 @@
 - Stock write/bash remain available and outside freshness protection. Snapshots are optimistic filesystem protection, not a sandbox or external-writer transaction.
 
 # Todos
+- [x] Align managed Pi instructions with guarded line tools.
+  - Requirement: audit pi/.pi/agent/AGENTS.md; explicitly prefer direct edits from known numbered context, retain necessary rereads and behavioral verification, and respect whichever tool schema is active. No live config changes.
+  - Definition of done: whole-file consistency review, independent wording review, diff check and commit. Continue existing worktree; main pulled/current and .local ignored.
+  - Parent reviewed the entire instruction file against the active tool contract. Reworded ambiguity handling to reuse available context; added a scoped tool-usage section preserving stock-schema fallback and behavioral verification. Existing PLAN rereads concern goal drift, not source freshness, and remain appropriate. Managed inventory already deploys this AGENTS.md; diff check passed. Independent full-file consistency review ff239e76 accepted with no blockers; documentation review only, no runtime checks needed for this instructions-only change. Live home copy unchanged.
 - [x] Avoid redundant pre-edit reads.
   - Requirement: tell the model to edit directly from known numbered content, trusting the harness freshness check instead of rereading just to check freshness. Retain missing/stale snapshot, lifecycle and position-shift guards; read when context is needed. No runtime safety changes.
   - Definition of done: inspect loaded prompt metadata, check edit guard paths remain unchanged, independent wording review, commit. No paid model runs; behavior guidance is not a guarantee of model compliance.
