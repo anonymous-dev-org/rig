@@ -6,6 +6,11 @@
 - Stock write/bash remain available and outside freshness protection. Snapshots are optimistic filesystem protection, not a sandbox or external-writer transaction.
 
 # Todos
+- [x] Avoid redundant pre-edit reads.
+  - Requirement: tell the model to edit directly from known numbered content, trusting the harness freshness check instead of rereading just to check freshness. Retain missing/stale snapshot, lifecycle and position-shift guards; read when context is needed. No runtime safety changes.
+  - Definition of done: inspect loaded prompt metadata, check edit guard paths remain unchanged, independent wording review, commit. No paid model runs; behavior guidance is not a guarantee of model compliance.
+  - Continue in the existing task worktree; main pulled and current. User tested the extension successfully; live installation remains outside this change.
+  - Verified actual extension loader exposes direct-edit snippet/guidelines/description and recovery rules without local dependencies; edit execution is byte-identical to 5a61495. Installed system-prompt builder incorporates active tool guidelines. Diff check passes. Disposable inline check left no files. Independent wording review 1e25823f accepted with no blockers; no reviewer baseline diff or behavioral model trial. Parent verified unchanged execution directly.
 - [x] Support ordinary text edits with harness-owned freshness.
   - Requirement: keep existing changes mapping; add explicit line splices for insertion, deletion and range replacement, including empty files. One mode per call; all coordinates refer to pre-edit file, overlaps/ambiguous duplicate starts refused. No old text or model hashes.
   - Requirement: preserve original untouched bytes/terminators except necessary boundary separators; retain full-file stale/missing/lifecycle checks, all-before-write validation, 4MiB cap and queue. Clearly report line-count changes so next calls use current coordinates.

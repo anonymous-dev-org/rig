@@ -22,6 +22,8 @@ read({ path: "file.ts", start: 50, end: 150 })
 edit({ path: "file.ts", changes: { "50": "new source text", "72": "other source text" } })
 ```
 
+Once the target lines and intended change are known from a numbered read, **call edit directly**. Do not reread merely to check whether the file changed: the harness checks that before writing. Successful position-preserving edits refresh the snapshot, so further edits can also proceed directly. Read when more source context is needed, after a position-changing splice/session reset, or when edit reports a missing/stale snapshot. After a stale-file error, reconsider the edit against the newly read content rather than blindly retrying.
+
 Read ranges are inclusive and 1-based; default is 1–200. An end beyond EOF is clamped. An empty file has zero lines. `changes` replaces existing lines without shifting positions: each value is exactly one line with no CR/LF. `""` blanks a terminated line. Blanking an unterminated final line with `changes` is refused because it would remove that physical line; use a splice instead.
 
 ## Insert, delete, or replace a range
