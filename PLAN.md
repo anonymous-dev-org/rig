@@ -1,4 +1,6 @@
 # Overview
+- Current task: council review of the complete `pi/.pi/agent/AGENTS.md` for clear, simple, unambiguous wording, preserving safety and the user's workflow preferences. Earlier tool-integration notes below are inherited history.
+- Continue existing `docs/bash-wait-guidelines` worktree; no merge or global installation. Council: exactly council-astra (openai/gpt-6-astra) and council-fable (pi-sub-anthropic/claude-fable-5-2), both fresh; at most two passes, no substitutions.
 - Goal: make harness-managed numbered-line tools a practical replacement for stock Pi read/edit, without exposing hashes or repeating old blocks.
 - Main pulled clean/up to date; .local ignored. New feat/line-tools-default worktree branches from completed prototype/benchmark commit8413562. Prior worktrees/evidence remain unchanged.
 - Build in working versions. Guarded splices handed over as d2002d8; user approved image compatibility and managed-default integration. Reuse this task worktree for the next version; main pulled again and already current. No live/global installation, merge, paid benchmark calls or installed-Pi patches in this version.
@@ -6,6 +8,16 @@
 - Stock write/bash remain available and outside freshness protection. Snapshots are optimistic filesystem protection, not a sandbox or external-writer transaction.
 
 # Todos
+- [ ] Simplify and clarify the final agent instructions with council review.
+  - Requirement: both advisors independently inspect the full file, read-only; resolve material ambiguity with at most one cross-exam. Parent applies only justified wording changes, without new workflow machinery or weakening verification.
+  - Definition of done: council findings and decisions recorded here, complete-file consistency check and `git diff --check` pass, changes committed.
+  - Brief: review all sections, especially new search, batching, output and waiting guidance; identify duplication, conflicting obligations, and unclear exceptions. Non-goals: further performance analysis, runtime/tool changes, policy redesign, or live configuration updates.
+  - Council pass 1 (workflow c3b15989): council-astra run 3cd53330, council-fable run 714c4c62; both fresh, read-only, completed. No pass 2: no dispute that advisor evidence could settle; the open items are owner decisions.
+  - Applied (both advisors, or one with no objection, no policy change): moved the tool guidance out of section 5 verification into section 2 as "Use tools efficiently"; moved the 180-second rule into its command subsection and kept its existing exception for jobs that cannot be split; one rule each for incomplete evidence, masked exit status, and reruns; read tool for source text versus `jq` for JSON; "same turn" batching wording; shell commands marked as examples; log location under `.local/`; "approved deployment"; setup steps need no approval but risky adaptations still ask; notes go in the final message when no `PLAN.md` exists.
+  - Decision: kept the long-command rule as "may take longer" instead of Fable's background-job wording, because the old text already allowed it ("unless there is no feasible way") and backgrounding would be new policy.
+  - Not applied: reordering the verification list (Fable 8) and rewording Finish for versions (Astra P3); both are the user's earlier wording and section 5's first paragraph already covers versions. Astra's "resolve instructions before setup" ordering sentence; the move to section 2 removes the ambiguity it addressed.
+  - Waiting on the user (changes policy, not wording): (1) say that ordinary edits to existing files are not "overwriting" in the ask-first list; (2) upper bound of the `AGENTS.md` ancestor check; (3) exempt small known lookups from "use subagents whenever"; (4) state that read-only questions and reviews need no worktree or `PLAN.md`.
+  - Shortcoming: the file is about 3% longer (3,414 to 3,533 words); duplication went down but five clarifying sentences were added.
 - [x] Align managed Pi instructions with guarded line tools.
   - Requirement: audit pi/.pi/agent/AGENTS.md; explicitly prefer direct edits from known numbered context, retain necessary rereads and behavioral verification, and respect whichever tool schema is active. No live config changes.
   - Definition of done: whole-file consistency review, independent wording review, diff check and commit. Continue existing worktree; main pulled/current and .local ignored.

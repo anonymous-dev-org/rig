@@ -47,6 +47,54 @@ Read when you need more context, when the harness reports a missing/stale snapsh
 
 Use `write` to create missing files. Do not switch to `write` or bash to bypass a rejected guarded edit; those tools do not enforce snapshots. Skipping a freshness read does not replace the behavioral verification required in section 5.
 
+### Use tools efficiently
+
+These rules cut wasted tool time. They never justify skipping evidence or verification that the task requires.
+
+#### Find instructions and files without scanning unrelated trees
+
+Choose the smallest search that can answer the question. The shell commands below are examples; a harness search tool with the same scope and exclusions is equally fine.
+
+1. **Use known locations first.** Use paths already given by the harness, tool results, skill metadata, or package configuration. Do not search the home directory for a skill or subagent artifact whose path you already have.
+2. **Find instructions by ancestry.** Use the instructions already supplied in context. Check for further `AGENTS.md` files in each directory on the current worktree's ancestor path, without walking down into those directories. Before editing a file, check the directories between the worktree root and that file for more specific instructions, and reuse checks you have already made. Never run `find ..` or search sibling worktrees to find instructions.
+3. **List paths before searching contents.** When you know a filename or extension but not the path, list matching paths first: `git ls-files -- '<pathspec>'` for tracked files, or `rg --files <directory> -g '<glob>'` for files that ripgrep's ignore rules leave visible. Neither lists ignored files, and the first lists no untracked ones, so an empty result does not prove a file is absent. Check instruction-file paths directly.
+4. **Search contents in the likely owner.** Start in the relevant package or directory and widen one level at a time. Use `rg -l` when you only need filenames, `rg -n` for matching lines, and `rg -F` for literal text. Leave out dependencies, generated output, and other worktrees unless the question is about them.
+5. **Prune before traversal.** Use `find ... -prune` or the search tool's directory exclusions. `find -not -path` and `grep -v` only hide results after the directory has been walked, and `head` limits what is shown, not the work done.
+6. **Narrow a failed search before retrying.** After a timeout, permission error, or truncated result, narrow the root, prune more, or use a known location. Do not just raise the timeout on a scan of the home directory or of sibling worktrees. Search that broadly only when the task needs that coverage.
+
+#### Batch independent reads without overfetching
+
+File reads are fast. Returning to the model between reads usually costs far more than the reads themselves.
+
+- Before reading, work out which files or ranges you already know you need, and request those independent reads in the same turn, with parallel tool calls or the harness's batching tool. Keep each result and check each one for failure.
+- Use the read tool for source and instruction text, not shell commands such as `cat` or `sed`.
+- Read a whole function or section with the context needed to understand it, not a series of small adjacent fragments. Respect output limits, and do not read a whole large file when a section answers the question.
+- Read one at a time when a result decides the next path or range, or contains instructions that govern later work. Do not guess paths or load unrelated files to save a call.
+- Reuse content you already have while it is still valid. The reread rules in "Use the active file tools without redundant reads" still apply.
+
+#### Ask for the output the question needs
+
+- Before a call, decide what you need: filenames, matching source sections, selected fields, a change summary, or complete evidence. Ask for that form directly instead of printing everything and relying on truncation.
+- Use a filename listing or a diff summary to find the scope when it is unknown, then inspect the source or patch itself. Skip the listing step when you already know the path. A summary never replaces reading the full change when a full review is required.
+- Treat JSON and JSONL as data. For a narrow question, select the records and fields with `jq` or a short parser instead of printing whole objects or whole JSONL lines. Keep the full payload when completeness or failure diagnosis needs it. Leave session history out of implementation searches unless the history is the subject.
+- For an operation with long output, such as a build or test run, save the full output to a log under the worktree's ignored `.local/` and print the exit status, a short result, the log path, and the relevant diagnostics. On failure, read the log around the error; the last lines often do not contain the cause.
+- Truncated output, a timeout, or a permission error means incomplete evidence. Narrow or page through the result before making a claim that needs full coverage. Never conclude "no errors", "no other matches", or "the file does not exist" from an incomplete result.
+
+#### Run commands and wait for completion
+
+Waiting for a required build, test, or approved deployment to finish is valid work. Cut redundant work and delays in noticing completion, not the wait itself.
+
+- Split separable work so that each Bash call needs at most 3 minutes (180 seconds). A single job that cannot be split, such as one build or test suite, may take longer. Do not rerun, shrink, or skip a required check to fit the limit.
+- Batch small independent inspections in one call, keep dependent steps in order, and keep each command's failure visible.
+- Do not rerun a check whose result is still valid, and do not rerun an operation only to see its output in another form; inspect the saved log.
+- The reported status must be the operation's own. A trailing `tail`, `grep`, `sleep`, or log command must not turn a failed or unfinished job into success.
+- Before sleeping, check whether the exact job, pipeline, commit, or process has already finished. Prefer a supported completion wait or bounded polling of a condition over a fixed delay followed by a status check. Use a fixed delay only when a settling or observation period is really required.
+- Give polling a deadline and a timeout on each status request, and stop as soon as the job succeeds or fails. If the deadline passes, report the job as unfinished and exit nonzero when the command is meant to verify success.
+- If a required check never finishes, continue with the work that does not depend on it and report the check as unfinished, not as passed.
+- Confirm the real result. A process that has exited, or an exit file that exists, does not prove success: read the exit status and the required job results, including relevant downstream jobs.
+- Pick a polling interval that balances detection delay against API load. Run one watcher per job. Fetch detailed logs and job trees on failure, completion, or a meaningful change, not on every unchanged poll, unless the task needs continuous inspection.
+- Wait with existing tools. Do not build a job framework or move work to the background just to make Bash durations look shorter.
+
 ### Build complex work in small working versions
 
 When a task has several parts, do not build them all together:
@@ -66,7 +114,7 @@ Before planning or implementation:
 2. Ensure `.local/` is ignored by Git.
 3. Create a worktree on a task branch under `<repository-root>/.local/worktrees/`. Keep all plans and edits in that worktree, not the main checkout.
 
-If a step cannot run as written, for example because there is no remote or the main checkout has uncommitted changes, adapt it in the way that best keeps the main checkout untouched, and continue. Note what you did in `PLAN.md`.
+These steps are part of the normal workflow and need no approval. If a step cannot run as written, for example because there is no remote or the main checkout has uncommitted changes, adapt it in the way that best keeps the main checkout untouched, and continue. Note what you did in `PLAN.md`. If the only way forward is a risky action listed in section 5, ask first.
 
 Use subagents whenever part of the work can be explored or implemented separately, or when an independent review would help. Work alone only when neither applies.
 
@@ -74,7 +122,7 @@ After the branch is merged, remove its worktree with `git worktree remove <workt
 
 ## 4. Plan and track
 
-Before implementation, create or update the single `PLAN.md` at the worktree root. Never create other plan files in that worktree. Skip `PLAN.md` only for mechanical edits where the result is known in advance and nothing needs investigating or deciding.
+Before implementation, create or update the single `PLAN.md` at the worktree root. Never create other plan files in that worktree. Skip `PLAN.md` only for mechanical edits where the result is known in advance and nothing needs investigating or deciding. When there is no `PLAN.md`, put anything these instructions tell you to note in it into the final message instead.
 
 Write `PLAN.md` as brief working notes, not a report: short bullets, direct wording, only what is needed to do and track the current task. Update existing entries instead of appending history, and remove details that no longer apply.
 
@@ -125,49 +173,6 @@ Verify in the cheapest way that gives real confidence:
 
 The user has repeatedly seen a simple case that could be tried by hand in a minute turn into a full test suite with fixtures, mocks, and helpers. That costs more time than the change itself and leaves code nobody asked for. Write test files, fixtures, or test infrastructure that stay in the repository only when the user asks for them. If you believe a change really deserves lasting tests, note that in `PLAN.md` as a suggestion instead of writing them.
 
-Split any Bash command that would need a timeout longer than 3 minutes (180 seconds) into smaller commands, unless there is no feasible way to do so.
-
-### Run commands and wait efficiently
-
-A long-running command is not automatically wasteful. Waiting for a required build, test, or deployment to finish is valid; optimize redundant work and delays in noticing completion, not away the verification itself.
-
-#### Discover instructions and files without scanning unrelated trees
-
-Choose the smallest search that can answer the current question. A search that times out is incomplete, not evidence that the file does not exist.
-
-1. **Use known locations first.** Use paths already supplied by the harness, tool results, skill metadata, or package configuration. Do not search the home directory for a skill or subagent artifact whose location is already available.
-2. **Resolve instructions by ancestry.** Use applicable instructions already supplied in context. Check for additional `AGENTS.md` files at each directory on the current worktree's ancestor path, without recursively walking those directories. Before editing a target, check the directories between the worktree root and that target for more-specific instructions. For several targets, reuse shared ancestor checks. Do not use `find ..` or search sibling worktrees for applicable instructions.
-3. **Match discovery to the question.** If the filename or extension is known, discover matching paths before searching contents. Use `git ls-files -- '<pathspec>'` when only tracked files matter, or `rg --files <directory> -g '<glob>'` for files visible under ripgrep's normal ignore rules. These commands are not proof that an ignored or untracked file does not exist. In particular, check instruction-file paths directly rather than relying only on a tracked-file list.
-4. **Search contents within the likely owner.** Start with the relevant package or directory, then expand one level at a time if necessary. Use `rg -l` when only filenames are needed, `rg -n` for matching lines, and `rg -F` for literal text. Do not scan dependencies, generated output, or other worktrees unless the question requires them.
-5. **Prune before traversal.** For filesystem searches, use `find ... -prune` or the search tool's directory exclusions to avoid irrelevant trees. `find -not -path` filters matches but does not prevent descent; piping results through `grep -v` excludes paths only after the work is done. `head` limits displayed output, not the work required to find matches.
-6. **Change failed searches rather than repeating them.** After a timeout, permission error, or truncated output, distinguish incomplete coverage from no matches. Narrow the root, prune irrelevant directories, or use a known index/location before retrying. Do not simply raise the timeout on a whole-home or sibling-worktree scan. Expand broadly only when the task genuinely requires that coverage.
-
-#### Batch independent reads without overfetching
-
-File reads are usually fast; returning to the model between each read can cost much more than the reads themselves.
-
-- Before reading, identify the small set of files or ranges already known to be necessary for the current question. Fetch independent reads together using the available batching tool, while retaining each result and checking individual failures. Continue using the designated file-read tool rather than replacing it with shell reads.
-- Read a coherent function or section with the surrounding context needed to understand it, rather than repeatedly requesting tiny adjacent fragments. Combine nearby ranges when useful, but respect output limits and do not fetch whole large files unnecessarily.
-- Keep reads sequential when one result determines the next path or range, or supplies instructions that govern subsequent work. Do not guess locations or preload unrelated files merely to reduce call count.
-- Reuse context already available when it remains valid. Batching does not override the freshness and reread rules for guarded edits, source changes, or session resets.
-
-#### Choose output for the question
-
-- Before calling a tool, decide whether you need filenames, matching source sections, selected structured fields, a change summary, or complete evidence. Request that form directly instead of producing everything and relying on truncation.
-- Keep discovery and review distinct. Use filename discovery or a diff summary when the relevant scope is unknown; once it is known, inspect the required source or patch directly. Do not add a discovery call when the path is already known. Summaries do not replace reviewing the full changes when full review is required.
-- Treat JSON and JSONL as structured data. For narrow questions, select the relevant records and fields with an existing tool such as `jq` or a short parser rather than printing entire objects or matching whole JSONL lines. Preserve full payloads when completeness or failure diagnosis requires them. Exclude session history from implementation searches unless history is the subject.
-- For noisy operations, preserve full output in a task-local log when appropriate and return the actual exit status, a concise result, the log path, and relevant diagnostics. Inspect the saved log around a failure instead of assuming its last lines contain the cause. A final `tail` or `grep` must not mask the operation's failure; do not rerun an operation merely to change its output presentation.
-- Treat truncated output as incomplete evidence. Narrow or page through the result before making claims that require complete coverage. Never infer "no errors" or "no other matches" from a truncated excerpt.
-
-#### Execute commands and observe completion
-
-- Batch small independent inspections when useful, but keep dependent operations in order and preserve each command's failure status. Do not rerun checks whose results are still valid.
-- Before sleeping, check whether the exact job, pipeline, commit, or process being observed has already finished. Prefer a supported completion wait or bounded condition polling over a blind delay followed by a status check. Keep fixed delays when a settling or observation period is actually required.
-- Give polling an explicit deadline, bound individual status requests, and stop promptly on success or relevant failure. If the deadline expires, report unfinished work distinctly and return a nonzero status when the command is intended to verify success. A successful final sleep or log command must not turn an unfinished or failed job into success.
-- Verify the actual result: process disappearance or an exit-file's existence is not proof of success. Read the exit status and required job results, including relevant downstream jobs.
-- Choose polling intervals to balance completion-detection delay against API load. Avoid duplicate watchers for the same job. Fetch detailed logs and job trees on failure, completion, or meaningful changes rather than on every unchanged poll, unless ongoing inspection is required.
-- Keep necessary waits observable and bounded using existing tools. Do not build a new job framework or background work merely to make recorded Bash durations look shorter.
-
 ### Finish
 
 When everything in the plan is done and verified, stop and write the final message as section 6 describes. Follow-up refactoring, optimization, or abstraction work is the user's call, so note it in `PLAN.md` as a suggestion without starting it.
@@ -187,7 +192,7 @@ A final message, or a handover after a version, has these parts in this order:
 1. The outcome in one or two sentences: what works now, or what you found.
 2. What the user needs to do or decide next, if anything, including how to try the result.
 3. An explanation of the one or two ideas most worth understanding, as described below.
-4. The path to `PLAN.md`, with one line saying what is waiting there, such as two suggestions and a known shortcoming.
+4. The path to `PLAN.md`, when there is one, with one line saying what is waiting there, such as two suggestions and a known shortcoming.
 
 It should usually fit on one terminal screen, not counting a diagram. When it does not, drop items instead of shortening the explanation. For a small change, the outcome may be all there is to say.
 
