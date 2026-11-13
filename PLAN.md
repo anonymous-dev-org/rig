@@ -8,7 +8,7 @@
 - Stock write/bash remain available and outside freshness protection. Snapshots are optimistic filesystem protection, not a sandbox or external-writer transaction.
 
 # Todos
-- [ ] Simplify and clarify the final agent instructions with council review.
+- [x] Simplify and clarify the final agent instructions with council review.
   - Requirement: both advisors independently inspect the full file, read-only; resolve material ambiguity with at most one cross-exam. Parent applies only justified wording changes, without new workflow machinery or weakening verification.
   - Definition of done: council findings and decisions recorded here, complete-file consistency check and `git diff --check` pass, changes committed.
   - Brief: review all sections, especially new search, batching, output and waiting guidance; identify duplication, conflicting obligations, and unclear exceptions. Non-goals: further performance analysis, runtime/tool changes, policy redesign, or live configuration updates.
@@ -16,8 +16,8 @@
   - Applied (both advisors, or one with no objection, no policy change): moved the tool guidance out of section 5 verification into section 2 as "Use tools efficiently"; moved the 180-second rule into its command subsection and kept its existing exception for jobs that cannot be split; one rule each for incomplete evidence, masked exit status, and reruns; read tool for source text versus `jq` for JSON; "same turn" batching wording; shell commands marked as examples; log location under `.local/`; "approved deployment"; setup steps need no approval but risky adaptations still ask; notes go in the final message when no `PLAN.md` exists.
   - Decision: kept the long-command rule as "may take longer" instead of Fable's background-job wording, because the old text already allowed it ("unless there is no feasible way") and backgrounding would be new policy.
   - Not applied: reordering the verification list (Fable 8) and rewording Finish for versions (Astra P3); both are the user's earlier wording and section 5's first paragraph already covers versions. Astra's "resolve instructions before setup" ordering sentence; the move to section 2 removes the ambiguity it addressed.
-  - Waiting on the user (changes policy, not wording): (1) say that ordinary edits to existing files are not "overwriting" in the ask-first list; (2) upper bound of the `AGENTS.md` ancestor check; (3) exempt small known lookups from "use subagents whenever"; (4) state that read-only questions and reviews need no worktree or `PLAN.md`.
-  - Shortcoming: the file is about 3% longer (3,414 to 3,533 words); duplication went down but five clarifying sentences were added.
+  - User approved all four policy clarifications, now applied: ordinary in-scope edits are not "overwriting" (deleting a file or replacing its whole content still asks); the `AGENTS.md` ancestor check stops at the repository root; a few known reads or searches are done directly, not delegated; read-only questions and reviews need no worktree or `PLAN.md`.
+  - Shortcoming: the file is longer than before the review (3,414 words before); duplication went down but clarifying sentences were added. Not merged or installed globally; that needs the user's go-ahead.
 - [x] Align managed Pi instructions with guarded line tools.
   - Requirement: audit pi/.pi/agent/AGENTS.md; explicitly prefer direct edits from known numbered context, retain necessary rereads and behavioral verification, and respect whichever tool schema is active. No live config changes.
   - Definition of done: whole-file consistency review, independent wording review, diff check and commit. Continue existing worktree; main pulled/current and .local ignored.

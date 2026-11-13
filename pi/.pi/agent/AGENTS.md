@@ -56,7 +56,7 @@ These rules cut wasted tool time. They never justify skipping evidence or verifi
 Choose the smallest search that can answer the question. The shell commands below are examples; a harness search tool with the same scope and exclusions is equally fine.
 
 1. **Use known locations first.** Use paths already given by the harness, tool results, skill metadata, or package configuration. Do not search the home directory for a skill or subagent artifact whose path you already have.
-2. **Find instructions by ancestry.** Use the instructions already supplied in context. Check for further `AGENTS.md` files in each directory on the current worktree's ancestor path, without walking down into those directories. Before editing a file, check the directories between the worktree root and that file for more specific instructions, and reuse checks you have already made. Never run `find ..` or search sibling worktrees to find instructions.
+2. **Find instructions by ancestry.** Use the instructions already supplied in context. Check for further `AGENTS.md` files in each directory from the worktree root up to the repository root (the main checkout), without walking down into those directories. Before editing a file, check the directories between the worktree root and that file for more specific instructions, and reuse checks you have already made. Never look above the repository root, run `find ..`, or search sibling worktrees to find instructions.
 3. **List paths before searching contents.** When you know a filename or extension but not the path, list matching paths first: `git ls-files -- '<pathspec>'` for tracked files, or `rg --files <directory> -g '<glob>'` for files that ripgrep's ignore rules leave visible. Neither lists ignored files, and the first lists no untracked ones, so an empty result does not prove a file is absent. Check instruction-file paths directly.
 4. **Search contents in the likely owner.** Start in the relevant package or directory and widen one level at a time. Use `rg -l` when you only need filenames, `rg -n` for matching lines, and `rg -F` for literal text. Leave out dependencies, generated output, and other worktrees unless the question is about them.
 5. **Prune before traversal.** Use `find ... -prune` or the search tool's directory exclusions. `find -not -path` and `grep -v` only hide results after the directory has been walked, and `head` limits what is shown, not the work done.
@@ -108,7 +108,7 @@ A working base is easy to build on and easy to review, and when something breaks
 
 ## 3. Worktree and delegation
 
-Before planning or implementation:
+Read-only questions and reviews need no worktree or `PLAN.md`. Before planning or implementing a change:
 
 1. Pull `origin/main` into local `main`.
 2. Ensure `.local/` is ignored by Git.
@@ -116,7 +116,7 @@ Before planning or implementation:
 
 These steps are part of the normal workflow and need no approval. If a step cannot run as written, for example because there is no remote or the main checkout has uncommitted changes, adapt it in the way that best keeps the main checkout untouched, and continue. Note what you did in `PLAN.md`. If the only way forward is a risky action listed in section 5, ask first.
 
-Use subagents whenever part of the work can be explored or implemented separately, or when an independent review would help. Work alone only when neither applies.
+Use subagents whenever part of the work can be explored or implemented separately, or when an independent review would help. Work alone only when neither applies. A few known reads or searches are not separate work; do them directly.
 
 After the branch is merged, remove its worktree with `git worktree remove <worktree-path>`.
 
@@ -159,7 +159,9 @@ Risky means hard to undo, or reaching beyond this worktree:
 - rewriting published Git history or force-pushing;
 - sending something to other people or outside services, or spending money.
 
-Besides this and the handover after each version, the only reason to stop is needing something only the user can supply, such as a credential or access. Finish everything that does not depend on it first.
+Ordinary edits to existing files within the task's scope are not overwriting. Deleting such a file, or replacing its whole content, is.
+
+Besides these risky actions and the handover after each version, the only reason to stop is needing something only the user can supply, such as a credential or access. Finish everything that does not depend on it first.
 
 When you do ask, ask one specific question, say what you recommend and why, and keep going with any work the answer does not affect.
 
