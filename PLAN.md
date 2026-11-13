@@ -1,15 +1,20 @@
 # Overview
-- Goal: persist an exactly-two council roster in rig's managed Pi configuration: Astra 6 and Fable 5.2.
-- Scope: advisor profiles, managed instructions, and a short usage note. No home deployment or model requests.
-- Main was clean and up to date with origin/main; .local is ignored; changes isolated on config/council-models.
-- Exact model IDs verified against the current subagent model registry.
+- Goal: isolated Pi read/edit overrides with numbered ranges and line-to-text replacements; the harness owns hashes and freshness checks.
+- Main pulled clean/up to date; .local ignored; work isolated on feat/line-file-tools.
+- First version replaces existing lines only. No insertion/deletion syntax, installation, model benchmark, or OMP dependency.
+- Hash state is memory-only, cleared on session/navigation/compaction; a fresh read is required afterward. No durable restoration.
 
 # Todos
-- [x] Council configuration pins two independent read-only advisors.
-  - Requirement: council-astra uses openai/gpt-6-astra; council-fable uses pi-sub-anthropic/claude-fable-5-2; fresh context, no inherited skills; no substitutions without permission.
-  - Definition of done: profiles and instruction agree, deployment includes new profiles, diff checks and independent review pass; committed.
-  - Deployment uses an explicit manifest, not automatic discovery; added both profiles to scripts/rig.mjs.
-  - Verified: node --check scripts/rig.mjs, git diff --check, and throwaway assertions for both model IDs, fresh context, read-only allowlists, and manifest entries.
-  - Existing sync tests on unchanged main: 41/43 pass; failures expect the removed Playwright --headless flag and missing init.sh. Unrelated baseline debt, left unchanged.
-  - Independent scout review passed: profiles, roster and manifest agree. Reviewer had no command tool; parent performed diff, syntax and targeted checks.
-  - Activation: merge and full Pi sync followed by reload; narrow JSON sync does not deploy these assets. Changes committed on config/council-models; merge and deployment await approval.
+- [x] Working line tools with harness-owned freshness checks.
+  - Requirement: read inclusive ranges; edit line mapping without model-supplied hashes; refuse missing/stale snapshots before writing; update hash after successful edits.
+  - Definition of done: manual API checks, extension loading, relevant existing checks, exact two-advisor council review addressed, commit.
+  - Preserve UTF-8 BOM, individual LF/CRLF separators and terminal newline. Bound regular UTF-8 files to 4 MiB and read output to 50 KiB; reject oversized ranges rather than silently clip.
+  - Reuse Pi's mutation queue. Hash checks are optimistic, not an OS-level transaction against external writers; other tools are not sandboxed.
+  - Verification: 57 throwaway direct tool calls passed (ranges, stale/missing hashes, all-or-nothing validation, encoding/endings, size caps, alias paths, permissions, lifecycle clearing, abort, concurrent edits). Strict TypeScript check passed after replacing union event registration with explicit overloads. Actual Pi resource loader registered both overrides without errors.
+  - Existing sync checks: 41/43 passed; unchanged baseline failures are obsolete Playwright headless expectation and missing init.sh. No paid model tasks run.
+  - Council pass 1 (both completed, medium confidence): 2 shared conclusions (core freshness ordering acceptable; empty-final-line claim incorrect), no material advisor disagreement. Astra run 91c6567d-a8ad-4444-92d3-8b63ea01aa16; Fable run 76126d84-6cc2-48b1-ad6e-2720cf66483c. Fable searched for PLAN in pi/ rather than this worktree root; clarify in pass 2.
+  - Accepted: refuse blanking unterminated final rows before any write; add lifecycle epoch guard for queued operations; add prompt snippets; document path limitations, giant-line limit, and OS special-mode caveat. Final direct checks now pass 63 calls, including queued read/edit crossing a reset and atomic rejection of a blank final row; strict typecheck passed again.
+  - Deferred: stock path normalization, seen-range provenance, provider/live-model validation and adverse-I/O injection. They are outside this minimal contract; full-file snapshots establish byte freshness, not proof the model saw every edited row. Type.Record emits patternProperties; no paid provider calls authorized/run, so provider acceptance remains unverified.
+  - Final council memo: both advisors accept after two passes, with no unresolved material dispute or blocker. Astra pass 2: 008f5cd1-da8d-47d2-9d93-9d250d0b3a7e; Fable pass 2: 37dad22c-ebdf-453e-9e0d-64099da1ed2e. Exact requested models, fresh independent first passes, retained-context cross-exam, no fallbacks. Accept fixes above; defer broader parity/testing rather than expand scope. Confidence: sufficient for local prototype trial, not provider-wide validation; a provider schema rejection would require revisiting the mapping schema. No owner decision needed before trial; merge/deployment remain unrequested.
+  - Cleanup: disposable check script and dependency symlink removed after verification. No permanent test framework added. Deliverables: index.ts and README.md, plus these notes.
+  - Council brief: assess correctness, stale protection, API simplicity and lifecycle behavior in pi/packages/line-file-tools. Non-goals: new syntax, global deployment, performance claims. Exactly council-astra/openai/gpt-6-astra and council-fable/pi-sub-anthropic/claude-fable-5-2, fresh context, read-only, two passes maximum. Evidence: implementation, README, verification notes here.
