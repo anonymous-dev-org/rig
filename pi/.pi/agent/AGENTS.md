@@ -127,6 +127,18 @@ The user has repeatedly seen a simple case that could be tried by hand in a minu
 
 Split any Bash command that would need a timeout longer than 3 minutes (180 seconds) into smaller commands, unless there is no feasible way to do so.
 
+### Run commands and wait efficiently
+
+A long-running command is not automatically wasteful. Waiting for a required build, test, or deployment to finish is valid; optimize redundant work and delays in noticing completion, not away the verification itself.
+
+- Search known paths and file types first. Avoid whole-repository or whole-machine scans unless narrower searches cannot answer the question.
+- Batch small independent inspections when useful, but keep dependent operations in order and preserve each command's failure status. Do not rerun checks whose results are still valid.
+- Before sleeping, check whether the exact job, pipeline, commit, or process being observed has already finished. Prefer a supported completion wait or bounded condition polling over a blind delay followed by a status check. Keep fixed delays when a settling or observation period is actually required.
+- Give polling an explicit deadline, bound individual status requests, and stop promptly on success or relevant failure. If the deadline expires, report unfinished work distinctly and return a nonzero status when the command is intended to verify success. A successful final sleep or log command must not turn an unfinished or failed job into success.
+- Verify the actual result: process disappearance or an exit-file's existence is not proof of success. Read the exit status and required job results, including relevant downstream jobs.
+- Choose polling intervals to balance completion-detection delay against API load. Avoid duplicate watchers for the same job. Fetch detailed logs and job trees on failure, completion, or meaningful changes rather than on every unchanged poll, unless ongoing inspection is required.
+- Keep necessary waits observable and bounded using existing tools. Do not build a new job framework or background work merely to make recorded Bash durations look shorter.
+
 ### Finish
 
 When everything in the plan is done and verified, stop and write the final message as section 6 describes. Follow-up refactoring, optimization, or abstraction work is the user's call, so note it in `PLAN.md` as a suggestion without starting it.
