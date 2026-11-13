@@ -151,6 +151,14 @@ File reads are usually fast; returning to the model between each read can cost m
 - Keep reads sequential when one result determines the next path or range, or supplies instructions that govern subsequent work. Do not guess locations or preload unrelated files merely to reduce call count.
 - Reuse context already available when it remains valid. Batching does not override the freshness and reread rules for guarded edits, source changes, or session resets.
 
+#### Choose output for the question
+
+- Before calling a tool, decide whether you need filenames, matching source sections, selected structured fields, a change summary, or complete evidence. Request that form directly instead of producing everything and relying on truncation.
+- Keep discovery and review distinct. Use filename discovery or a diff summary when the relevant scope is unknown; once it is known, inspect the required source or patch directly. Do not add a discovery call when the path is already known. Summaries do not replace reviewing the full changes when full review is required.
+- Treat JSON and JSONL as structured data. For narrow questions, select the relevant records and fields with an existing tool such as `jq` or a short parser rather than printing entire objects or matching whole JSONL lines. Preserve full payloads when completeness or failure diagnosis requires them. Exclude session history from implementation searches unless history is the subject.
+- For noisy operations, preserve full output in a task-local log when appropriate and return the actual exit status, a concise result, the log path, and relevant diagnostics. Inspect the saved log around a failure instead of assuming its last lines contain the cause. A final `tail` or `grep` must not mask the operation's failure; do not rerun an operation merely to change its output presentation.
+- Treat truncated output as incomplete evidence. Narrow or page through the result before making claims that require complete coverage. Never infer "no errors" or "no other matches" from a truncated excerpt.
+
 #### Execute commands and observe completion
 
 - Batch small independent inspections when useful, but keep dependent operations in order and preserve each command's failure status. Do not rerun checks whose results are still valid.
