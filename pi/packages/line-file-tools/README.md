@@ -26,4 +26,4 @@ Local regular UTF-8 files only, at most 4 MiB, without NUL. BOM, individual LF/C
 
 Pi's shared file mutation queue serializes cooperating tools. Hash comparison and writing run synchronously without an intervening async yield, but **this is optimistic protection, not an OS-level compare-and-swap**: an external process can still race the check/write. In-place writes preserve the inode and hard links; I/O failure can leave a partial write. A write attempt invalidates the snapshot until successful completion, so failures require rereading. Use ordinary version control/backups for recovery.
 
-This version has no token/time performance claim and no automatic deployment.
+The [controlled token/time benchmark](../../docs/line-file-tools-benchmark.md) compares this version with stock Pi on existing-line replacements. It completed 17 paired comparisons before a provider subscription limit stopped the planned batch. Results are scoped to those tasks, not a universal performance claim. There is no automatic deployment.
