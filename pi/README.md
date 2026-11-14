@@ -15,7 +15,7 @@ private configs, templates, repository docs, sync tooling and browser captures f
 deployment. Disabled skills are retained in the repo and are not deployed.
 Direct principle skills, agents, extensions, themes and instructions are managed local copies. Every full sync restores repo bytes, including edits and deletions, with private backups of replaced files. Add personal resources in separate files outside the managed inventory. Managed JSON assets use the additive ownership policy below.
 Pi's built-in auto-compaction is enabled by default (`"compaction": {"enabled": true}`),
-using Pi's default token thresholds. Manual `/compact` remains available.
+with a 72,000-token reserve (a 200,000-token trigger for a 272,000-token context window). Manual `/compact` remains available.
 Pi Lens and billion-context are no longer default packages, and rig no longer
 deploys their configuration files. This removes their tools and instructions from
 new sessions using the defaults.
