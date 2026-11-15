@@ -117,6 +117,7 @@ export default function lineFileTools(pi: ExtensionAPI) {
 		promptGuidelines: [
 			"Call edit with line numbers from an earlier read. Do not reread a file just to check freshness or after a successful edit: edit rejects any target that no longer matches and writes nothing. Read again only for more context, after a rejection, or after a session reset or compaction.",
 			"After edit inserts or deletes lines, the lines above that point keep their numbers and stay editable. If edit rejects a line below it, read that range again and correct the line numbers instead of retrying.",
+			"Never guess line numbers or text you have not read, and never use write or bash to get around a rejected edit: they skip the freshness check.",
 			"To change several files together, use one edit call with edits: [{path, changes}, {path, splices}].",
 		],
 		description: [

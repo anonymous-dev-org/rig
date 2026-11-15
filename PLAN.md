@@ -1,9 +1,37 @@
 ## Overview
-- Support mixed multi-file guarded edits and teach the model the request format; retain single-file compatibility.
-- Validate every file before writing; disk-write failures can still partially apply a batch. Reject duplicate resolved paths (including hard-link aliases).
-- Preserve the merged sync-output task notes below; updating from main conflicted only in this shared plan. No source conflicts.
+- Goal: make every text this repo feeds to the model clear, unambiguous, simply worded and concise, so it steers the agent reliably. Started with `pi/.pi/agent/AGENTS.md`; the user then widened scope to tool descriptions, tool input descriptions, skills and any other model-facing text.
+- In scope: wording, structure, removing duplication between surfaces, making implied rules explicit. Out of scope: changing what the user wants the agent to do, and text owned by pi itself or npm packages.
+- Built one surface per version; each is handed over before the next starts.
+- Rule for duplicates: each rule lives in one place. How to call a tool lives in that tool's description; when to use it and workflow rules live in AGENTS.md.
+- Open question for the user: this PLAN.md is tracked and still carries finished tasks' notes (below). AGENTS.md says the plan covers the current task only, but earlier branches kept old notes through merges. Left the old notes as found; decide whether PLAN.md should be reset per task or left out of Git.
+- Earlier, finished tasks (kept as found): multi-file guarded edits; sync output cleanup. Their notes are under the checked todos at the end.
 
 ## Todos
+- [x] Version 1: AGENTS.md is restructured, deduplicated and unambiguous, with no rule lost.
+  - Requirement: same intended behavior; simple wording; shorter; references by section name; fits with the read/edit tool text instead of repeating it.
+  - Definition of done: every rule in the old file is present in the new file or in the edit tool text; section references resolve; extension file still parses; committed on `docs/agents-optimize`.
+  - Result: 3597 to 3184 words (-11%). Further cuts would mean dropping rules or the reasons behind them, which is the user's call (candidates below).
+  - Structure: tool-efficiency rules moved out of "Simplicity" into their own last section, so sections 1 to 6 read as the workflow in order. Section 3 now opens with which tasks need a worktree and a PLAN.md. PLAN.md notes (decisions, assumptions, debt, suggestions) are now assigned to one place: under the relevant todo.
+  - Made explicit what the old text only implied (confirm with user): pushing, opening a pull request and merging are ask-first; an action the user already asked for needs no second confirmation; an explicit user instruction overrides the file; commit on the task branch at finish; updating an existing test for an intended behavior change is allowed; verification is "try it, or a throwaway check when that is impractical, plus existing checks" instead of an ambiguous numbered list.
+  - Dedupe: removed the "Use the active file tools" subsection (edit call format and reread policy), which repeated the edit tool description and its prompt guidelines. Its two rules that the tool text lacked (never guess lines or text; never bypass a rejected edit with write or bash) were added as one edit prompt guideline in `line-file-tools/index.ts`. Removed "read with the read tool, not cat or sed", which the read tool's stock guideline already says.
+  - Not verified in a live session: the new guideline is one string in an existing array; checked only that the file parses (`bun build --no-bundle`). No live installation changed; run the repo sync to install.
+  - Left as is, unclear intent: a new dependency has no place in the "prefer, in this order" list; "Pull origin/main" assumes the default branch is `main` (the adapt clause covers other cases).
+  - Suggestions for further shortening (each drops rules): the polling and watcher bullets under "Run commands and wait" matter only for CI and deploy jobs; the `rg`/`find` flag hints under "Search narrowly" restate tool knowledge.
+- [ ] Version 2: read/edit tool text says each thing once.
+  - Requirement: description, prompt snippet, prompt guidelines and schema field descriptions in `pi/.pi/agent/extensions/line-file-tools/index.ts` do not repeat each other (the reread policy is currently stated in both description and guidelines); no behavior change; README kept in step.
+  - Definition of done: extension loads in a session, both call formats accepted, texts printed for review, committed.
+  - Note: this text was rewritten and benchmarked in PR #49 (`pi/docs/line-file-tools-benchmark.md`); keep changes small or rerun the benchmark.
+- [ ] Version 3: subagent prompts and watchdog prompt.
+  - Requirement: `pi/.pi/agent/agents/{planner,scout,worker,council-astra,council-fable}.md` and `pi/.pi/agent/WATCHDOG.md` are clear, consistent with AGENTS.md and free of repeated rules.
+  - Definition of done: each file reviewed against AGENTS.md, frontmatter unchanged, committed.
+- [ ] Version 4: prompts injected by extensions.
+  - Requirement: model-facing strings in `goal-reminder.ts`, `paired-review.ts` and `compaction-fallback.ts` are clear and short; code behavior unchanged.
+  - Definition of done: files parse, strings printed for review, committed.
+- [ ] Version 5: skills.
+  - Requirement: the 27 `pi/.pi/agent/skills/principle-*/SKILL.md` files have descriptions that say when to load them, and bodies without overlap with AGENTS.md.
+  - Definition of done: each skill reviewed, frontmatter valid, committed.
+  - Note: not yet checked which skills a session actually loads (the live install has 58 skill folders; this session listed one).
+- Not editable here: pi's built-in system prompt and stock tool text, and tool descriptions from npm packages (`pi-subagents`, codemode, web access).
 - [x] Multi-file edits work with existing freshness guarantees and clear model guidance.
   - Requirement: nonempty edits array, exactly one mode per file, no mixing batch and single-file fields, deterministic mutation locking, validation before writes, actionable partial-write errors.
   - Definition of done: direct tool exercises cover mixed success, validation rejection without writes, aliases, legacy calls, and model-facing schema/instructions; existing checks assessed; commit changes.
