@@ -26,10 +26,11 @@
   - Verified installed WATCHDOG.md and no-op reminder byte-match repo; native installed config resolver confirms main enabled, cadence 20, scope/guidance enabled, questions/child watchdogs off, active model/thinking inherited.
   - Initial deployment bypassed a repeated ff-only pull after origin/main gained per-line-edit commits (7139006); publication now integrates that upstream change without rewriting either history.
   - Pi deployment verified; reload/restart Pi to replace the already-loaded reminder and inspect /subagents-watchdog status afterwards.
-- [ ] Publish and merge the GitHub pull request into upstream main.
+- [x] Publish and merge the GitHub pull request into upstream main.
   - Requirement: user authorized PR creation and merge; reconcile current origin/main on the task branch without rewriting history, preserve both changes, and update local main after remote merge.
   - Definition of done: PR is merged with checks resolved, local main matches origin/main, and the task worktree is removed.
   - Recreated task worktree at ddd9748. Merged origin/main; only PLAN.md conflicted. Preserved both completed-task records; upstream source changes and the separate pair-review README section merge without code conflicts.
+  - PR #36: https://github.com/anonymous-dev-org/rig/pull/36. GitHub reports mergeable/clean with no configured checks. Merge-commit method preserves existing local-main ancestry; finish by verifying remote merge, fast-forwarding main, and removing the task worktree.
 - [x] Per-line guarded edits work end to end without automatic rereads.
   - Requirement: unrelated changes do not reject an unchanged target; changed/missing targets reject before any write. Splices guard affected rows and insertion/EOF anchors, retain usable snapshots, and never silently refresh unrelated external changes. Success text is only `Edit succeeded.`.
   - Requirement: update prompt metadata, README and managed AGENTS guidance to attempt known edits directly, including after splices; read on rejection, missing context or lifecycle reset.
