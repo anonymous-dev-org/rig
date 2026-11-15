@@ -106,7 +106,7 @@ Read-only questions and reviews need no worktree or `PLAN.md`. Before planning o
 
 These steps are part of the normal workflow and need no approval. If a step cannot run as written, for example because there is no remote or the main checkout has uncommitted changes, adapt it in the way that best keeps the main checkout untouched, and continue. Note what you did in `PLAN.md`. If the only way forward is a risky action listed in section 5, ask first.
 
-Use subagents whenever part of the work can be explored or implemented separately, or when an independent review would help. Work alone only when neither applies. A few known reads or searches are not separate work; do them directly.
+Use subagents whenever part of the work can be explored or implemented separately. Otherwise, work alone. A few known reads or searches are not separate work; do them directly.
 
 After the branch is merged, remove its worktree with `git worktree remove <worktree-path>`.
 
