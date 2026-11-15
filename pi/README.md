@@ -205,13 +205,16 @@ security. They may inspect source with read/search tools, but cannot run shell
 commands, edit files, or spawn agents. The seven specialist reviewer definitions
 are retired; the installed single-model watchdog is disabled to avoid duplicates.
 
-Reviews launch every **20 tool results**, at the next completed assistant/tool-batch
-boundary. Both reviewers run in the background: the main agent continues working.
-Only one pair runs at a time; results accumulated during a review count toward the
-next launch at a later completed turn. A batch crossing multiple thresholds gets
-one review, with the remainder carried forward. There is no extra end-of-run or
-idle review, and tool-free reasoning does not count. Delegated child sessions skip
-this extension; reviewer agents load no extensions.
+Reviews launch every **40 main-agent model calls**, at the next completed turn
+boundary. Each finalized assistant response counts once, including reported error
+or aborted responses; tool, user and custom messages do not count. Tool-free
+responses count too. Both reviewers run in the background while the main agent
+continues working. Only one pair runs at a time; calls accumulated during a review
+count toward the next launch at a later completed turn. If multiple thresholds
+pass while busy, one review launches with the remainder carried forward.
+There is no extra end-of-run or idle review. Session lifecycle resets, reloads
+and manual compaction restart the counter. Delegated child sessions skip this
+extension; reviewer agents load no extensions and do not advance the counter.
 
 Each reviewer returns JSON: `{require_changes: true, message: "..."}` or
 `{require_changes: false}` without a message. Once both reviews finish, the

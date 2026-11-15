@@ -14,7 +14,7 @@ const REVIEWERS = [
 	{ name: "Astra", provider: "openai", id: "gpt-6-astra" },
 	{ name: "Fable", provider: "pi-sub-anthropic", id: "claude-fable-5-2" },
 ] as const;
-const CADENCE = 20;
+const CADENCE = 40;
 
 type ReviewResult = { require_changes: boolean; message?: string };
 
@@ -82,13 +82,13 @@ export default function (pi: ExtensionAPI) {
 	// Direct Agents above load no extensions; ordinary delegated children also
 	// skip this hook so reviews never fan out recursively.
 	if (process.env.PI_SUBAGENT_CHILD === "1") return;
-	let toolResults = 0;
+	let modelCalls = 0;
 	let active: AbortController | undefined;
 	let epoch = 0;
 	const reset = (_event: unknown, ctx: ExtensionContext) => {
 		ctx.ui.setStatus(REVIEW_TYPE, undefined);
 		epoch++;
-		toolResults = 0;
+		modelCalls = 0;
 		active?.abort();
 		active = undefined;
 	};
@@ -103,11 +103,11 @@ export default function (pi: ExtensionAPI) {
 		if (event.reason === "manual") reset(event, ctx);
 	});
 
-	pi.on("tool_result", () => { toolResults++; });
+	pi.on("message_end", (event) => { if (event.message.role === "assistant") modelCalls++; });
 	pi.on("turn_end", (event, ctx) => {
 		if (event.outcome === "aborted") active?.abort();
-		if (toolResults < CADENCE || active || event.outcome !== "completed") return;
-		toolResults %= CADENCE;
+		if (modelCalls < CADENCE || active || event.outcome !== "completed") return;
+		modelCalls %= CADENCE;
 		const generation = epoch;
 		const controller = new AbortController();
 		active = controller;
