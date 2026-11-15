@@ -166,7 +166,6 @@ Say things directly. State a caveat once, where it applies, and only if it chang
 These rules cut wasted tool time. They never justify skipping evidence or verification that the task requires. Each tool's own description says how to call it; the rules here are about which calls to make.
 
 ### Search narrowly
-### Search narrowly
 
 Use the smallest search that can answer the question. The shell commands below are examples; a harness search tool with the same scope and exclusions is just as good.
 
