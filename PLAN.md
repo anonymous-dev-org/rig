@@ -1,7 +1,7 @@
 ## Overview
 - Goal: make every text this repo feeds to the model clear, unambiguous, simply worded and concise, so it steers the agent reliably. Started with `pi/.pi/agent/AGENTS.md`; the user then widened scope to tool descriptions, tool input descriptions, skills and any other model-facing text.
 - In scope: wording, structure, removing duplication between surfaces, making implied rules explicit. Out of scope: changing what the user wants the agent to do, and text owned by pi itself or npm packages.
-- Built one surface per version; each is handed over before the next starts.
+- Version 1 covered AGENTS.md alone; version 2 read every model-facing text in the repo together and fixed what conflicts or confuses across them.
 - Rule for duplicates: each rule lives in one place. How to call a tool lives in that tool's description; when to use it and workflow rules live in AGENTS.md.
 - Open question for the user: this PLAN.md is tracked and still carries finished tasks' notes (below). AGENTS.md says the plan covers the current task only, but earlier branches kept old notes through merges. Left the old notes as found; decide whether PLAN.md should be reset per task or left out of Git.
 - Earlier, finished tasks (kept as found): multi-file guarded edits; sync output cleanup. Their notes are under the checked todos at the end.
@@ -13,24 +13,24 @@
   - Result: 3597 to 3184 words (-11%). Further cuts would mean dropping rules or the reasons behind them, which is the user's call (candidates below).
   - Structure: tool-efficiency rules moved out of "Simplicity" into their own last section, so sections 1 to 6 read as the workflow in order. Section 3 now opens with which tasks need a worktree and a PLAN.md. PLAN.md notes (decisions, assumptions, debt, suggestions) are now assigned to one place: under the relevant todo.
   - Made explicit what the old text only implied (confirm with user): pushing, opening a pull request and merging are ask-first; an action the user already asked for needs no second confirmation; an explicit user instruction overrides the file; commit on the task branch at finish; updating an existing test for an intended behavior change is allowed; verification is "try it, or a throwaway check when that is impractical, plus existing checks" instead of an ambiguous numbered list.
-  - Dedupe: removed the "Use the active file tools" subsection (edit call format and reread policy), which repeated the edit tool description and its prompt guidelines. Its two rules that the tool text lacked (never guess lines or text; never bypass a rejected edit with write or bash) were added as one edit prompt guideline in `line-file-tools/index.ts`. Removed "read with the read tool, not cat or sed", which the read tool's stock guideline already says.
-  - Not verified in a live session: the new guideline is one string in an existing array; checked only that the file parses (`bun build --no-bundle`). No live installation changed; run the repo sync to install.
+  - Dedupe: removed the "Use the active file tools" subsection (edit call format and reread policy), which repeated the edit tool description and its prompt guidelines. Removed "read with the read tool, not cat or sed", which the read tool's stock guideline already says.
   - Left as is, unclear intent: a new dependency has no place in the "prefer, in this order" list; "Pull origin/main" assumes the default branch is `main` (the adapt clause covers other cases).
   - Suggestions for further shortening (each drops rules): the polling and watcher bullets under "Run commands and wait" matter only for CI and deploy jobs; the `rg`/`find` flag hints under "Search narrowly" restate tool knowledge.
-- [ ] Version 2: read/edit tool text says each thing once.
-  - Requirement: description, prompt snippet, prompt guidelines and schema field descriptions in `pi/.pi/agent/extensions/line-file-tools/index.ts` do not repeat each other (the reread policy is currently stated in both description and guidelines); no behavior change; README kept in step.
-  - Definition of done: extension loads in a session, both call formats accepted, texts printed for review, committed.
-  - Note: this text was rewritten and benchmarked in PR #49 (`pi/docs/line-file-tools-benchmark.md`); keep changes small or rerun the benchmark.
-- [ ] Version 3: subagent prompts and watchdog prompt.
-  - Requirement: `pi/.pi/agent/agents/{planner,scout,worker,council-astra,council-fable}.md` and `pi/.pi/agent/WATCHDOG.md` are clear, consistent with AGENTS.md and free of repeated rules.
-  - Definition of done: each file reviewed against AGENTS.md, frontmatter unchanged, committed.
-- [ ] Version 4: prompts injected by extensions.
-  - Requirement: model-facing strings in `goal-reminder.ts`, `paired-review.ts` and `compaction-fallback.ts` are clear and short; code behavior unchanged.
-  - Definition of done: files parse, strings printed for review, committed.
-- [ ] Version 5: skills.
-  - Requirement: the 27 `pi/.pi/agent/skills/principle-*/SKILL.md` files have descriptions that say when to load them, and bodies without overlap with AGENTS.md.
-  - Definition of done: each skill reviewed, frontmatter valid, committed.
-  - Note: not yet checked which skills a session actually loads (the live install has 58 skill folders; this session listed one).
+- [x] Version 2: all model-facing texts in the repo agree when read together.
+  - Requirement: no rule in one text contradicts or blurs a rule in another; one term per concept; plain full sentences everywhere; no change to what the user wants the agent to do.
+  - Definition of done: AGENTS.md, read/edit tool text, the five agent prompts, WATCHDOG.md, extension-injected strings and the skills were read side by side; each conflict is fixed or listed here; frontmatter keys intact; extension parses; committed.
+  - Fixed, subagent vs main agent: AGENTS.md now says a subagent follows its agent prompt and task first, creates no worktree or PLAN.md, and reports to the main agent. Needed because a forked child receives the whole of AGENTS.md (fresh children of the repo's own agents receive none of it).
+  - Fixed, delegation permission: the pi-subagents tool says to delegate only when the operator asked; AGENTS.md now says its delegation paragraph is that standing request.
+  - Fixed, skills: the 24 `principle-*` skills are vendored from pstack and load only when the user runs `/skill:...`. Several differ from AGENTS.md on purpose (build-the-lever says build a tool by default; prove-it-works and sequence-verifiable-units ask for scripted checks and a failing test first). Not edited; AGENTS.md now says a skill the user invokes overrides it.
+  - Fixed, pull vs merge: the ask-first bullet said "merging", which also described the approved pull into local `main`; it now says merging the task branch into another branch.
+  - Fixed, worker/scout/planner prompts: rewritten from telegraphic fragments into full sentences with the same rules. Three alignments with AGENTS.md: worker decides small details itself and reports the assumption, escalating only unclear requirements, blocking decisions and ownership conflicts (was "never guess"); "never add automated tests" became "unless the task asks"; "replace flawed design" is limited to flaws that affect the task, inside the worker's files. Descriptions reworded, same meaning.
+  - Fixed, reviewer PLAN.md: the reviewer runs in the session's working directory (usually the main checkout, whose PLAN.md is from older tasks). WATCHDOG.md now says the parent's PLAN.md is at the root of the worktree it is editing.
+  - Fixed, edit rules in one place: "never guess lines or text" and "never get around a rejected edit with write or bash" now sit in the edit tool description, which every agent with the tool sees, instead of AGENTS.md. Description and prompt guidelines still both state the reread policy on purpose: a child with a replaced system prompt sees only the description.
+  - Checked, no change needed: strings injected by `paired-review.ts` and `compaction-fallback.ts` (findings are advisory, not new requirements); council prompts; `goal-reminder.ts` injects nothing.
+  - Open, needs the user: worker and planner carry TypeScript, React and naming rules (no `as`, `useEffect` only for external systems, and so on) that AGENTS.md lacks, so the main agent and a worker write to different standards. Either move them into AGENTS.md or drop them from the agents.
+  - Open, cannot fix here: the pi-subagents tool says to stop and report after a subagent launch failure, while AGENTS.md says to route around problems and continue. Tool text belongs to the npm package; decide which wins and say so in AGENTS.md.
+  - Open, minor: `pi/README.md` (Council advisors) says the roster is pinned in AGENTS.md, which no longer mentions it. `edit` guideline says to attempt edits below an insertion, yet line snapshots do not shift, so such an attempt is rejected unless reread (seen in this task).
+  - Not verified in a live session: agent prompts and tool text were checked by reading and by parsing the extension (`bun build --no-bundle`), not by launching agents. No live installation changed; run the repo sync to install.
 - Not editable here: pi's built-in system prompt and stock tool text, and tool descriptions from npm packages (`pi-subagents`, codemode, web access).
 - [x] Multi-file edits work with existing freshness guarantees and clear model guidance.
   - Requirement: nonempty edits array, exactly one mode per file, no mixing batch and single-file fields, deterministic mutation locking, validation before writes, actionable partial-write errors.

@@ -1,6 +1,8 @@
 # Working instructions
 
-An explicit instruction from the user overrides anything in this file.
+An explicit instruction from the user, including a skill they invoke, overrides anything in this file.
+
+When you run as a subagent, the agent prompt and task you were given take precedence over this file. Work where you were told to, create no worktree or `PLAN.md` of your own, and report to the main agent in the format it asked for.
 
 ## 1. Stay on the goal
 
@@ -58,7 +60,7 @@ These steps need no approval. If one cannot run as written, for example because 
 
 After the branch is merged, remove its worktree with `git worktree remove <worktree-path>`.
 
-Delegate a part of the work to a subagent whenever it is separate: a subagent can explore or implement it from a written task description, without waiting on the rest of the work. Otherwise work alone. A few known reads or searches are not separate work; do them yourself.
+Delegate a part of the work to a subagent whenever it is separate: a subagent can explore or implement it from a written task description, without waiting on the rest of the work. Otherwise work alone. A few known reads or searches are not separate work; do them yourself. This paragraph is the user's standing request to delegate, so you need no further permission to launch a subagent.
 
 ## 4. Plan and track
 
@@ -93,7 +95,7 @@ An action is risky when it is hard to undo or reaches beyond this worktree:
 - changing or deploying to production or any other live or shared system;
 - deleting or overwriting data, files, or branches that this task did not create;
 - rewriting published Git history or force-pushing;
-- pushing a branch, opening a pull request, or merging;
+- pushing a branch, opening a pull request, or merging the task branch into another branch;
 - sending something to other people or outside services, or spending money.
 
 Ordinary edits to existing files within the task's scope are not overwriting. Deleting such a file, or replacing its whole content, is. An action the user has already asked for needs no second confirmation.
