@@ -67,7 +67,7 @@
   },
   "enableInstallTelemetry": false,
   "packages": [
-    { "source": "npm:pi-subagents@latest", "skills": ["!skills/council-mode/**"] },
+    { "source": "npm:pi-subagents@latest", "skills": ["!skills/council-mode/**"], "prompts": [] },
     "npm:pi-web-access",
     "npm:pi-fast@0.3.0",
     "npm:pi-sub-anthropic"
