@@ -21,7 +21,8 @@ export default function (pi: ExtensionAPI) {
       const unsubscribeBranch = footerData.onBranchChange(requestRender);
       let costLeaf: string | null | undefined;
       let cost = 0;
-      let totalTokens = 0;
+      let inputTokens = 0;
+      let outputTokens = 0;
 
       return {
         invalidate() {},
@@ -51,7 +52,8 @@ export default function (pi: ExtensionAPI) {
           if (costLeaf !== leaf) {
             costLeaf = leaf;
             cost = 0;
-            totalTokens = 0;
+            inputTokens = 0;
+            outputTokens = 0;
             // Match Pi's cumulative accounting without rescanning on every frame.
             for (const entry of ctx.sessionManager.getEntries()) {
               const billed = entry.type === "message"
@@ -59,7 +61,8 @@ export default function (pi: ExtensionAPI) {
                 : (entry.type === "usage" || entry.type === "compaction" || entry.type === "branch_summary" ? entry.usage : undefined);
               if (billed) {
                 cost += billed.cost.total;
-                totalTokens += billed.input + billed.output + billed.cacheRead + billed.cacheWrite;
+                inputTokens += billed.input + billed.cacheRead + billed.cacheWrite;
+                outputTokens += billed.output;
               }
             }
           }
@@ -67,7 +70,7 @@ export default function (pi: ExtensionAPI) {
           const reviewing = footerData.getExtensionStatuses().get("rig-paired-review");
           const right = (reviewing ? theme.fg("accent", `${reviewing}  `) : "") +
             theme.fg(contextColor, context) +
-            theme.fg("dim", `  used ${totalTokens.toLocaleString("en-US")} tok  $${cost.toFixed(3)}  ${fast} │ `) +
+            theme.fg("dim", `  in ${inputTokens.toLocaleString("en-US")} - out ${outputTokens.toLocaleString("en-US")} ($${cost.toFixed(3)})  ${fast} │ `) +
             theme.fg("accent", thinking) + theme.fg("dim", ` │ ${model} `);
           const rightWidth = visibleWidth(right);
           if (rightWidth >= width) return [truncateToWidth(right, width)];

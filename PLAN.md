@@ -1,9 +1,19 @@
 ## Overview
-- Run Astra and Fable concurrently in the background without blocking the parent. Keep one pair active, deliver advisory findings safely even when idle, cancel on session replacement, and log each review outcome.
-- Scope: paired-review extension and its documentation; no live deployment or paid model calls.
-- Use Pi's steer queue with triggerTurn for safe busy/idle delivery. Evidence is captured at launch; source reads remain live, so feedback must be rechecked.
+- Replace footer cumulative token total with session input/output and total cost, including recorded main-agent, subagent, reviewer and tool usage. Preserve context display.
+- Worktree branched from fetched origin/main; leave main checkout untouched.
+- Input includes cache reads/writes; cost uses reported prices, not inferred charges for tools without usage.
 
 ## Todos
+- [x] Version 1: session footer separates recorded input/output and cost.
+  - Requirement: remove used-total display; sum recorded session entries, including toolResult and native usage records; preserve context.
+  - Definition of done: controlled rendering verifies counts, cache accounting, refresh and layout; installed loader accepts extension; commit changes.
+  - Verified all entry kinds and leaf refresh; widths checked with visibleWidth (raw string length includes terminal escapes). Diff check passes. No live installation; controlled checks make no provider calls.
+- [ ] Version 2: accurate all-subagent totals, including nested and async runs.
+  - Requirement: count each run once across notifications, repeated waits and nested delegation; include main and generic tool usage without double counting.
+  - Definition of done: notification-only, repeated wait, nested delegation, reload and missing-artifact checks prove completeness or visibly indicate missing usage.
+  - Scout found installed pi-subagents attaches sync usage to tool results but async notification-only runs are absent; repeated waits replay usage; child reconciliation counts assistant messages only, so nested work is not established as included.
+  - Existing collectSubagentCost in installed src/slash/subagent-cost.js resolves async artifacts and deduplicates direct runs; branch-only scope and recursive completeness prevent using it as a complete session collector unchanged.
+  - Merge the verified display now; complete all-agent accounting remains follow-up work, not part of this merge.
 - [x] Background reviews and observable outcomes work end to end.
   - Requirement: preserve cadence and read-only reviewers; nonblocking launch; one pair at a time; session-safe delivery; log starts, duration, approvals, findings, failures and cancellation.
   - Definition of done: local controlled execution verifies concurrency, parent progress, delivery options, clean/error/cancellation paths and logging; independent review addressed; documentation updated; commit created.

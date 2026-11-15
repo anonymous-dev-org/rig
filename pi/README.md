@@ -251,7 +251,13 @@ Every reviewer model response also records its reported token usage and price in
 the parent session's native usage entries, including intermediate tool rounds and
 clean approvals. Reported usage on failed or cancelled responses counts too; no
 usage can be recovered if the provider does not report it. These entries contribute
-to `/session` totals and the footer's cumulative `used … tok` and dollar amount.
+to `/session` totals and the footer's cumulative `in … - out … ($…)` display.
+Input includes uncached input, cache reads and cache writes; output is generated
+tokens. These counters sum usage recorded in the parent session, including tool
+usage, compaction and branch summaries. They are not yet complete all-subagent
+totals: async notification-only runs can be missing, and repeated waits can
+duplicate child usage. Tools without reported usage add no separate charge;
+their results count as model input when processed.
 The separate `ctx` counter still describes only the main agent's context window,
 not tokens consumed by reviewers. Prices use Pi's provider/model usage data.
 
