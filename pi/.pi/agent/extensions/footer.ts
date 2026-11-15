@@ -62,7 +62,9 @@ export default function (pi: ExtensionAPI) {
             }
           }
           const fast = footerData.getExtensionStatuses().get("pi-fast") ?? "Fast n/a";
-          const right = theme.fg(contextColor, context) +
+          const reviewing = footerData.getExtensionStatuses().get("rig-paired-review");
+          const right = (reviewing ? theme.fg("accent", `${reviewing}  `) : "") +
+            theme.fg(contextColor, context) +
             theme.fg("dim", `  $${cost.toFixed(3)}  ${fast} │ `) +
             theme.fg("accent", thinking) + theme.fg("dim", ` │ ${model} `);
           const rightWidth = visibleWidth(right);

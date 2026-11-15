@@ -197,39 +197,39 @@ safely; they are not automatically retried as smaller chunks.
 
 ## Automatic pair-programming review
 
-Rig enables the installed `pi-subagents` watchdog instead of injecting the old
-fixed goal reminder. A fresh read-only reviewer checks the retained user goal
-and recent work for scope drift, unnecessary complexity, concrete simpler safe
-alternatives, and code errors. `pi/.pi/agent/WATCHDOG.md` supplies these priorities.
-It can inspect `PLAN.md`, relevant source, and the diff since the session baseline.
+Rig's `paired-review.ts` extension launches two fresh read-only agents in parallel:
+`openai/gpt-6-astra` and `pi-sub-anthropic/claude-fable-5-2`, both at high thinking.
+They receive the exact same `~/.pi/agent/WATCHDOG.md` prompt and parent-session
+evidence, covering goal focus, unnecessary complexity, code correctness, and
+security. They may inspect source with read/search tools, but cannot run shell
+commands, edit files, or spawn agents. The seven specialist reviewer definitions
+are retired; the installed single-model watchdog is disabled to avoid duplicates.
 
-Ongoing reviews run every **20 tool results**, not every 20 messages or model
-calls. Changed code also receives an end-of-run review; unchanged/reverted diffs
-are skipped. Busy reviews can skip a cadence opportunity. There is no idle timer
-or review during tool-free reasoning. Change
-`subagents.watchdog.cadence.everyNTools` in `settings.example.json` to adjust it.
+Reviews run every **20 tool results**, at the next completed assistant/tool-batch
+boundary so both reviewers see finalized results. A batch crossing multiple
+thresholds gets one combined review; the remainder carries forward. There is no
+extra end-of-run or idle review, and tool-free reasoning does not count. Delegated
+child sessions skip this extension; reviewer agents load no extensions.
 
-Actionable findings use `watchdog_warn` with high importance so they reach the
-main agent with evidence and a corrective action. Clean reviews add no message.
-Freeform reviewer text is ignored; low/medium-importance findings are user-only,
-so the standing instructions explicitly request high importance for actionable
-issues. The main agent decides how to address them. The reviewer has no shell,
-write/edit tools, or ability to spawn agents; child-session watchdogs and
-clarification questions are disabled.
+Each reviewer returns JSON: `{require_changes: true, message: "..."}` or
+`{require_changes: false}` without a message. The extension waits for both reviews
+and adds **one** persisted feedback message containing only the reviewers that
+requested changes. Either reviewer can flag an issue; agreement is not required.
+If both are clean, no feedback or continuation is added. Feedback is projected as
+a system message (developer feedback on compatible providers), not a user request.
 
-The reviewer inherits the active model and thinking level unless separately
-overridden. Each review can incur model usage and delay. Its evidence is bounded
-(up to eight retained user prompts, 2,000 characters each, plus recent work),
-not a replay of the whole conversation. Reviews are advisory, not a correctness
-guarantee; unavailable models and review errors remain visible.
+Evidence includes retained user prompts/compaction scope and bounded recent work,
+not the full history or a Git diff. Reviewers can read PLAN.md and source to verify
+concerns. Reviews are advisory and incur model usage and latency. The main model
+waits for the pair, with a three-minute cancellation deadline. Missing models,
+malformed results, or failed reviews produce visible errors without model fallback;
+successful actionable findings from the other reviewer are still delivered.
+User cancellation or session replacement discards the pending pair.
 
-Full Pi sync deploys `~/.pi/agent/WATCHDOG.md`, settings, and a no-op
-`goal-reminder.ts` compatibility asset that disables the old reminder on existing
-installs. The JSON-only `sync-settings.mjs` command enables settings but does not
-deploy guidance or disable the old extension, so use full sync for this change.
-After deployment, reload/restart Pi and run `/subagents-watchdog status` to inspect
-the effective configuration. Project settings can override global defaults;
-project `.pi/WATCHDOG.md` is combined with global guidance (8,000 characters total).
+Use full Pi sync to deploy settings, guidance, the extension, and reviewer-file
+retirements (with private backups), then reload/restart Pi. The JSON-only settings
+sync cannot deploy this mechanism. Project overrides must not re-enable the old
+`subagents.watchdog`; `/subagents-watchdog status` can confirm it is disabled.
 
 ## Explicit legacy migration
 
