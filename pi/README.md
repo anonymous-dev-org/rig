@@ -198,7 +198,7 @@ safely; they are not automatically retried as smaller chunks.
 ## Automatic pair-programming review
 
 Rig's `paired-review.ts` extension launches two fresh read-only agents in parallel:
-`openai/gpt-6-astra` and `pi-sub-anthropic/claude-fable-5-2`, both at high thinking.
+`openai/gpt-6-astra` and `pi-sub-anthropic/claude-fable-5-2`, both at medium thinking.
 They receive the exact same `~/.pi/agent/WATCHDOG.md` prompt and parent-session
 evidence, covering goal focus, unnecessary complexity, code correctness, and
 security. They may inspect source with read/search tools, but cannot run shell
