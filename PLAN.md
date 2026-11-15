@@ -1,16 +1,13 @@
 ## Overview
-- Goal: clear, consistent model-facing instructions across AGENTS.md, tools and agent prompts.
-- Keep tool call formats in tool descriptions; keep workflow in AGENTS.md. Skills explicitly invoked by the user override the defaults.
+- Finish format-on-save: spacing-only formatter changes should not force another read; add project opt-in detection for Prettier package.json, Go, Rust and Ruff; format stock write output too.
+- Keep fully asynchronous formatting and the per-file mutation queue. Failures stay best-effort. Never promote an external/stale change into a valid snapshot. No Prettier runtime test, per user.
+- Worktree format-followups starts from updated main and merges existing direct-line-edits implementation; main's restructured AGENTS.md and stronger edit safeguards are retained. Initial merge into old branch conflicted, aborted without changing it.
+- One complete version: shared formatting path for edit/write plus safe snapshot refresh. No live sync or publication.
 
 ## Todos
-- [x] Simplify and align instructions.
-  - Requirement: plain wording, explicit precedence, no duplicate tool instructions or TypeScript rules in subagent prompts.
-  - Definition of done: texts reviewed together, extension parses, changes committed.
-  - Decisions: publishing and merging need permission; local commits do not. PLAN.md covers only the current task. Keep the remaining workflow rules rather than shorten by dropping requirements.
-  - Subagents follow their assigned scope and report to the main agent. React and general naming rules remain in agent profiles; TypeScript rules belong in skills.
-  - Verification: editorial review and extension parse check, not live agent trials.
-  - Suggestions: correct the stale council roster reference in pi/README.md; separately revisit rereading shifted lines after insertions.
-- [ ] Publish and merge the pull request, as requested.
-  - Requirement: preserve the new multi-file read implementation from origin/main; merge only this task's changes.
-  - Definition of done: PR merged, local main updated, task worktree removed.
-  - Merged origin/main before publishing. Kept this task's PLAN.md and restructured AGENTS.md; incoming batch-read call guidance already lives in the read tool description, so it is not repeated in AGENTS.md. No implementation changes discarded.
+- [ ] Format-on-save works without rereads for harmless spacing changes.
+  - Requirement: refresh only matched baseline rows at unchanged coordinates when whitespace changes are known safe; changed text, moved lines and meaningful whitespace still reject; lifecycle resets cannot restore snapshots.
+  - Requirement: detect project-configured formatters including package.json Prettier, Go, Rust and Ruff, and schedule after successful write as well as edit. No-config projects remain literal.
+  - Definition of done: direct registered-tool exercises cover queued formatting, spacing-only reuse, real text/line changes rejecting, stale baselines, write-created files, detection and failure isolation. Existing relevant checks pass; diff reviewed and committed.
+  - Scope note: formatter failure means approximate indentation may remain. This is best-effort formatting, not syntax correction.
+  - Suggestion: lasting tests may be worthwhile for this extension, but none requested; use throwaway checks only.

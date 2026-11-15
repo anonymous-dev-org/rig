@@ -1,7 +1,8 @@
 import { createHash } from "node:crypto";
-import { constants, openSync, closeSync, fstatSync, readSync, writeSync, ftruncateSync, realpathSync } from "node:fs";
+import { spawn } from "node:child_process";
+import { constants, openSync, closeSync, existsSync, fstatSync, readdirSync, readFileSync, readSync, writeSync, ftruncateSync, realpathSync } from "node:fs";
 import { homedir } from "node:os";
-import { resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { type ExtensionAPI, createReadToolDefinition, detectSupportedImageMimeTypeFromFile, withFileMutationQueue } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import { Text } from "@earendil-works/pi-tui";
@@ -39,6 +40,64 @@ function load(fd: number) {
 	const rows = Array.from(body.matchAll(/([^\r\n]*)(\r\n|\n|\r|$)/g), m => ({ text: m[1], eol: m[2] }));
 	rows.pop(); // The regex always ends with an empty, zero-width match.
 	return { bom, rows };
+}
+
+function writeAll(fd: number, data: Buffer) {
+	let offset = 0;
+	while (offset < data.length) {
+		const written = writeSync(fd, data, offset, data.length - offset, offset);
+		if (!written) throw new Error("Write made no progress.");
+		offset += written;
+	}
+	ftruncateSync(fd, data.length);
+}
+
+// Format on save: only a project that ships a formatter config opts in.
+const FORMATTERS = [
+	{ bin: "biome", config: /^biome\.jsonc?$/, args: (file: string) => ["format", `--stdin-file-path=${file}`] },
+	{ bin: "prettier", config: /^(\.prettierrc(\..+)?|prettier\.config\.[cm]?[jt]s)$/, args: (file: string) => ["--stdin-filepath", file] },
+	{ bin: "oxfmt", config: /^(\.oxfmtrc\.jsonc?|oxfmt\.config\.[cm]?[jt]s)$/, args: (file: string) => [`--stdin-filepath=${file}`] },
+];
+
+function findFormatter(file: string) {
+	for (let dir = dirname(file); ; dir = dirname(dir)) {
+		let names: string[] = [];
+		try { names = readdirSync(dir); } catch {}
+		const found = FORMATTERS.find(formatter => names.some(name => formatter.config.test(name)));
+		if (found) {
+			// Prefer the project's own install over one on PATH.
+			let command = found.bin;
+			for (let up = dir; ; up = dirname(up)) {
+				const local = join(up, "node_modules", ".bin", found.bin);
+				if (existsSync(local)) { command = local; break; }
+				if (dirname(up) === up) break;
+			}
+			return { name: found.bin, command, args: found.args(file), cwd: dir };
+		}
+		if (dirname(dir) === dir) return undefined;
+	}
+}
+
+// Runs in the file's mutation queue, so later reads and edits wait for it. Snapshots are left alone:
+// a line the formatter changed no longer matches and the next edit of it is rejected as usual.
+function formatInBackground(target: string, formatter: NonNullable<ReturnType<typeof findFormatter>>) {
+	void withFileMutationQueue(target, async () => {
+		const before = readFileSync(target);
+		if (before.length > MAX_BYTES) return;
+		const child = spawn(formatter.command, formatter.args, { cwd: formatter.cwd, stdio: ["pipe", "pipe", "ignore"], timeout: 10_000 });
+		const chunks: Buffer[] = [];
+		child.stdout.on("data", chunk => chunks.push(chunk));
+		child.stdin.on("error", () => {});
+		child.stdin.end(before);
+		const code = await new Promise(done => { child.on("error", () => done(-1)); child.on("close", done); });
+		const after = Buffer.concat(chunks);
+		if (code !== 0 || !after.length || after.length > MAX_BYTES || after.equals(before)) return;
+		const fd = openSync(target, constants.O_RDWR | constants.O_NONBLOCK);
+		try {
+			// Skip if something else changed the file while the formatter ran.
+			if (fstatSync(fd).isFile() && readFileSync(fd).equals(before)) writeAll(fd, after);
+		} finally { closeSync(fd); }
+	}).catch(() => {}); // Like an editor's format on save, failure leaves the file as edited.
 }
 
 const readFields = {
@@ -150,12 +209,14 @@ export default function lineFileTools(pi: ExtensionAPI) {
 			"Call edit with line numbers from an earlier read. Do not reread a file just to check freshness or after a successful edit: edit rejects any target that no longer matches and writes nothing. Read again only for more context, after a rejection, or after a session reset or compaction.",
 			"After edit inserts or deletes lines, the lines above that point keep their numbers and stay editable. If edit rejects a line below it, read that range again and correct the line numbers instead of retrying.",
 			"To change several files together, use one edit call with edits: [{path, changes}, {path, splices}].",
+			"Write each line's text directly in changes or lines; do not script an edit through codemode just to build indentation. When the edit result says a formatter is running, it fixes indentation after the edit, so approximate indentation is enough unless whitespace carries meaning (Python, YAML, Markdown). Without that notice the text stays exactly as written.",
 		],
 		description: [
 			"Edit lines in one or more text files that read has already shown. Line numbers come from read and refer to each file as it was before this call. Create new files with write.",
 			"One file: {path, changes} or {path, splices}. Several files: {edits: [{path, changes}, {path, splices}]}, listing each file once and passing no top-level path, changes or splices.",
 			"Give each file exactly one of changes or splices and leave the other out entirely, not empty. changes replaces whole existing lines by number. A splice replaces deleteCount lines at start with lines, so it can insert (deleteCount 0), delete (lines []), replace a range, or append (start = last line + 1, deleteCount 0). To replace some lines and insert or delete others in the same file, use splices for all of it. Splices in one file must not overlap or share a start. Every string is a single line with no line breaks.",
 			"All files are checked before any is written. If a file has not been read, or a target line no longer matches what read showed, the call fails and nothing changes: read that range again and correct the line numbers. Never guess line numbers or text you have not read, and never use write or bash to get around a rejected edit, because they skip this check. Do not reread just to check freshness or after success. If a disk write fails partway through a multi-file call, the error names the files already written; reread the failed file instead of repeating the whole call.",
+			"After a successful edit, a file inside a project with a Biome, Prettier or Oxfmt config is formatted in the background, and the result says so. Later reads and edits of that file wait for it. A line the formatter changed is then rejected like any other changed line: read that range again.",
 		].join("\n\n"),
 		parameters: Type.Object({
 			...editFields,
@@ -286,12 +347,7 @@ export default function lineFileTools(pi: ExtensionAPI) {
 						// Invalidate before any write, including failures/partial writes.
 						snapshots.delete(target);
 						try {
-							let offset = 0;
-							while (offset < updated.length) {
-								const written = writeSync(fd, updated, offset, updated.length - offset, offset);
-								if (!written) throw new Error("Write made no progress.");
-								offset += written;
-							}
+							writeAll(fd, updated);
 							ftruncateSync(fd, updated.length);
 							snapshots.set(target, next);
 							completed.push(target);
@@ -299,7 +355,14 @@ export default function lineFileTools(pi: ExtensionAPI) {
 							throw new Error(`Write failed for ${target}; it may be partially modified. Completed files: ${JSON.stringify(completed)}. Remaining files were not written. Inspect completed files and reread the failed file before retrying; do not replay the whole batch. ${error instanceof Error ? error.message : String(error)}`);
 						}
 					}
-					return result("Edit succeeded.");
+					const formatting: string[] = [];
+					for (const { target } of prepared) {
+						const formatter = findFormatter(target);
+						if (!formatter) continue;
+						formatInBackground(target, formatter);
+						formatting.push(`${target} (${formatter.name})`);
+					}
+					return result(formatting.length ? `Edit succeeded. Formatting in the background: ${formatting.join(", ")}.` : "Edit succeeded.");
 				} finally { for (const fd of handles) closeSync(fd); }
 			};
 			return locked(0);
