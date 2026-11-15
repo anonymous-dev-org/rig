@@ -12,3 +12,9 @@
   - No live installation changed. Try via pi --no-extensions -e <worktree>/pi/.pi/agent/extensions/line-file-tools/index.ts in a new session.
   - Follow-up suggestion: retain focused regression tests if requested; current verification scripts are throwaway, not committed.
   - Public schema checks passed both request formats and rejected empty batches, missing entry paths, and invalid splice coordinates. Independent reviewer found no issues.
+- [x] Tool descriptions are short and say what each tool does and how to call it.
+  - Requirement: rewrite read/edit descriptions, prompt snippets, edit guidelines and schema field descriptions; no behavior change; drop internals the model cannot act on (hashes, terminator rules), which stay in the README.
+  - Definition of done: extension loads, schema accepts both formats, descriptions printed for review; commit.
+  - Per-field usage moved into schema descriptions (start, deleteCount, lines, changes, edits) so the main description covers only call shape, mode choice and failure handling.
+  - Added the case that failed twice in this session: replacing lines and inserting in the same file. Description and the exactly-one error now say to use splices for all of it and to omit, not empty, the unused field.
+  - Suggestion: the reread policy still says to attempt edits below an insertion and reread on rejection. Telling the model to reread those ranges up front would save a rejected call; left unchanged because it is the benchmarked policy.

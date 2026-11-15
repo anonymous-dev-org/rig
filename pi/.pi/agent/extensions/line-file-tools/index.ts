@@ -42,13 +42,13 @@ function load(fd: number) {
 }
 
 const editFields = {
-	path: Type.String({ description: "File path, relative to cwd or absolute." }),
-	changes: Type.Optional(Type.Record(Type.String(), Type.String(), { description: "1-based line numbers to replacement single-line text. Omit when using splices." })),
+	path: Type.String({ description: "File to edit, relative to cwd or absolute. Read it first." }),
+	changes: Type.Optional(Type.Record(Type.String(), Type.String(), { description: "Replace whole lines: each key is a 1-based line number, each value that line's new text. Omit when using splices." })),
 	splices: Type.Optional(Type.Array(Type.Object({
-		start: Type.Integer({ minimum: 1 }),
-		deleteCount: Type.Integer({ minimum: 0 }),
-		lines: Type.Array(Type.String()),
-	}), { minItems: 1, description: "Range edits using pre-edit coordinates. Omit when using changes." })),
+		start: Type.Integer({ minimum: 1, description: "1-based line where the splice begins. Last line + 1 appends." }),
+		deleteCount: Type.Integer({ minimum: 0, description: "Number of lines to remove starting at start. 0 inserts before start." }),
+		lines: Type.Array(Type.String(), { description: "Lines to put there, one string per line. [] deletes only." }),
+	}), { minItems: 1, description: "Insert, delete or replace line ranges, numbered as in the file before this call. Omit when using changes." })),
 };
 
 export default function lineFileTools(pi: ExtensionAPI) {
@@ -67,14 +67,14 @@ export default function lineFileTools(pi: ExtensionAPI) {
 	pi.registerTool({
 		name: "read",
 		label: "read (numbered lines)",
-		promptSnippet: "Read numbered text lines using inclusive start/end, or image attachments; harness remembers text-file freshness.",
+		promptSnippet: "Read numbered text lines (inclusive start/end) or images; required before edit can change a file.",
 		promptGuidelines: stockRead.promptGuidelines,
 		outputSchema: stockRead.outputSchema,
-		description: "Read local UTF-8 text as numbered lines, or supported images (jpg, png, gif, webp, bmp) as attachments through stock Pi processing. For text, start/end are inclusive, 1-based; defaults to lines 1–200. The harness privately remembers per-line hashes and EOF for edit. Maximum text file 4 MiB and output 50 KiB; request a narrower range if needed. Image ranges are ignored; images do not establish an edit snapshot.",
+		description: "Read a local UTF-8 text file as numbered lines, or an image (jpg, png, gif, webp, bmp) as an attachment. A text read returns lines start to end, 1-based and inclusive, 200 lines by default. Reading a text file is required before edit can change it. Limits: 4 MiB per text file and 50 KiB per result; read a narrower range if a result is too large. Images ignore start and end and cannot be edited.",
 		parameters: Type.Object({
-			path: Type.String(),
-			start: Type.Optional(Type.Integer({ minimum: 1 })),
-			end: Type.Optional(Type.Integer({ minimum: 1 })),
+			path: Type.String({ description: "File to read, relative to cwd or absolute." }),
+			start: Type.Optional(Type.Integer({ minimum: 1, description: "First line, 1-based. Default 1." })),
+			end: Type.Optional(Type.Integer({ minimum: 1, description: "Last line, inclusive. Default start + 199." })),
 		}),
 		async execute(id, { path, start = 1, end = start + 199 }, signal, update, ctx) {
 			const target = filePath(ctx.cwd, path);
@@ -113,17 +113,22 @@ export default function lineFileTools(pi: ExtensionAPI) {
 	pi.registerTool({
 		name: "edit",
 		label: "edit (guarded lines)",
-		promptSnippet: "Edit one or multiple files with changes or splices per file; checks freshness and validates the whole batch before writing.",
+		promptSnippet: "Edit lines by number in one or several files, using changes (replace lines) or splices (insert, delete, replace ranges) per file.",
 		promptGuidelines: [
-			"When you already know the target lines and intended change from a prior numbered read or successful edit, call edit directly. Do not reread merely to check freshness or after success: edit checks private per-line snapshots before writing.",
-			"After insertions/deletions, attempt known edits directly; edit rejects targets whose content no longer matches at that coordinate while earlier unchanged lines stay usable. Read only for needed context, a rejected/missing target snapshot, or a session-state reset. On rejection, read the relevant range and reconsider the coordinates rather than blindly retrying.",
-			'For edit, use {path, changes} or {path, splices} for one file, or {edits: [{path, changes}, {path, splices}]} for multiple files. Supply exactly one of changes or splices per file; omit the unused field. Never combine edits with top-level path/changes/splices, and list each file only once. Read each file first to establish its snapshot; do not reread known targets just for freshness.',
+			"Call edit with line numbers from an earlier read. Do not reread a file just to check freshness or after a successful edit: edit rejects any target that no longer matches and writes nothing. Read again only for more context, after a rejection, or after a session reset or compaction.",
+			"After edit inserts or deletes lines, the lines above that point keep their numbers and stay editable. If edit rejects a line below it, read that range again and correct the line numbers instead of retrying.",
+			"To change several files together, use one edit call with edits: [{path, changes}, {path, splices}].",
 		],
-		description: "Edit one or multiple files using known lines; do not reread to check freshness or after success, including after splices. Use {path, changes} or {path, splices}, or batch {edits: [{path, changes}, {path, splices}]}; never mix batch and top-level file fields. Supply exactly one of changes (1-based line-number to single-line text) or splices ([{start, deleteCount, lines}]) per file; omit the unused field. List each file once; duplicate paths, symlinks and hard-link aliases are rejected. All files must have read snapshots. All files are validated before any writes; validation failure changes nothing. Disk-write failure can partially apply the batch: inspect the reported paths before retrying. Private per-line hashes reject changed/missing target snapshots; unrelated changes do not block fresh targets. On rejection, read the relevant range and reconsider coordinates. A splice replaces deleteCount lines starting at 1-based start with lines; count 0 inserts before start, empty lines deletes, start=total+1/count=0 appends. All coordinates refer to that file before this call; overlapping splices or duplicate starts are refused. Strings must contain no CR, LF or NUL. No hashes or old text required. Splices check removed rows, insertion anchors and any changed boundary row; appends check EOF and the last row. Hashes stay at their numeric coordinates, so shifted targets may reject while unchanged earlier lines stay usable. Changes preserve original terminators and cannot blank an unterminated final row. Splices use the first file terminator (else LF) for new rows; preserve final-newline presence except an empty final row needs a terminator. Empty files gain LF-terminated rows. Success returns only: Edit succeeded.",
+		description: [
+			"Edit lines in one or more text files that read has already shown. Line numbers come from read and refer to each file as it was before this call. Create new files with write.",
+			"One file: {path, changes} or {path, splices}. Several files: {edits: [{path, changes}, {path, splices}]}, listing each file once and passing no top-level path, changes or splices.",
+			"Give each file exactly one of changes or splices and leave the other out entirely, not empty. changes replaces whole existing lines by number. A splice replaces deleteCount lines at start with lines, so it can insert (deleteCount 0), delete (lines []), replace a range, or append (start = last line + 1, deleteCount 0). To replace some lines and insert or delete others in the same file, use splices for all of it. Splices in one file must not overlap or share a start. Every string is a single line with no line breaks.",
+			"All files are checked before any is written. If a file has not been read, or a target line no longer matches what read showed, the call fails and nothing changes: read that range again and correct the line numbers. Do not reread just to check freshness or after success. If a disk write fails partway through a multi-file call, the error names the files already written; reread the failed file instead of repeating the whole call.",
+		].join("\n\n"),
 		parameters: Type.Object({
 			...editFields,
 			path: Type.Optional(editFields.path),
-			edits: Type.Optional(Type.Array(Type.Object(editFields), { minItems: 1, description: "Multi-file edits. Each entry has path and exactly one of changes or splices. Omit top-level path, changes and splices." })),
+			edits: Type.Optional(Type.Array(Type.Object(editFields), { minItems: 1, description: "Edit several files in one call. Each entry is {path, changes} or {path, splices}; list each file once. Omit top-level path, changes and splices." })),
 		}),
 		// Stock edit rendering expects oldText/newText and otherwise hides success text.
 		renderShell: "default",
@@ -140,7 +145,7 @@ export default function lineFileTools(pi: ExtensionAPI) {
 			const requests = edits ?? (path === undefined ? [] : [{ path, changes, splices }]);
 			if (!requests.length) throw new Error("Provide a path with changes/splices, or a nonempty edits array. No edits applied.");
 			for (const entry of requests) {
-				if ((entry.changes === undefined) === (entry.splices === undefined)) throw new Error(`${entry.path}: provide exactly one of changes or splices; omit the unused field. No edits applied.`);
+				if ((entry.changes === undefined) === (entry.splices === undefined)) throw new Error(`${entry.path}: provide exactly one of changes or splices and omit the other field. To replace lines and also insert or delete in this file, use splices for all of it. No edits applied.`);
 			}
 			const targets = requests.map(entry => ({ ...entry, target: filePath(ctx.cwd, entry.path) }));
 			if (new Set(targets.map(entry => entry.target)).size !== targets.length) throw new Error("Each file must appear only once, including path/symlink aliases. No edits applied.");
