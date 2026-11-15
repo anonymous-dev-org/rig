@@ -53,10 +53,6 @@
       "researcher": {
         "fast": false
       },
-      "reviewer": {
-        "fast": false,
-        "disabled": true
-      },
       "reviewer-api": {
         "fast": false,
         "disabled": true
