@@ -51,7 +51,7 @@ async function review(
 	}
 	const agent = new Agent({
 		initialState: {
-			systemPrompt, model, thinkingLevel: "high",
+			systemPrompt, model, thinkingLevel: "medium",
 			tools: createReadOnlyTools(ctx.cwd).filter((tool) => ["read", "grep", "find", "ls"].includes(tool.name)),
 		},
 		convertToLlm,
