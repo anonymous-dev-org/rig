@@ -26,6 +26,22 @@ Once the target lines and intended change are known, **call edit directly**. Do 
 
 Read ranges are inclusive and 1-based; default is 1–200. An end beyond EOF is clamped. An empty file has zero lines. `changes` replaces existing lines without shifting positions: each value is exactly one line with no CR/LF. `""` blanks a terminated line. Blanking an unterminated final line with `changes` is refused because it would remove that physical line; use a splice instead.
 
+## Read multiple files
+
+```js
+read({ reads: [
+  { path: "src/config.ts", start: 1, end: 40 },
+  { path: "src/main.ts", start: 50, end: 100 },
+  { path: "screenshot.png" }
+] })
+```
+
+Use a nonempty `reads` array and omit top-level `path`, `start`, and `end`. Each entry has the same defaults and rules as a single-file read. Repeated paths are allowed for separate ranges. Results follow request order, with a path label before each text range or image. Successful text reads establish the same edit snapshots as single-file calls.
+
+The 50 KiB numbered-text budget applies across the batch, including path labels; split batches or narrow ranges if needed. Images retain stock processing limits. Reads stop at the first failure, naming the failed path; earlier successful reads retain their snapshots, but their output is not returned. A batch is not an atomic view of all files.
+
+Programmatic single-file results are unchanged. Batch callers receive `[{ path, result }, ...]`, where `result` is the usual numbered string or stock image object. This array form is also declared in the tool's output schema.
+
 ## Edit multiple files
 
 Use `edits` to mix line replacements and range edits across files:
