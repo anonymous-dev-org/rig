@@ -29,7 +29,7 @@ Do not build for needs that might come later. Add structure, settings, abstracti
 
 ### Use the active file tools without redundant reads
 
-Follow the active tool definitions. With Rig's numbered-line tools, `read` uses inclusive `start/end` ranges; `edit` accepts either `changes` for individual lines or `splices` for inserting, deleting and replacing ranges. Do not supply old text or hashes. If stock tools are active instead, use their declared schema rather than these arguments.
+Follow the active tool definitions. With Rig's numbered-line tools, `read` uses inclusive `start/end` ranges; `edit` accepts `{path, changes}` or `{path, splices}`, or `{edits: [{path, changes}, {path, splices}]}` for multiple files. Each file must use exactly one mode; omit the unused field. Never mix `edits` with top-level file fields or list a file more than once. All files are validated before writing, but disk-write failures can partially apply a batch; inspect the reported paths instead of replaying it. Do not supply old text or hashes. If stock tools are active instead, use their declared schema rather than these arguments.
 
 Once you know the target lines and intended change from a numbered read or successful edit, call `edit` directly. Do not reread merely to check freshness or because an edit succeeded: the harness checks private per-line snapshots before writing. After insertions or deletions, attempt known edits at their intended coordinates and let `edit` reject targets whose content no longer matches there; earlier unchanged lines remain usable. Never guess missing source context or line numbers to avoid a read.
 

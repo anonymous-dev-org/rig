@@ -41,6 +41,16 @@ function load(fd: number) {
 	return { bom, rows };
 }
 
+const editFields = {
+	path: Type.String({ description: "File to edit, relative to cwd or absolute. Read it first." }),
+	changes: Type.Optional(Type.Record(Type.String(), Type.String(), { description: "Replace whole lines: each key is a 1-based line number, each value that line's new text. Omit when using splices." })),
+	splices: Type.Optional(Type.Array(Type.Object({
+		start: Type.Integer({ minimum: 1, description: "1-based line where the splice begins. Last line + 1 appends." }),
+		deleteCount: Type.Integer({ minimum: 0, description: "Number of lines to remove starting at start. 0 inserts before start." }),
+		lines: Type.Array(Type.String(), { description: "Lines to put there, one string per line. [] deletes only." }),
+	}), { minItems: 1, description: "Insert, delete or replace line ranges, numbered as in the file before this call. Omit when using changes." })),
+};
+
 export default function lineFileTools(pi: ExtensionAPI) {
 	const stockRead = createReadToolDefinition(process.cwd());
 	const snapshots = new Map<string, { lines: string[]; eof: number }>();
@@ -57,14 +67,14 @@ export default function lineFileTools(pi: ExtensionAPI) {
 	pi.registerTool({
 		name: "read",
 		label: "read (numbered lines)",
-		promptSnippet: "Read numbered text lines using inclusive start/end, or image attachments; harness remembers text-file freshness.",
+		promptSnippet: "Read numbered text lines (inclusive start/end) or images; required before edit can change a file.",
 		promptGuidelines: stockRead.promptGuidelines,
 		outputSchema: stockRead.outputSchema,
-		description: "Read local UTF-8 text as numbered lines, or supported images (jpg, png, gif, webp, bmp) as attachments through stock Pi processing. For text, start/end are inclusive, 1-based; defaults to lines 1–200. The harness privately remembers per-line hashes and EOF for edit. Maximum text file 4 MiB and output 50 KiB; request a narrower range if needed. Image ranges are ignored; images do not establish an edit snapshot.",
+		description: "Read a local UTF-8 text file as numbered lines, or an image (jpg, png, gif, webp, bmp) as an attachment. A text read returns lines start to end, 1-based and inclusive, 200 lines by default. Reading a text file is required before edit can change it. Limits: 4 MiB per text file and 50 KiB per result; read a narrower range if a result is too large. Images ignore start and end and cannot be edited.",
 		parameters: Type.Object({
-			path: Type.String(),
-			start: Type.Optional(Type.Integer({ minimum: 1 })),
-			end: Type.Optional(Type.Integer({ minimum: 1 })),
+			path: Type.String({ description: "File to read, relative to cwd or absolute." }),
+			start: Type.Optional(Type.Integer({ minimum: 1, description: "First line, 1-based. Default 1." })),
+			end: Type.Optional(Type.Integer({ minimum: 1, description: "Last line, inclusive. Default start + 199." })),
 		}),
 		async execute(id, { path, start = 1, end = start + 199 }, signal, update, ctx) {
 			const target = filePath(ctx.cwd, path);
@@ -103,127 +113,164 @@ export default function lineFileTools(pi: ExtensionAPI) {
 	pi.registerTool({
 		name: "edit",
 		label: "edit (guarded lines)",
-		promptSnippet: "Edit known lines directly with changes or splices; harness checks freshness, so no pre-edit freshness read is needed.",
+		promptSnippet: "Edit lines by number in one or several files, using changes (replace lines) or splices (insert, delete, replace ranges) per file.",
 		promptGuidelines: [
-			"When you already know the target lines and intended change from a prior numbered read or successful edit, call edit directly. Do not reread merely to check freshness or after success: edit checks private per-line snapshots before writing.",
-			"After insertions/deletions, attempt known edits directly; edit rejects targets whose content no longer matches at that coordinate while earlier unchanged lines stay usable. Read only for needed context, a rejected/missing target snapshot, or a session-state reset. On rejection, read the relevant range and reconsider the coordinates rather than blindly retrying.",
+			"Call edit with line numbers from an earlier read. Do not reread a file just to check freshness or after a successful edit: edit rejects any target that no longer matches and writes nothing. Read again only for more context, after a rejection, or after a session reset or compaction.",
+			"After edit inserts or deletes lines, the lines above that point keep their numbers and stay editable. If edit rejects a line below it, read that range again and correct the line numbers instead of retrying.",
+			"To change several files together, use one edit call with edits: [{path, changes}, {path, splices}].",
 		],
-		description: "Edit known lines directly; do not reread to check freshness or after success, including after splices. Private per-line hashes reject changed/missing target snapshots before writing; unrelated changes do not block fresh targets. On rejection, read the relevant range and reconsider coordinates. Supply exactly one of changes (1-based line-number to single-line text) or splices ([{start, deleteCount, lines}]). A splice replaces deleteCount lines starting at 1-based start with lines; count 0 inserts before start, empty lines deletes, start=total+1/count=0 appends. All coordinates refer to the pre-edit file; overlapping splices or duplicate starts are refused. Strings must contain no CR, LF or NUL. No hashes or old text required. Splices check removed rows, insertion anchors and any changed boundary row; appends check EOF and the last row. Hashes stay at their numeric coordinates, so shifted targets may reject while unchanged earlier lines stay usable. Changes preserve original terminators and cannot blank an unterminated final row. Splices use the first file terminator (else LF) for new rows; preserve final-newline presence except an empty final row needs a terminator. Empty files gain LF-terminated rows. Success returns only: Edit succeeded.",
+		description: [
+			"Edit lines in one or more text files that read has already shown. Line numbers come from read and refer to each file as it was before this call. Create new files with write.",
+			"One file: {path, changes} or {path, splices}. Several files: {edits: [{path, changes}, {path, splices}]}, listing each file once and passing no top-level path, changes or splices.",
+			"Give each file exactly one of changes or splices and leave the other out entirely, not empty. changes replaces whole existing lines by number. A splice replaces deleteCount lines at start with lines, so it can insert (deleteCount 0), delete (lines []), replace a range, or append (start = last line + 1, deleteCount 0). To replace some lines and insert or delete others in the same file, use splices for all of it. Splices in one file must not overlap or share a start. Every string is a single line with no line breaks.",
+			"All files are checked before any is written. If a file has not been read, or a target line no longer matches what read showed, the call fails and nothing changes: read that range again and correct the line numbers. Do not reread just to check freshness or after success. If a disk write fails partway through a multi-file call, the error names the files already written; reread the failed file instead of repeating the whole call.",
+		].join("\n\n"),
 		parameters: Type.Object({
-			path: Type.String(),
-			changes: Type.Optional(Type.Record(Type.String(), Type.String())),
-			splices: Type.Optional(Type.Array(Type.Object({
-				start: Type.Integer({ minimum: 1 }),
-				deleteCount: Type.Integer({ minimum: 0 }),
-				lines: Type.Array(Type.String()),
-			}), { minItems: 1 })),
+			...editFields,
+			path: Type.Optional(editFields.path),
+			edits: Type.Optional(Type.Array(Type.Object(editFields), { minItems: 1, description: "Edit several files in one call. Each entry is {path, changes} or {path, splices}; list each file once. Omit top-level path, changes and splices." })),
 		}),
 		// Stock edit rendering expects oldText/newText and otherwise hides success text.
 		renderShell: "default",
 		renderCall(args, theme) {
-			return new Text(theme.fg("toolTitle", theme.bold("edit (lines) ")) + JSON.stringify(args.path ?? ""), 0, 0);
+			return new Text(theme.fg("toolTitle", theme.bold("edit (lines) ")) + JSON.stringify(args.edits?.map(edit => edit.path) ?? args.path ?? ""), 0, 0);
 		},
 		renderResult(output, _options, theme, context) {
 			const text = output.content.filter(item => item.type === "text").map(item => item.text).join("\n");
 			return new Text(theme.fg(context.isError ? "error" : "toolOutput", text), 0, 0);
 		},
-		async execute(_id, { path, changes, splices }, signal, _update, ctx) {
-			if ((changes === undefined) === (splices === undefined)) throw new Error("Provide exactly one of changes or splices.");
-			const target = filePath(ctx.cwd, path);
+		async execute(_id, params, signal, _update, ctx) {
+			const { path, changes, splices, edits } = params;
+			if (edits !== undefined && (path !== undefined || changes !== undefined || splices !== undefined)) throw new Error("Use edits OR top-level path/changes/splices, not both. No edits applied.");
+			const requests = edits ?? (path === undefined ? [] : [{ path, changes, splices }]);
+			if (!requests.length) throw new Error("Provide a path with changes/splices, or a nonempty edits array. No edits applied.");
+			for (const entry of requests) {
+				if ((entry.changes === undefined) === (entry.splices === undefined)) throw new Error(`${entry.path}: provide exactly one of changes or splices and omit the other field. To replace lines and also insert or delete in this file, use splices for all of it. No edits applied.`);
+			}
+			const targets = requests.map(entry => ({ ...entry, target: filePath(ctx.cwd, entry.path) }));
+			if (new Set(targets.map(entry => entry.target)).size !== targets.length) throw new Error("Each file must appear only once, including path/symlink aliases. No edits applied.");
 			const startedEpoch = epoch;
-			return withFileMutationQueue(target, async () => {
+			// Acquire overlapping batches in the same order to avoid deadlocks.
+			const lockPaths = targets.map(entry => entry.target).sort();
+			const locked = (index: number): Promise<ReturnType<typeof result>> => index < lockPaths.length
+				? withFileMutationQueue(lockPaths[index], () => locked(index + 1))
+				: apply();
+			const apply = async () => {
 				signal?.throwIfAborted();
-				if (epoch !== startedEpoch) throw new Error("Session state changed while queued. Read the file again.");
-				const expected = snapshots.get(target);
-				if (!expected) throw new Error("No read snapshot. Read this file before editing.");
-				const fd = openSync(target, constants.O_RDWR | constants.O_NONBLOCK);
+				if (epoch !== startedEpoch) throw new Error("Session state changed while queued. Read the files again.");
+				const handles: number[] = [];
+				const identities = new Set<string>();
 				try {
-					const { bom, rows } = load(fd);
-					const checkLine = (line: number) => {
-						if (!rows[line - 1] || expected.lines[line - 1] !== hash(rows[line - 1])) {
-							throw new Error(`Line ${line} changed or has no matching snapshot. No edits applied. Read the relevant range and reconsider the line numbers.`);
-						}
-					};
-					const checkEOF = () => {
-						if (expected.eof !== rows.length) throw new Error("EOF changed since the snapshot. No edits applied. Read the end of the file and reconsider the line numbers.");
-						if (rows.length) checkLine(rows.length);
-					};
-					let updatedRows = rows;
-					const authored = new Set<Row>();
-					if (changes !== undefined) {
-						const entries = Object.entries(changes);
-						if (!entries.length) throw new Error("Provide at least one line replacement.");
-						for (const [key, text] of entries) {
-							const line = Number(key);
-							if (!/^[1-9]\d*$/.test(key) || !Number.isSafeInteger(line) || line > rows.length) throw new Error(`Invalid line number: ${key}. File has ${rows.length} lines.`);
-							if (/[\r\n\0]/.test(text) || !text.isWellFormed()) throw new Error(`Line ${key}: replacement must be well-formed Unicode with no CR, LF, or NUL.`);
-							if (text === "" && rows[line - 1].eol === "") throw new Error(`Line ${key}: cannot blank an unterminated final line without deleting it. Use splices instead.`);
-							checkLine(line);
-							rows[line - 1].text = text;
-							authored.add(rows[line - 1]);
-						}
-					} else {
-						if (!splices?.length) throw new Error("Provide at least one splice.");
-						const ordered = [...splices].sort((a, b) => a.start - b.start);
-						const eol = rows.find(row => row.eol)?.eol ?? "\n";
-						const finalEol = rows.at(-1)?.eol ?? eol;
-						const segments: typeof rows[] = [];
-						let cursor = 0;
-						let previousStart = 0;
-						for (const { start, deleteCount, lines } of ordered) {
-							if (!Number.isSafeInteger(start) || start < 1 || start > rows.length + 1 || !Number.isSafeInteger(deleteCount) || deleteCount < 0 || deleteCount > rows.length - start + 1) throw new Error("Splice is outside the file. Use start 1..total+1 and a valid nonnegative deleteCount.");
-							if (start === previousStart || start - 1 < cursor) throw new Error("Splices overlap or share a start. Combine them into one splice.");
-							if (!deleteCount && !lines.length) throw new Error("An empty insertion is not an edit.");
-							for (const text of lines) {
-								if (/[\r\n\0]/.test(text) || !text.isWellFormed()) throw new Error("Splice lines must be well-formed Unicode with no CR, LF, or NUL.");
+					const prepared = targets.map(({ target, changes, splices }) => {
+						const expected = snapshots.get(target);
+						if (!expected) throw new Error(`${target}: no read snapshot. Read this file before editing. No edits applied.`);
+						const fd = openSync(target, constants.O_RDWR | constants.O_NONBLOCK);
+						handles.push(fd);
+						try {
+							const stat = fstatSync(fd);
+							const identity = `${stat.dev}:${stat.ino}`;
+							if (identities.has(identity)) throw new Error("Each file must appear only once, including hard-link aliases.");
+							identities.add(identity);
+							const { bom, rows } = load(fd);
+							const checkLine = (line: number) => {
+								if (!rows[line - 1] || expected.lines[line - 1] !== hash(rows[line - 1])) {
+									throw new Error(`Line ${line} changed or has no matching snapshot. No edits applied. Read the relevant range and reconsider the line numbers.`);
+								}
+							};
+							const checkEOF = () => {
+								if (expected.eof !== rows.length) throw new Error("EOF changed since the snapshot. No edits applied. Read the end of the file and reconsider the line numbers.");
+								if (rows.length) checkLine(rows.length);
+							};
+							let updatedRows = rows;
+							const authored = new Set<Row>();
+							if (changes !== undefined) {
+								const entries = Object.entries(changes);
+								if (!entries.length) throw new Error("Provide at least one line replacement.");
+								for (const [key, text] of entries) {
+									const line = Number(key);
+									if (!/^[1-9]\d*$/.test(key) || !Number.isSafeInteger(line) || line > rows.length) throw new Error(`Invalid line number: ${key}. File has ${rows.length} lines.`);
+									if (/[\r\n\0]/.test(text) || !text.isWellFormed()) throw new Error(`Line ${key}: replacement must be well-formed Unicode with no CR, LF, or NUL.`);
+									if (text === "" && rows[line - 1].eol === "") throw new Error(`Line ${key}: cannot blank an unterminated final line without deleting it. Use splices instead.`);
+									checkLine(line);
+									rows[line - 1].text = text;
+									authored.add(rows[line - 1]);
+								}
+							} else {
+								if (!splices?.length) throw new Error("Provide at least one splice.");
+								const ordered = [...splices].sort((a, b) => a.start - b.start);
+								const eol = rows.find(row => row.eol)?.eol ?? "\n";
+								const finalEol = rows.at(-1)?.eol ?? eol;
+								const segments: typeof rows[] = [];
+								let cursor = 0;
+								let previousStart = 0;
+								for (const { start, deleteCount, lines } of ordered) {
+									if (!Number.isSafeInteger(start) || start < 1 || start > rows.length + 1 || !Number.isSafeInteger(deleteCount) || deleteCount < 0 || deleteCount > rows.length - start + 1) throw new Error("Splice is outside the file. Use start 1..total+1 and a valid nonnegative deleteCount.");
+									if (start === previousStart || start - 1 < cursor) throw new Error("Splices overlap or share a start. Combine them into one splice.");
+									if (!deleteCount && !lines.length) throw new Error("An empty insertion is not an edit.");
+									for (const text of lines) {
+										if (/[\r\n\0]/.test(text) || !text.isWellFormed()) throw new Error("Splice lines must be well-formed Unicode with no CR, LF, or NUL.");
+									}
+									for (let line = start; line < start + deleteCount; line++) checkLine(line);
+									if (!deleteCount) {
+										if (start > 1) checkLine(start - 1);
+										if (start <= rows.length) checkLine(start);
+										else checkEOF();
+									}
+									const added = lines.map(text => ({ text, eol }));
+									for (const row of added) authored.add(row);
+									segments.push(rows.slice(cursor, start - 1), added);
+									cursor = start - 1 + deleteCount;
+									previousStart = start;
+								}
+								segments.push(rows.slice(cursor));
+								updatedRows = segments.flat();
+								for (let i = 0; i < updatedRows.length; i++) {
+									const row = updatedRows[i];
+									// Guard retained rows whose terminator changes at a splice boundary.
+									let nextEol = row.eol;
+									if (i < updatedRows.length - 1) nextEol ||= eol;
+									else if (!finalEol && row.text !== "") nextEol = "";
+									else nextEol ||= eol;
+									if (nextEol !== row.eol) {
+										if (!authored.has(row)) checkLine(rows.indexOf(row) + 1);
+										row.eol = nextEol;
+										authored.add(row);
+									}
+								}
 							}
-							for (let line = start; line < start + deleteCount; line++) checkLine(line);
-							if (!deleteCount) {
-								if (start > 1) checkLine(start - 1);
-								if (start <= rows.length) checkLine(start);
-								else checkEOF();
-							}
-							const added = lines.map(text => ({ text, eol }));
-							for (const row of added) authored.add(row);
-							segments.push(rows.slice(cursor, start - 1), added);
-							cursor = start - 1 + deleteCount;
-							previousStart = start;
+							const updated = Buffer.from(bom + updatedRows.map(row => row.text + row.eol).join(""));
+							if (updated.length > MAX_BYTES) throw new Error("Edited file would exceed 4 MiB.");
+							// Keep baselines at their numeric coordinates, even after a shift.
+							const next = { lines: [...expected.lines], eof: expected.eof === rows.length ? updatedRows.length : expected.eof };
+							updatedRows.forEach((row, index) => { if (authored.has(row)) next.lines[index] = hash(row); });
+							return { target, fd, updated, next };
+						} catch (error) {
+							throw new Error(`${target}: ${error instanceof Error ? error.message : String(error)} No edits applied.`);
 						}
-						segments.push(rows.slice(cursor));
-						updatedRows = segments.flat();
-						for (let i = 0; i < updatedRows.length; i++) {
-							const row = updatedRows[i];
-							// Guard retained rows whose terminator changes at a splice boundary.
-							let nextEol = row.eol;
-							if (i < updatedRows.length - 1) nextEol ||= eol;
-							else if (!finalEol && row.text !== "") nextEol = "";
-							else nextEol ||= eol;
-							if (nextEol !== row.eol) {
-								if (!authored.has(row)) checkLine(rows.indexOf(row) + 1);
-								row.eol = nextEol;
-								authored.add(row);
+					});
+					// No async yield between validation and all writes.
+					const completed: string[] = [];
+					for (const { target, fd, updated, next } of prepared) {
+						// Invalidate before any write, including failures/partial writes.
+						snapshots.delete(target);
+						try {
+							let offset = 0;
+							while (offset < updated.length) {
+								const written = writeSync(fd, updated, offset, updated.length - offset, offset);
+								if (!written) throw new Error("Write made no progress.");
+								offset += written;
 							}
+							ftruncateSync(fd, updated.length);
+							snapshots.set(target, next);
+							completed.push(target);
+						} catch (error) {
+							throw new Error(`Write failed for ${target}; it may be partially modified. Completed files: ${JSON.stringify(completed)}. Remaining files were not written. Inspect completed files and reread the failed file before retrying; do not replay the whole batch. ${error instanceof Error ? error.message : String(error)}`);
 						}
 					}
-					const updated = Buffer.from(bom + updatedRows.map(row => row.text + row.eol).join(""));
-					if (updated.length > MAX_BYTES) throw new Error("Edited file would exceed 4 MiB.");
-					// Invalidate before any write, including failures/partial writes.
-					snapshots.delete(target);
-					let offset = 0;
-					while (offset < updated.length) {
-						const written = writeSync(fd, updated, offset, updated.length - offset, offset);
-						if (!written) throw new Error("Write made no progress. Reread the file before retrying.");
-						offset += written;
-					}
-					ftruncateSync(fd, updated.length);
-					// Keep baselines at their numeric coordinates, even after a shift.
-					// Refresh only tool-authored rows, never unrelated external changes.
-					const next = { lines: [...expected.lines], eof: expected.eof === rows.length ? updatedRows.length : expected.eof };
-					updatedRows.forEach((row, index) => { if (authored.has(row)) next.lines[index] = hash(row); });
-					snapshots.set(target, next);
 					return result("Edit succeeded.");
-				} finally { closeSync(fd); }
-			});
+				} finally { for (const fd of handles) closeSync(fd); }
+			};
+			return locked(0);
 		},
 	});
 }

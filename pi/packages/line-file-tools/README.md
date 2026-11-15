@@ -26,9 +26,28 @@ Once the target lines and intended change are known, **call edit directly**. Do 
 
 Read ranges are inclusive and 1-based; default is 1–200. An end beyond EOF is clamped. An empty file has zero lines. `changes` replaces existing lines without shifting positions: each value is exactly one line with no CR/LF. `""` blanks a terminated line. Blanking an unterminated final line with `changes` is refused because it would remove that physical line; use a splice instead.
 
+## Edit multiple files
+
+Use `edits` to mix line replacements and range edits across files:
+
+```js
+edit({ edits: [
+  { path: "src/config.ts", changes: { "12": "export const timeout = 5000;" } },
+  { path: "src/main.ts", splices: [
+    { start: 20, deleteCount: 2, lines: ["initialize(config);"] }
+  ] }
+] })
+```
+
+Read each file first to establish its snapshot, then use known coordinates directly. Each entry must supply exactly one of `changes` or `splices`; omit the unused field entirely. Do not combine `edits` with top-level `path`, `changes`, or `splices`. The original single-file format remains supported. A batch must be nonempty, and each file can appear only once, including relative/absolute, symlink, or hard-link aliases. Combine edits for one file into its single entry; all coordinates refer to that file before the call.
+
+All files are opened and validated before any writes begin, so a validation failure leaves every file unchanged and preserves usable snapshots. Batches acquire file queues in canonical path order to avoid deadlocks. **Writes across files are not atomic:** an I/O failure can leave earlier files completed and the failing file partially modified. The error names the failed file and completed files; later files are not written. Inspect the completed files and reread the failed file before retrying rather than replaying the whole batch.
+
+The model receives this format through the tool's parameter schema, description, prompt snippet, and prompt guidelines; it does not need to discover it in this README.
+
 ## Insert, delete, or replace a range
 
-A **splice** removes a count of existing lines at a position and puts new lines there. Supply exactly one of `changes` or `splices` per call:
+A **splice** removes a count of existing lines at a position and puts new lines there. Supply exactly one of `changes` or `splices` per file:
 
 ```js
 // After reading the file, insert two lines BEFORE original line 12.
