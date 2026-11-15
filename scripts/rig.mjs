@@ -21,12 +21,15 @@ const value = flag => { const i = args.indexOf(flag); return i < 0 ? undefined :
 const fail = message => { throw new Error(message); };
 function status(label, message, stream = process.stdout) {
   const color = {SUCCESS:32, ERROR:31, PREVIEW:36}[label];
-  const text = `${{SUCCESS:'✅', ERROR:'❌', PREVIEW:'🔎'}[label]} [${label}] ${message}`;
+  const text = `${{SUCCESS:'✓', ERROR:'✗', PREVIEW:'○'}[label]} ${message}`;
   stream.write(`${stream.isTTY && process.env.NO_COLOR === undefined && process.env.TERM !== 'dumb' ? `\x1b[1;${color}m${text}\x1b[0m` : text}\n`);
 }
 function run(command, argv, options = {}) {
-  const result = spawnSync(command, argv, {cwd: root, stdio: 'inherit', ...options});
-  if (result.error || result.status !== 0) fail(`${command} failed; correct the error and rerun (completed components remain applied).`);
+  const result = spawnSync(command, argv, {cwd: root, encoding:'utf8', maxBuffer:64 * 1024 * 1024, ...options, stdio:'pipe'});
+  if (result.error || result.status !== 0) {
+    const details = [result.error?.message, result.stdout?.trim(), result.stderr?.trim()].filter(Boolean).join('\n');
+    fail(`${command} ${argv.join(' ')} ${result.signal ? `stopped by ${result.signal}` : `failed (exit ${result.status ?? 'unknown'})`}.${details ? `\n${details}` : ''}`);
+  }
   return result.stdout;
 }
 async function reconcilePiPackages(piBin, noUpgrade) {
@@ -47,7 +50,7 @@ async function reconcilePiPackages(piBin, noUpgrade) {
   catch { fail(`Cannot read Pi settings at ${agentDir}/settings.json. Correct the file and rerun.`); }
   const settingsManager = SettingsManager.inMemory(settings, {projectTrusted:false});
   const manager = new DefaultPackageManager({cwd: agentDir, agentDir, settingsManager});
-  manager.setProgressCallback(event => { if (event.message) console.log(event.message); });
+  manager.setProgressCallback(event => { if (event.message) console.log(`  ${event.message}`); });
   const {installFailures} = await manager.resolve();
   if (installFailures.length) fail(`Pi package installation failed: ${installFailures.map(item => `${item.source}: ${item.message}`).join('; ')}. Correct the error and rerun.`);
   if (!noUpgrade) await manager.update();
@@ -261,7 +264,7 @@ function deploy(component, relative) {
   }
   const digest = hash(effective);
   if (prior && !linked && hash(prior) === digest) { record(dest, digest, component, defaults); return; }
-  console.log(`${linked ? 'Detach known rig link and enforce' : 'Enforce'} ${dest}; repo: ${source}`);
+  console.log(`  ${preview ? 'Would ' : ''}${linked ? 'replace rig link' : current ? 'update' : 'create'} ${dest}`);
   if (preview) return;
   fs.mkdirSync(path.dirname(dest), {recursive:true, mode:0o700});
   if (prior) snapshot(dest, prior);
@@ -332,8 +335,8 @@ try {
       process.exit(child.status ?? 1);
     }
   }
-  console.log(`${preview ? 'Preview' : 'Apply'} ${mode}: ${state.components.join(', ') || '(none)'}.`);
-  console.log('AeroSpace, Lazysql and macOS config are untouched: adopt/update them manually. Principle skills are copied with Pi; other vendored skills are disabled.');
+  console.log(`\n${preview ? 'Sync preview — no changes will be made' : 'Sync configuration'}`);
+  console.log(`Components: ${state.components.join(', ') || 'none'}\n`);
   let lock;
   if (!preview) {
     fs.mkdirSync(stateRoot, {recursive:true,mode:0o700});
@@ -351,12 +354,13 @@ try {
     const failures = [];
     for (const component of state.components) {
       try {
-        console.log(`\n${component}:`);
+        console.log(`[${state.components.indexOf(component) + 1}/${state.components.length}] ${component} — ${component === 'brew' ? 'install packages' : 'sync configuration'}`);
         if (component === 'brew') {
           const env = {...process.env, ...state.brew.skip};
           for (const file of [path.join(root,'brew/Brewfile'), state.brew.file].filter(Boolean)) {
             const argv = ['bundle', `--file=${file}`, ...(state.brew.noUpgrade ? ['--no-upgrade'] : [])];
-            console.log(`brew ${argv.join(' ')}; skips: ${JSON.stringify(state.brew.skip)}`);
+            console.log(`  ${preview ? 'Would install' : 'Installing'} Homebrew packages${state.brew.noUpgrade ? ' (without upgrades)' : ' and upgrades'} from ${file}`);
+            if (Object.keys(state.brew.skip).length) console.log(`  Package exclusions: ${JSON.stringify(state.brew.skip)}`);
             if (!preview) run('brew', argv, {env});
           }
         } else {
@@ -373,7 +377,7 @@ try {
           if (component === 'pi') {
             let piBin;
             if (!available('pi') || !state.brew.noUpgrade) {
-              console.log('bun add --global --ignore-scripts @earendil-works/pi-coding-agent (selected Pi; shared upgrade control applies)');
+              console.log(`  ${preview ? 'Would install/update' : 'Installing/updating'} Pi CLI…`);
               if (!preview) {
                 run('bun', ['add','--global','--ignore-scripts','@earendil-works/pi-coding-agent']);
                 piBin = path.join(run('bun', ['pm','--global','bin'], {stdio:'pipe', encoding:'utf8'}).trim(), 'pi');
@@ -388,8 +392,9 @@ try {
             if (!preview) await reconcilePiPackages(piBin, state.brew.noUpgrade);
           }
         }
-        status(preview ? 'PREVIEW' : 'SUCCESS', `${component}: ${preview ? 'preview complete' : 'complete'}.`);
-      } catch (error) { failures.push(component); status('ERROR', `${component}: ${error.message}`, process.stderr); }
+        status(preview ? 'PREVIEW' : 'SUCCESS', `${component}: ${preview ? 'preview complete' : 'done'}.`);
+        console.log();
+      } catch (error) { failures.push(component); status('ERROR', `${component}: ${error.message}`, process.stderr); console.log(); }
     }
     if (args.includes('--install-hooks')) {
       const hooks = spawnSync('git', ['config','--get','core.hooksPath'], {cwd:root,encoding:'utf8'});
@@ -398,6 +403,7 @@ try {
       if (!preview) run('git', ['config','--local','core.hooksPath','.githooks']);
     }
     if (failures.length) fail(`${preview ? 'Preview conflicts' : 'Partial success'}; failed components: ${failures.join(', ')}. ${preview ? 'No selections saved.' : 'Selections saved;'} Resolve reported conflicts and rerun.`);
-    status(preview ? 'PREVIEW' : 'SUCCESS', preview ? 'Preview complete; no changes applied or rig state written.' : 'Sync completed successfully. Deselected components were not removed.');
+    status(preview ? 'PREVIEW' : 'SUCCESS', preview ? `Preview complete: ${state.components.length} components checked. No changes made.` : `Sync complete: ${state.components.length} components done.`);
+    if (!preview && stat(backupRoot)) console.log(`Backups: ${backupRoot}`);
   } finally { if (lock !== undefined) { fs.closeSync(lock); fs.unlinkSync(path.join(stateRoot,'lock')); } }
 } catch (error) { status('ERROR', `${preview ? 'Preview' : 'Sync'} failed: ${error.message}`, process.stderr); process.exitCode = 1; }
