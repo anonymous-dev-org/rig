@@ -111,10 +111,12 @@ security sandbox. Do not expose untrusted pages to privileged secrets casually.
 Full Pi sync deploys `extensions/line-file-tools/index.ts` as the default `read`
 and `edit` implementation. Text reads return numbered lines with inclusive
 `start/end` ranges. Edits use a line-number mapping or `splices` for inserting,
-deleting and replacing ranges; the harness checks a private full-file hash,
-so the model supplies neither hashes nor repeated old text. Read again after
-position-changing edits or a freshness error. Stock `write` and `bash` remain
-available and are not protected by this check.
+deleting and replacing ranges; the harness checks private per-line hashes,
+so the model supplies neither hashes nor repeated old text. Attempt known edits
+directly, including after insertions/deletions; reread relevant lines only when
+context is needed or a target is rejected as stale/missing. Successful edits
+return only `Edit succeeded.`. Stock `write` and `bash` remain available and
+are not protected by these checks.
 
 Supported images go through Pi's stock image processing and return attachments;
 codemode receives the stock image object or a numbered text string. This is not
