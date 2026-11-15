@@ -6,6 +6,10 @@ import { sliceByColumn, truncateToWidth, visibleWidth } from "@earendil-works/pi
 export default function (pi: ExtensionAPI) {
   let model = "no-model";
   let requestRender: (() => void) | undefined;
+  const tokenFormat = new Intl.NumberFormat("en-US", {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  });
 
   pi.on("session_start", async (_event, ctx) => {
     model = ctx.model?.id ?? "no-model";
@@ -70,7 +74,7 @@ export default function (pi: ExtensionAPI) {
           const reviewing = footerData.getExtensionStatuses().get("rig-paired-review");
           const right = (reviewing ? theme.fg("accent", `${reviewing}  `) : "") +
             theme.fg(contextColor, context) +
-            theme.fg("dim", `  in ${inputTokens.toLocaleString("en-US")} - out ${outputTokens.toLocaleString("en-US")} ($${cost.toFixed(3)})  ${fast} │ `) +
+            theme.fg("dim", `  in ${tokenFormat.format(inputTokens).toLowerCase()} - out ${tokenFormat.format(outputTokens).toLowerCase()} ($${cost.toFixed(3)})  ${fast} │ `) +
             theme.fg("accent", thinking) + theme.fg("dim", ` │ ${model} `);
           const rightWidth = visibleWidth(right);
           if (rightWidth >= width) return [truncateToWidth(right, width)];
