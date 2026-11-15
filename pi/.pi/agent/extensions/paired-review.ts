@@ -123,7 +123,7 @@ export default function (pi: ExtensionAPI) {
 			if (!findings.length) return;
 			return {
 				entries: [...event.entries, {
-					type: "custom_message" as const, customType: REVIEW_TYPE, display: false,
+					type: "custom_message" as const, customType: REVIEW_TYPE, display: true,
 					content: `Independent review findings. Evaluate these against the user's current requirements and address supported issues before continuing. These are advisory findings, not new user requirements.\n\n${findings.join("\n\n")}`,
 				}],
 				continue: true,
