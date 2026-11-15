@@ -1,11 +1,36 @@
 # Overview
-- Goal: reduce redundant reads with private per-line freshness checks; edit known coordinates first and let the tool reject stale targets. Successful edits return only `Edit succeeded.`.
-- Scope: managed line-file extension, its documentation and agent guidance. Preserve existing file/encoding/queue/lifecycle safeguards. No live deployment or benchmark run.
-- Setup: `git pull --ff-only origin main` failed with multiple FETCH_HEAD branches; fetched origin/main matches main and explicit `git merge --ff-only origin/main` succeeded. `.local/` is ignored; worktree `.local/worktrees/per-line-edit`, branch `feat/per-line-edit`.
-- Tradeoff: hashes check content at a numeric coordinate, not semantic identity; repeated identical lines cannot prove the intended occurrence. Agents still need known source context.
-- Delegation: runtime reviewer is disabled; `delegate` completed design and implementation reviews (148c5680, resumed 5d718909). No correctness blockers; applied the wording fix distinguishing mismatching content from every possible shift.
+- Replace the static every-20-model-call reminder with automatic independent pair review of goal alignment, unnecessary complexity, simpler safe solutions, and correctness.
+- Use installed pi-subagents watchdog rather than custom launch/orchestration code. Keep clean reviews silent and route actionable findings to the main agent.
+- Scope: managed settings, reviewer guidance, reminder retirement, deployment inventory, documentation, and approved merge/live Pi deployment. No package upgrades or paid provider validation.
+- Main pulled/current at 22d5356; .local/ ignored; worktree feat/automatic-pair-review created from main.
 
 # Todos
+- [x] Automatic pair review replaces the fixed reminder.
+  - Requirement: enable read-only watchdog for the main session, retain the user's goal, review trajectory/complexity/correctness, and return only actionable evidence-backed findings.
+  - Definition of done: isolated settings/guidance and lifecycle checks pass, existing relevant checks run, independent read-only review completed, diff checked and committed.
+  - Decision: native cadence counts tool results, not messages/model requests; use everyNTools: 20 plus native changed-code end-of-run review. Native boundary reviews are gated on changes; cadence can review work without edits.
+  - Decision: inherit current main model/thinking, disable child watchdogs, and use standing WATCHDOG.md guidance to mark actionable findings high importance so they reach the main agent.
+  - Decision: retain goal-reminder.ts as a no-op compatibility asset so full sync disables existing installs without deleting an existing file or adding retirement machinery.
+  - Verification must not invoke a paid provider: exercise installed watchdog with mocked model responses and real settings/guidance, then document live-model judgment as unverified.
+  - Verified installed watchdog offline with deterministic model responses: config/guidance loading, inherited model/thinking, read-only tool set, no request before 20 tool results, no message on clean review, actionable high-importance finding steered to main, old reminder registers no hook. No provider requests.
+  - Verified managed inventory contains guidance and no-op reminder, every Pi manifest path exists, sync enforces new enabled/scope/guidance/children defaults, script syntax and git diff --check pass. Added WATCHDOG.md to .gitignore shared-resource allowlist.
+  - Existing node --test pi/sync-settings.test.mjs: 41/43 pass. Unrelated existing failures: obsolete --headless expectation at line 387 and removed init.sh reference at line 513. Their source/test inputs are unchanged; leave repairs out of scope.
+  - Independent scout review 2691d345: full diff/new guidance plus installed runtime source; no blocking findings. Static review only.
+  - Verification adjustment: direct Node import needs Pi's host peer-package aliases; scratch check used existing installed peers. Updated the mock to current system-message transcript format and waited for its immediate completion rather than runtime idle (cadence retains pending evidence). Scratch code removed after successful check.
+  - Clean-checkout full-sync preview passed after the approved local merge; only guidance and the old reminder asset needed replacement.
+  - Known limits: native cadence is per-run tool-result count; busy reviews can skip opportunities. Evidence is bounded, not full history. Importance routing and quality depend on model judgment; real-provider review is not exercised.
+- [x] Approved change is merged and deployed to the live Pi configuration.
+  - Requirement: user approved merge/deployment; use Pi-only full sync with no upgrades, verify deployed assets and effective watchdog configuration, then remove the merged task worktree.
+  - Definition of done: main contains the change, sync succeeds, installed guidance/no-op/settings match repo, native config resolves enabled with cadence 20 and questions/child reviews off, main is clean and task worktree removed.
+  - Local main fast-forwarded to the task branch. Pi-only no-upgrade full sync succeeded; existing CLI/packages retained. Log: .local/automatic-pair-review/deploy-reviewed.log.
+  - Verified installed WATCHDOG.md and no-op reminder byte-match repo; native installed config resolver confirms main enabled, cadence 20, scope/guidance enabled, questions/child watchdogs off, active model/thinking inherited.
+  - Initial deployment bypassed a repeated ff-only pull after origin/main gained per-line-edit commits (7139006); publication now integrates that upstream change without rewriting either history.
+  - Pi deployment verified; reload/restart Pi to replace the already-loaded reminder and inspect /subagents-watchdog status afterwards.
+- [x] Publish and merge the GitHub pull request into upstream main.
+  - Requirement: user authorized PR creation and merge; reconcile current origin/main on the task branch without rewriting history, preserve both changes, and update local main after remote merge.
+  - Definition of done: PR is merged with checks resolved, local main matches origin/main, and the task worktree is removed.
+  - Recreated task worktree at ddd9748. Merged origin/main; only PLAN.md conflicted. Preserved both completed-task records; upstream source changes and the separate pair-review README section merge without code conflicts.
+  - PR #36: https://github.com/anonymous-dev-org/rig/pull/36. GitHub reports mergeable/clean with no configured checks. Merge-commit method preserves existing local-main ancestry; finish by verifying remote merge, fast-forwarding main, and removing the task worktree.
 - [x] Per-line guarded edits work end to end without automatic rereads.
   - Requirement: unrelated changes do not reject an unchanged target; changed/missing targets reject before any write. Splices guard affected rows and insertion/EOF anchors, retain usable snapshots, and never silently refresh unrelated external changes. Success text is only `Edit succeeded.`.
   - Requirement: update prompt metadata, README and managed AGENTS guidance to attempt known edits directly, including after splices; read on rejection, missing context or lifecycle reset.

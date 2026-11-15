@@ -195,25 +195,41 @@ later handler to override the result. Recognized overflow errors are handled bot
 as provider error responses and thrown exceptions. Unrecognized exceptions stop
 safely; they are not automatically retried as smaller chunks.
 
-## Goal reminder
+## Automatic pair-programming review
 
-The `goal-reminder.ts` extension adds a short instruction every 20 model calls:
-step back and ask the two questions from section 1 of `AGENTS.md` (does this
-move the goal forward, and is it the simplest thing that meets the current
-requirements). If yes, the agent carries on; if it has drifted, it returns to
-the goal or takes the simpler route. The check is private: the agent should not
-stop, ask the user, or mention it.
-Change `REMINDER_INTERVAL` in the extension to adjust the cadence. Calls are counted
-from extension load, so `/reload` or a restart resets the counter; the first reminder
-is on call 20. It uses Pi's `context_with_system` hook without adding saved conversation messages
-or starting extra turns. Pi handles the provider's system/developer role mapping;
-providers without mid-conversation system messages fold it into the leading prompt.
-An extension that forces a replacement `before_agent_start.systemPrompt` can remove
-the reminder. This is advisory, not enforcement or a separate goal tracker.
+Rig enables the installed `pi-subagents` watchdog instead of injecting the old
+fixed goal reminder. A fresh read-only reviewer checks the retained user goal
+and recent work for scope drift, unnecessary complexity, concrete simpler safe
+alternatives, and code errors. `pi/.pi/agent/WATCHDOG.md` supplies these priorities.
+It can inspect `PLAN.md`, relevant source, and the diff since the session baseline.
 
-Rig sync deploys it to `~/.pi/agent/extensions/goal-reminder.ts` when Pi is
-selected; the JSON-only `sync-settings.mjs` command does not deploy extensions.
-After deployment, use `/reload` or restart Pi to activate it.
+Ongoing reviews run every **20 tool results**, not every 20 messages or model
+calls. Changed code also receives an end-of-run review; unchanged/reverted diffs
+are skipped. Busy reviews can skip a cadence opportunity. There is no idle timer
+or review during tool-free reasoning. Change
+`subagents.watchdog.cadence.everyNTools` in `settings.example.json` to adjust it.
+
+Actionable findings use `watchdog_warn` with high importance so they reach the
+main agent with evidence and a corrective action. Clean reviews add no message.
+Freeform reviewer text is ignored; low/medium-importance findings are user-only,
+so the standing instructions explicitly request high importance for actionable
+issues. The main agent decides how to address them. The reviewer has no shell,
+write/edit tools, or ability to spawn agents; child-session watchdogs and
+clarification questions are disabled.
+
+The reviewer inherits the active model and thinking level unless separately
+overridden. Each review can incur model usage and delay. Its evidence is bounded
+(up to eight retained user prompts, 2,000 characters each, plus recent work),
+not a replay of the whole conversation. Reviews are advisory, not a correctness
+guarantee; unavailable models and review errors remain visible.
+
+Full Pi sync deploys `~/.pi/agent/WATCHDOG.md`, settings, and a no-op
+`goal-reminder.ts` compatibility asset that disables the old reminder on existing
+installs. The JSON-only `sync-settings.mjs` command enables settings but does not
+deploy guidance or disable the old extension, so use full sync for this change.
+After deployment, reload/restart Pi and run `/subagents-watchdog status` to inspect
+the effective configuration. Project settings can override global defaults;
+project `.pi/WATCHDOG.md` is combined with global guidance (8,000 characters total).
 
 ## Explicit legacy migration
 
