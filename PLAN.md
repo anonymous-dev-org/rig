@@ -23,3 +23,9 @@
   - Verified with controlled reviewer responses against real SessionManager/AgentSession stats: every tool round, both clean approvals, malformed/error/aborted usage, provider/model attribution, reload persistence, footer totals and redraw, unchanged main-context count, replacement-session isolation, and fail-before-model-call compatibility guard. Both extensions load in installed Pi; diff check passes.
   - Usage records use provider-reported counts and prices. Historical reviews cannot be backfilled. A provider ignoring cancellation and returning after manager replacement is logged as review_usage_unattributed rather than charged to the wrong session; no session-file rewrites or cross-session mutations.
   - No live deployment or paid model calls. Throwaway check removed after verification; no lasting test infrastructure added.
+- [x] Reviews run every 40 main-agent model calls instead of tool results.
+  - Requirement: count finalized assistant responses (including reported error/aborted responses); tool/user/custom messages do not count. Launch at next completed turn, preserve one active pair and medium thinking.
+  - Definition of done: controlled hooks verify 39/40 threshold, tool independence, active-pair guard and lifecycle reset; loader and diff checks pass; commit.
+  - Reuse review-medium worktree so medium-thinking changes remain together. Fetched origin/main; main checkout untouched.
+  - Cadence excludes reviewer and delegated-child calls. Existing lifecycle resets (including reload/manual compaction) restart the counter; no persistence added.
+  - Controlled event hooks passed: tool/user/custom exclusion, 39/40 boundary, completed-turn gate, one-active-pair guard and lifecycle reset. Installed loader and diff check pass; no provider calls.
