@@ -17,9 +17,12 @@
   - Existing node --test pi/sync-settings.test.mjs: 41/43 pass. Unrelated existing failures: obsolete --headless expectation at line 387 and removed init.sh reference at line 513. Their source/test inputs are unchanged; leave repairs out of scope.
   - Independent scout review 2691d345: full diff/new guidance plus installed runtime source; no blocking findings. Static review only.
   - Verification adjustment: direct Node import needs Pi's host peer-package aliases; scratch check used existing installed peers. Updated the mock to current system-message transcript format and waited for its immediate completion rather than runtime idle (cadence retains pending evidence). Scratch code removed after successful check.
-  - Full-sync preview declined the uncommitted worktree as designed; no installation attempted. Source inventory and merge behavior verified directly instead.
+  - Clean-checkout full-sync preview passed after the approved local merge; only guidance and the old reminder asset needed replacement.
   - Known limits: native cadence is per-run tool-result count; busy reviews can skip opportunities. Evidence is bounded, not full history. Importance routing and quality depend on model judgment; real-provider review is not exercised.
-- [ ] Approved change is merged and deployed to the live Pi configuration.
+- [x] Approved change is merged and deployed to the live Pi configuration.
   - Requirement: user approved merge/deployment; use Pi-only full sync with no upgrades, verify deployed assets and effective watchdog configuration, then remove the merged task worktree.
   - Definition of done: main contains the change, sync succeeds, installed guidance/no-op/settings match repo, native config resolves enabled with cadence 20 and questions/child reviews off, main is clean and task worktree removed.
-  - Main pulled/current at 22d5356 before deployment; source worktree clean at 7c4ffcb.
+  - Local main fast-forwarded to the task branch. Pi-only no-upgrade full sync succeeded; existing CLI/packages retained. Log: .local/automatic-pair-review/deploy-reviewed.log.
+  - Verified installed WATCHDOG.md and no-op reminder byte-match repo; native installed config resolver confirms main enabled, cadence 20, scope/guidance enabled, questions/child watchdogs off, active model/thinking inherited.
+  - Upstream race: after the initial up-to-date pull, origin/main gained unrelated per-line-edit commits (7139006). Sync's repeated ff-only pull stopped before deployment. Used existing RIG_AFTER_PULL=1 guard to deploy the already-reviewed local merge without incorporating unrelated changes; local main remains divergent from origin/main and nothing was pushed.
+  - Finalize deployment notes, fast-forward local main, and remove merged worktree; no further source/runtime changes needed. Reload/restart Pi to replace the already-loaded reminder; inspect /subagents-watchdog status afterwards.
