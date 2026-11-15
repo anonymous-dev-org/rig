@@ -255,6 +255,7 @@ usage, compaction and branch summaries. They are not yet complete all-subagent
 totals: async notification-only runs can be missing, and repeated waits can
 duplicate child usage. Tools without reported usage add no separate charge;
 their results count as model input when processed.
+The separate `ctx` counter still describes only the main agent's context window,
 not tokens consumed by reviewers. Prices use Pi's provider/model usage data.
 
 If a provider ignores cancellation and reports usage only after session replacement,
