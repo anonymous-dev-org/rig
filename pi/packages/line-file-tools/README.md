@@ -89,7 +89,7 @@ New rows use the file's first line terminator, or LF when none exists. Untouched
 
 ## Format after edit
 
-After a successful edit, each edited file is formatted in the background, like format on save in an editor. This happens only when a directory above the file holds a Biome config (`biome.json`, `biome.jsonc`) or a Prettier config file (`.prettierrc*`, `prettier.config.*`); the nearest one wins. The formatter is taken from the nearest `node_modules/.bin`, otherwise from `PATH`. A `prettier` key in `package.json` is not detected.
+After a successful edit, each edited file is formatted in the background, like format on save in an editor. This happens only when a directory above the file holds a Biome config (`biome.json`, `biome.jsonc`), a Prettier config file (`.prettierrc*`, `prettier.config.*`) or an Oxfmt config (`.oxfmtrc.json`, `.oxfmtrc.jsonc`, `oxfmt.config.*`); the nearest one wins. The formatter is taken from the nearest `node_modules/.bin`, otherwise from `PATH`. A `prettier` key in `package.json` is not detected.
 
 The edit returns without waiting. The format job runs in the same per-file queue as reads and edits, so the next read or edit of that file waits for it. The file is piped through the formatter and written back only if it still holds what was sent. A failing, missing or slow formatter (10 s limit) leaves the file as edited and is not reported.
 

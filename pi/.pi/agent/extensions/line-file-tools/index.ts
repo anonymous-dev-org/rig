@@ -56,6 +56,7 @@ function writeAll(fd: number, data: Buffer) {
 const FORMATTERS = [
 	{ bin: "biome", config: /^biome\.jsonc?$/, args: (file: string) => ["format", `--stdin-file-path=${file}`] },
 	{ bin: "prettier", config: /^(\.prettierrc(\..+)?|prettier\.config\.[cm]?[jt]s)$/, args: (file: string) => ["--stdin-filepath", file] },
+	{ bin: "oxfmt", config: /^(\.oxfmtrc\.jsonc?|oxfmt\.config\.[cm]?[jt]s)$/, args: (file: string) => [`--stdin-filepath=${file}`] },
 ];
 
 function findFormatter(file: string) {
@@ -215,7 +216,7 @@ export default function lineFileTools(pi: ExtensionAPI) {
 			"One file: {path, changes} or {path, splices}. Several files: {edits: [{path, changes}, {path, splices}]}, listing each file once and passing no top-level path, changes or splices.",
 			"Give each file exactly one of changes or splices and leave the other out entirely, not empty. changes replaces whole existing lines by number. A splice replaces deleteCount lines at start with lines, so it can insert (deleteCount 0), delete (lines []), replace a range, or append (start = last line + 1, deleteCount 0). To replace some lines and insert or delete others in the same file, use splices for all of it. Splices in one file must not overlap or share a start. Every string is a single line with no line breaks.",
 			"All files are checked before any is written. If a file has not been read, or a target line no longer matches what read showed, the call fails and nothing changes: read that range again and correct the line numbers. Do not reread just to check freshness or after success. If a disk write fails partway through a multi-file call, the error names the files already written; reread the failed file instead of repeating the whole call.",
-			"After a successful edit, a file inside a project with a Biome or Prettier config is formatted in the background, and the result says so. Later reads and edits of that file wait for it. A line the formatter changed is then rejected like any other changed line: read that range again.",
+			"After a successful edit, a file inside a project with a Biome, Prettier or Oxfmt config is formatted in the background, and the result says so. Later reads and edits of that file wait for it. A line the formatter changed is then rejected like any other changed line: read that range again.",
 		].join("\n\n"),
 		parameters: Type.Object({
 			...editFields,
