@@ -1,9 +1,15 @@
 ## Overview
+- Add footer `turn N (X)` using the review hook's live model-call counter; preserve 40-call cadence and lifecycle resets. N counts responses since reset; X clamps to zero while a review is due but gated. No persistence or live deployment.
 - Replace footer cumulative token total with session input/output and total cost, including recorded main-agent, subagent, reviewer and tool usage. Preserve context display.
 - Worktree branched from fetched origin/main; leave main checkout untouched.
 - Input includes cache reads/writes; cost uses reported prices, not inferred charges for tools without usage.
 
 ## Todos
+- [x] Footer shows review-aligned turn count.
+  - Requirement: publish total responses and calls until review through extension status; keep background-review status separate.
+  - Definition of done: controlled hooks and footer rendering verify startup, 39/40 boundary, trigger rollover, ignored messages, resets and narrow widths; commit.
+  - Main updated cleanly; isolated worktree footer-turn-count. Existing review resets also reset displayed N (including reload and manual compaction).
+  - Controlled checks pass: installed imports, counters, trigger rollover, completed-turn gate, lifecycle resets, footer and narrow terminal widths; no provider calls. Initial width check corrected from string length to terminal visibleWidth.
 - [x] Version 1: session footer separates recorded input/output and cost.
   - Requirement: remove used-total display; sum recorded session entries, including toolResult and native usage records; preserve context.
   - Definition of done: controlled rendering verifies counts, cache accounting, refresh and layout; installed loader accepts extension; commit changes.

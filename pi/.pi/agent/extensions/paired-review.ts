@@ -83,12 +83,18 @@ export default function (pi: ExtensionAPI) {
 	// skip this hook so reviews never fan out recursively.
 	if (process.env.PI_SUBAGENT_CHILD === "1") return;
 	let modelCalls = 0;
+	let totalCalls = 0;
+	const updateTurnStatus = (ctx: ExtensionContext) => {
+		ctx.ui.setStatus(`${REVIEW_TYPE}-turns`, `turn ${totalCalls} (${Math.max(0, CADENCE - modelCalls)})`);
+	};
 	let active: AbortController | undefined;
 	let epoch = 0;
 	const reset = (_event: unknown, ctx: ExtensionContext) => {
 		ctx.ui.setStatus(REVIEW_TYPE, undefined);
 		epoch++;
 		modelCalls = 0;
+		totalCalls = 0;
+		updateTurnStatus(ctx);
 		active?.abort();
 		active = undefined;
 	};
@@ -103,11 +109,17 @@ export default function (pi: ExtensionAPI) {
 		if (event.reason === "manual") reset(event, ctx);
 	});
 
-	pi.on("message_end", (event) => { if (event.message.role === "assistant") modelCalls++; });
+	pi.on("message_end", (event, ctx) => {
+		if (event.message.role !== "assistant") return;
+		modelCalls++;
+		totalCalls++;
+		updateTurnStatus(ctx);
+	});
 	pi.on("turn_end", (event, ctx) => {
 		if (event.outcome === "aborted") active?.abort();
 		if (modelCalls < CADENCE || active || event.outcome !== "completed") return;
 		modelCalls %= CADENCE;
+		updateTurnStatus(ctx);
 		const generation = epoch;
 		const controller = new AbortController();
 		active = controller;

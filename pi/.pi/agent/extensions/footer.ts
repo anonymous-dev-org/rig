@@ -72,7 +72,9 @@ export default function (pi: ExtensionAPI) {
           }
           const fast = footerData.getExtensionStatuses().get("pi-fast") ?? "Fast n/a";
           const reviewing = footerData.getExtensionStatuses().get("rig-paired-review");
-          const right = (reviewing ? theme.fg("accent", `${reviewing}  `) : "") +
+          const turns = footerData.getExtensionStatuses().get("rig-paired-review-turns");
+          const right = (turns ? theme.fg("dim", `${turns}  `) : "") +
+            (reviewing ? theme.fg("accent", `${reviewing}  `) : "") +
             theme.fg(contextColor, context) +
             theme.fg("dim", `  in ${tokenFormat.format(inputTokens).toLowerCase()} - out ${tokenFormat.format(outputTokens).toLowerCase()} ($${cost.toFixed(3)})  ${fast} │ `) +
             theme.fg("accent", thinking) + theme.fg("dim", ` │ ${model} `);
