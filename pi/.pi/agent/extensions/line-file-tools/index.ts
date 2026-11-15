@@ -41,6 +41,12 @@ function load(fd: number) {
 	return { bom, rows };
 }
 
+const readFields = {
+	path: Type.String({ description: "File to read, relative to cwd or absolute." }),
+	start: Type.Optional(Type.Integer({ minimum: 1, description: "First line, 1-based. Default 1." })),
+	end: Type.Optional(Type.Integer({ minimum: 1, description: "Last line, inclusive. Default start + 199." })),
+};
+
 const editFields = {
 	path: Type.String({ description: "File to edit, relative to cwd or absolute. Read it first." }),
 	changes: Type.Optional(Type.Record(Type.String(), Type.String(), { description: "Replace whole lines: each key is a 1-based line number, each value that line's new text. Omit when using splices." })),
@@ -67,46 +73,72 @@ export default function lineFileTools(pi: ExtensionAPI) {
 	pi.registerTool({
 		name: "read",
 		label: "read (numbered lines)",
-		promptSnippet: "Read numbered text lines (inclusive start/end) or images; required before edit can change a file.",
-		promptGuidelines: stockRead.promptGuidelines,
-		outputSchema: stockRead.outputSchema,
-		description: "Read a local UTF-8 text file as numbered lines, or an image (jpg, png, gif, webp, bmp) as an attachment. A text read returns lines start to end, 1-based and inclusive, 200 lines by default. Reading a text file is required before edit can change it. Limits: 4 MiB per text file and 50 KiB per result; read a narrower range if a result is too large. Images ignore start and end and cannot be edited.",
+		promptSnippet: "Read numbered text lines (inclusive start/end) or images from one or several files; required before edit can change a file.",
+		promptGuidelines: [...(stockRead.promptGuidelines ?? []), "To read several files or ranges together, use reads: [{path, start?, end?}]. Omit top-level path/start/end."],
+		outputSchema: Type.Union([stockRead.outputSchema!, Type.Array(Type.Object({ path: Type.String(), result: stockRead.outputSchema! }))]),
+		description: "Read local UTF-8 text as numbered lines, or images as attachments. One file: {path, start?, end?}. Several files/ranges: {reads: [{path, start?, end?}, ...]}, with no top-level path/start/end. Text ranges are inclusive, 1-based, defaulting to 200 lines. Limits: 4 MiB per text file and 50 KiB of text per call; narrow ranges or split batches if too large. Images ignore ranges and cannot be edited. Batch results follow request order and identify paths; failure stops the batch, but earlier successful reads retain edit snapshots.",
 		parameters: Type.Object({
-			path: Type.String({ description: "File to read, relative to cwd or absolute." }),
-			start: Type.Optional(Type.Integer({ minimum: 1, description: "First line, 1-based. Default 1." })),
-			end: Type.Optional(Type.Integer({ minimum: 1, description: "Last line, inclusive. Default start + 199." })),
+			...readFields,
+			path: Type.Optional(readFields.path),
+			reads: Type.Optional(Type.Array(Type.Object(readFields), { minItems: 1, description: "Read several files or ranges. Omit top-level path/start/end." })),
 		}),
-		async execute(id, { path, start = 1, end = start + 199 }, signal, update, ctx) {
-			const target = filePath(ctx.cwd, path);
+		renderCall(args, theme) {
+			return new Text(theme.fg("toolTitle", theme.bold("read (lines) ")) + JSON.stringify(args.reads ?? args.path ?? ""), 0, 0);
+		},
+		async execute(id, params, signal, update, ctx) {
+			const { path, start, end, reads } = params;
+			if (reads !== undefined && (path !== undefined || start !== undefined || end !== undefined)) throw new Error("Use reads OR top-level path/start/end, not both.");
+			const requests = reads ?? (path === undefined ? [] : [{ path, start, end }]);
+			if (!requests.length) throw new Error("Provide a path or a nonempty reads array.");
 			const startedEpoch = epoch;
-			return withFileMutationQueue(target, async () => {
-				signal?.throwIfAborted();
-				if (epoch !== startedEpoch) throw new Error("Session state changed while queued. Read the file again.");
-				if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start < 1 || end < start) throw new Error("Use positive integer start/end with end >= start.");
-				const fd = openSync(target, constants.O_RDONLY | constants.O_NONBLOCK);
-				try {
-					// Reject static directories/devices/FIFOs before the stock sniff opens a path.
-					if (!fstatSync(fd).isFile()) throw new Error("Only regular files are supported.");
-					const mime = await detectSupportedImageMimeTypeFromFile(target);
+			let textBytes = reads ? requests.reduce((sum, entry) => sum + Buffer.byteLength(`File: ${JSON.stringify(entry.path)}\n`), 0) : 0;
+			if (textBytes > 50 * 1024) throw new Error("Batch labels exceed 50 KiB. Split the batch.");
+			const readOne = async ({ path, start = 1, end = start + 199 }: { path: string; start?: number; end?: number }) => {
+				const target = filePath(ctx.cwd, path);
+				return withFileMutationQueue(target, async () => {
 					signal?.throwIfAborted();
-					if (epoch !== startedEpoch) throw new Error("Session state changed during read. Read the file again.");
-					if (mime) {
-						snapshots.delete(target);
-						const image = await stockRead.execute(id, { path: target }, signal, update, ctx);
+					if (epoch !== startedEpoch) throw new Error("Session state changed while queued. Read the file again.");
+					if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start < 1 || end < start) throw new Error("Use positive integer start/end with end >= start.");
+					const fd = openSync(target, constants.O_RDONLY | constants.O_NONBLOCK);
+					try {
+						// Reject static directories/devices/FIFOs before the stock sniff opens a path.
+						if (!fstatSync(fd).isFile()) throw new Error("Only regular files are supported.");
+						const mime = await detectSupportedImageMimeTypeFromFile(target);
 						signal?.throwIfAborted();
 						if (epoch !== startedEpoch) throw new Error("Session state changed during read. Read the file again.");
-						return image;
-					}
-					const { rows } = load(fd);
-					if (start > rows.length && !(rows.length === 0 && start === 1)) throw new Error(`Start is beyond EOF (${rows.length} lines).`);
-					const last = Math.min(end, rows.length);
-					const text = rows.slice(start - 1, last).map((row, i) => `${start + i}: ${row.text}`).join("\n");
-					const output = `[${rows.length} lines total; ${rows.length ? `showing ${start}–${last}` : "empty file"}]\n${text}`;
-					if (Buffer.byteLength(output) > 50 * 1024) throw new Error("Range exceeds 50 KiB. Read a narrower range.");
-					snapshots.set(target, { lines: rows.map(hash), eof: rows.length });
-					return { ...result(output), structuredContent: output };
-				} finally { closeSync(fd); }
-			});
+						if (mime) {
+							snapshots.delete(target);
+							const image = await stockRead.execute(id, { path: target }, signal, update, ctx);
+							signal?.throwIfAborted();
+							if (epoch !== startedEpoch) throw new Error("Session state changed during read. Read the file again.");
+							return image;
+						}
+						const { rows } = load(fd);
+						if (start > rows.length && !(rows.length === 0 && start === 1)) throw new Error(`Start is beyond EOF (${rows.length} lines).`);
+						const last = Math.min(end, rows.length);
+						const text = rows.slice(start - 1, last).map((row, i) => `${start + i}: ${row.text}`).join("\n");
+						const output = `[${rows.length} lines total; ${rows.length ? `showing ${start}–${last}` : "empty file"}]\n${text}`;
+						if (Buffer.byteLength(output) > 50 * 1024) throw new Error("Range exceeds 50 KiB. Read a narrower range.");
+						textBytes += Buffer.byteLength(output);
+						if (textBytes > 50 * 1024) throw new Error("Batch exceeds 50 KiB of text. Read narrower ranges or split the batch.");
+						snapshots.set(target, { lines: rows.map(hash), eof: rows.length });
+						return { ...result(output), structuredContent: output };
+					} finally { closeSync(fd); }
+				});
+			};
+			if (!reads) return readOne(requests[0]);
+			const content: Awaited<ReturnType<typeof readOne>>["content"] = [];
+			const structuredContent: { path: string; result: unknown }[] = [];
+			for (const request of requests) {
+				try {
+					const output = await readOne(request);
+					content.push({ type: "text", text: `File: ${JSON.stringify(request.path)}` }, ...output.content);
+					structuredContent.push({ path: request.path, result: output.structuredContent });
+				} catch (error) {
+					throw new Error(`${request.path}: ${error instanceof Error ? error.message : String(error)}. Earlier successful reads retain their snapshots.`);
+				}
+			}
+			return { content, details: {}, structuredContent };
 		},
 	});
 
