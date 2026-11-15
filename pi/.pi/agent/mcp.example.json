@@ -5,6 +5,7 @@
       "args": ["@playwright/mcp@latest", "--isolated"]
     },
     "rea": {
+      "enabled": false,
       "command": "npx",
       "args": ["-y", "rea-agents@6.5.0", "mcp"]
     }

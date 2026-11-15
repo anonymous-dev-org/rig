@@ -1,4 +1,5 @@
 {
+  "skills": ["!**/council-mode/**","!**/reverse-engineer-anything/**"],
   "theme": "rig",
   "npmCommand": ["bun"],
   "defaultProvider": "openai",
@@ -18,6 +19,8 @@
       "npm:pi-fast@0.3.0"
     ],
     "agentOverrides": {
+      "council-astra": { "disabled": true },
+      "council-fable": { "disabled": true },
       "cursor-agent": {
         "disabled": true
       },
@@ -64,7 +67,7 @@
   },
   "enableInstallTelemetry": false,
   "packages": [
-    "npm:pi-subagents@latest",
+    { "source": "npm:pi-subagents@latest", "skills": ["!skills/council-mode/**"] },
     "npm:pi-web-access",
     "npm:pi-fast@0.3.0",
     "npm:pi-sub-anthropic"
