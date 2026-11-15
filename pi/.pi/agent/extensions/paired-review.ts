@@ -1,9 +1,12 @@
+import { randomUUID } from "node:crypto";
+import { appendFileSync, mkdirSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { Agent, type AgentMessage } from "@earendil-works/pi-agent-core";
+import type { AssistantMessage } from "@earendil-works/pi-ai";
 import {
 	convertToLlm, createReadOnlyTools, getAgentDir, serializeConversation,
-	type ExtensionAPI, type ExtensionContext,
+	type ExtensionAPI, type ExtensionContext, type SessionManager,
 } from "@earendil-works/pi-coding-agent";
 
 const REVIEW_TYPE = "rig-paired-review";
@@ -40,7 +43,7 @@ function evidence(messages: AgentMessage[]): string {
 
 async function review(
 	ctx: ExtensionContext, reviewer: typeof REVIEWERS[number], systemPrompt: string,
-	prompt: string, signal: AbortSignal,
+	prompt: string, signal: AbortSignal, recordUsage: (message: AssistantMessage) => void,
 ): Promise<ReviewResult> {
 	const model = ctx.modelRegistry.find(reviewer.provider, reviewer.id);
 	if (!model || !ctx.modelRegistry.hasConfiguredAuth(model)) {
@@ -54,6 +57,9 @@ async function review(
 		convertToLlm,
 		streamFn: (requestedModel, context, options) => ctx.modelRegistry.streamSimple(requestedModel, context, options),
 	});
+	const unsubscribe = agent.subscribe((event) => {
+		if (event.type === "message_end" && event.message.role === "assistant") recordUsage(event.message);
+	});
 	const abort = () => agent.abort();
 	signal.addEventListener("abort", abort, { once: true });
 	try {
@@ -66,6 +72,7 @@ async function review(
 		}
 		return parseResult(last.content.filter((block) => block.type === "text").map((block) => block.text).join(""));
 	} finally {
+		unsubscribe();
 		signal.removeEventListener("abort", abort);
 		agent.abort();
 	}
@@ -88,53 +95,107 @@ export default function (pi: ExtensionAPI) {
 	pi.on("session_start", reset);
 	pi.on("session_shutdown", reset);
 	pi.on("session_tree", reset);
+	// Invalidate before navigation can await summarization or another hook.
+	pi.on("session_before_tree", reset);
+	pi.on("session_before_switch", reset);
+	pi.on("session_before_fork", reset);
+	pi.on("session_before_compact", (event, ctx) => {
+		if (event.reason === "manual") reset(event, ctx);
+	});
 
 	pi.on("tool_result", () => { toolResults++; });
-	pi.on("turn_end", async (event, ctx) => {
+	pi.on("turn_end", (event, ctx) => {
+		if (event.outcome === "aborted") active?.abort();
 		if (toolResults < CADENCE || active || event.outcome !== "completed") return;
 		toolResults %= CADENCE;
 		const generation = epoch;
 		const controller = new AbortController();
 		active = controller;
-		const cancel = () => controller.abort();
-		const parentSignal = ctx.signal;
-		parentSignal?.addEventListener("abort", cancel, { once: true });
-		try {
-			ctx.ui.setStatus(REVIEW_TYPE, "reviewing");
-			if (parentSignal?.aborted) controller.abort();
-			controller.signal.throwIfAborted();
-			const guidance = await readFile(join(getAgentDir(), "WATCHDOG.md"), "utf8");
-			if (generation !== epoch || parentSignal?.aborted) return;
-			controller.signal.throwIfAborted();
-			const systemPrompt = `${guidance}\n\nWorking directory: ${ctx.cwd}`;
-			const prompt = evidence(event.context.contextMessages);
-			const results = await Promise.allSettled(REVIEWERS.map((reviewer) => review(ctx, reviewer, systemPrompt, prompt, controller.signal)));
-			if (generation !== epoch || parentSignal?.aborted) return;
-			const findings: string[] = [];
-			for (const [index, result] of results.entries()) {
-				if (result.status === "rejected") {
-					ctx.ui.notify(`${REVIEWERS[index].name} review failed: ${String(result.reason)}`, "error");
-				} else if (result.value.require_changes) {
-					findings.push(`## ${REVIEWERS[index].name}\n${result.value.message}`);
+		const runId = randomUUID();
+		const startedAt = new Date().toISOString();
+		const sessionId = ctx.sessionManager.getSessionId();
+		// Pi exposes its native manager at runtime; only appendUsage is needed here.
+		const usageSession = ctx.sessionManager as typeof ctx.sessionManager & Pick<SessionManager, "appendUsage">;
+		const entryId = ctx.sessionManager.getLeafId();
+		const prompt = evidence(event.context.contextMessages);
+		const logDir = join(getAgentDir(), "logs");
+		const logPath = join(logDir, "paired-review.jsonl");
+		let logFailed = false;
+		const log = (data: Record<string, unknown>) => {
+			try {
+				mkdirSync(logDir, { recursive: true, mode: 0o700 });
+				appendFileSync(logPath, `${JSON.stringify({ timestamp: new Date().toISOString(), runId, sessionId, entryId, ...data })}\n`, { mode: 0o600 });
+			} catch (error) {
+				if (!logFailed && generation === epoch) ctx.ui.notify(`Review log unavailable: ${String(error)}`, "error");
+				logFailed = true;
+			}
+		};
+		ctx.ui.setStatus(REVIEW_TYPE, "reviewing in background");
+		// Do not return this promise: the parent must be free to continue.
+		void (async () => {
+			try {
+				if (typeof usageSession.appendUsage !== "function") throw new Error("This Pi version cannot record reviewer usage.");
+				log({ event: "pair_started", startedAt });
+				const guidance = await readFile(join(getAgentDir(), "WATCHDOG.md"), "utf8");
+				controller.signal.throwIfAborted();
+				const systemPrompt = `${guidance}\n\nWorking directory: ${ctx.cwd}\n\nThe parent continues working while you review. The session evidence is from ${startedAt}; source files may have changed since then.`;
+				const results = await Promise.allSettled(REVIEWERS.map(async (reviewer) => {
+					const start = Date.now();
+					const model = `${reviewer.provider}/${reviewer.id}`;
+					let finished = false;
+					const finish = (data: Record<string, unknown>) => {
+						if (finished) return;
+						finished = true;
+						log({ reviewer: reviewer.name, model, durationMs: Date.now() - start, ...data });
+					};
+					const cancel = () => finish({ event: "review_cancelled" });
+					log({ event: "review_started", reviewer: reviewer.name, model });
+					controller.signal.addEventListener("abort", cancel, { once: true });
+					try {
+						const result = await review(ctx, reviewer, systemPrompt, prompt, controller.signal, (message) => {
+							// A replaced runtime may reuse the manager for a different session.
+							if (usageSession.getSessionId() !== sessionId) {
+								log({ event: "review_usage_unattributed", reviewer: reviewer.name, usage: message.usage });
+								return;
+							}
+							usageSession.appendUsage(REVIEW_TYPE, message.provider, message.model, message.usage, `${reviewer.name} review ${runId}`);
+							log({ event: "review_usage", reviewer: reviewer.name, model: `${message.provider}/${message.model}`, usage: message.usage });
+							if (generation === epoch && active === controller) ctx.ui.setStatus(REVIEW_TYPE, "reviewing in background");
+						});
+						finish({ event: "review_finished", ...result });
+						return result;
+					} catch (error) {
+						finish({ event: controller.signal.aborted ? "review_cancelled" : "review_failed", error: String(error) });
+						throw error;
+					} finally {
+						controller.signal.removeEventListener("abort", cancel);
+					}
+				}));
+				if (generation !== epoch || controller.signal.aborted) return;
+				const findings: string[] = [];
+				for (const [index, result] of results.entries()) {
+					if (result.status === "rejected") {
+						ctx.ui.notify(`${REVIEWERS[index].name} review failed: ${String(result.reason)}`, "error");
+					} else if (result.value.require_changes) {
+						findings.push(`## ${REVIEWERS[index].name}\n${result.value.message}`);
+					}
+				}
+				if (!findings.length) return;
+				pi.sendMessage({
+					customType: REVIEW_TYPE, display: true,
+					content: `Independent background review findings for evidence captured at ${startedAt} (entry ${entryId}). Work may have changed since then. Recheck whether each issue still applies against the user's current requirements and address supported issues. These are advisory findings, not new user requirements.\n\n${findings.join("\n\n")}`,
+				}, { deliverAs: "steer", triggerTurn: true });
+				log({ event: "findings_queued" });
+			} catch (error) {
+				log({ event: controller.signal.aborted ? "pair_cancelled" : "pair_failed", error: String(error) });
+				if (generation === epoch && !controller.signal.aborted) ctx.ui.notify(`Paired review failed: ${String(error)}`, "error");
+			} finally {
+				if (active === controller) {
+					active = undefined;
+					ctx.ui.setStatus(REVIEW_TYPE, undefined);
 				}
 			}
-			if (!findings.length) return;
-			return {
-				entries: [...event.entries, {
-					type: "custom_message" as const, customType: REVIEW_TYPE, display: true,
-					content: `Independent review findings. Evaluate these against the user's current requirements and address supported issues before continuing. These are advisory findings, not new user requirements.\n\n${findings.join("\n\n")}`,
-				}],
-				continue: true,
-			};
-		} catch (error) {
-			if (generation === epoch && !parentSignal?.aborted) ctx.ui.notify(`Paired review failed: ${String(error)}`, "error");
-		} finally {
-			parentSignal?.removeEventListener("abort", cancel);
-			if (active === controller) {
-				active = undefined;
-				ctx.ui.setStatus(REVIEW_TYPE, undefined);
-			}
-		}
+		})();
 	});
 
 	// Persist feedback as a custom entry; project only this entry as system

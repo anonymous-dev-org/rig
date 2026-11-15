@@ -205,26 +205,56 @@ security. They may inspect source with read/search tools, but cannot run shell
 commands, edit files, or spawn agents. The seven specialist reviewer definitions
 are retired; the installed single-model watchdog is disabled to avoid duplicates.
 
-Reviews run every **20 tool results**, at the next completed assistant/tool-batch
-boundary so both reviewers see finalized results. A batch crossing multiple
-thresholds gets one combined review; the remainder carries forward. There is no
-extra end-of-run or idle review, and tool-free reasoning does not count. Delegated
-child sessions skip this extension; reviewer agents load no extensions.
+Reviews launch every **20 tool results**, at the next completed assistant/tool-batch
+boundary. Both reviewers run in the background: the main agent continues working.
+Only one pair runs at a time; results accumulated during a review count toward the
+next launch at a later completed turn. A batch crossing multiple thresholds gets
+one review, with the remainder carried forward. There is no extra end-of-run or
+idle review, and tool-free reasoning does not count. Delegated child sessions skip
+this extension; reviewer agents load no extensions.
 
 Each reviewer returns JSON: `{require_changes: true, message: "..."}` or
-`{require_changes: false}` without a message. The extension waits for both reviews
-and adds **one** persisted feedback message containing only the reviewers that
-requested changes. Either reviewer can flag an issue; agreement is not required.
-If both are clean, no feedback or continuation is added. Feedback is projected as
-a system message (developer feedback on compatible providers), not a user request.
+`{require_changes: false}` without a message. Once both reviews finish, the
+extension queues **one** persisted feedback message containing only the reviewers
+that requested changes. Pi delivers it after the current turn's tools finish,
+before the next model call, or starts a new turn if the main agent is already idle.
+Either reviewer can flag an issue; agreement is not required. If both are clean,
+no feedback or continuation is added. Feedback is projected as a system message
+(developer feedback on compatible providers), not a user request.
 
 Evidence includes retained user prompts/compaction scope and bounded recent work,
-not the full history or a Git diff. Reviewers can read PLAN.md and source to verify
-concerns. Reviews are advisory and incur model usage and latency. The main model
-waits for the pair, with a three-minute cancellation deadline. Missing models,
-malformed results, or failed reviews produce visible errors without model fallback;
-successful actionable findings from the other reviewer are still delivered.
-User cancellation or session replacement discards the pending pair.
+not the full history or a Git diff. It is captured at launch, but reviewers read
+live source files. Findings identify the launch time and session entry, and the
+main agent must recheck whether they still apply. Reviews are advisory and incur
+model usage, but do not block the main agent. There is no review timeout. Missing
+models, malformed results, or failed reviews produce visible errors without model
+fallback; successful findings from the other reviewer are still delivered.
+An aborted parent turn, session shutdown, manual compaction, or navigation to
+another session/branch cancels the pending pair. Navigation attempts cancel even
+if navigation is later declined. Reviews do not survive process exit.
+
+Per-reviewer starts and terminal outcomes (including clean approvals, findings,
+errors, and cancellation) are saved to `~/.pi/agent/logs/paired-review.jsonl`.
+Each record includes a run ID, session ID, source entry, and timestamp; terminal
+records also include duration. The log contains finding text, not full reviewer
+transcripts, and is created with private file permissions. It is append-only with
+no automatic rotation. To watch both reviewers:
+
+```sh
+tail -f ~/.pi/agent/logs/paired-review.jsonl | jq .
+```
+
+Every reviewer model response also records its reported token usage and price in
+the parent session's native usage entries, including intermediate tool rounds and
+clean approvals. Reported usage on failed or cancelled responses counts too; no
+usage can be recovered if the provider does not report it. These entries contribute
+to `/session` totals and the footer's cumulative `used … tok` and dollar amount.
+The separate `ctx` counter still describes only the main agent's context window,
+not tokens consumed by reviewers. Prices use Pi's provider/model usage data.
+
+If a provider ignores cancellation and reports usage only after session replacement,
+that usage is retained in the log as `review_usage_unattributed`, never charged to
+the replacement session. Historical reviews without recorded usage are not backfilled.
 
 Use full Pi sync to deploy settings, guidance, the extension, and reviewer-file
 retirements (with private backups), then reload/restart Pi. The JSON-only settings

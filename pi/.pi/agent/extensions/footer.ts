@@ -21,6 +21,7 @@ export default function (pi: ExtensionAPI) {
       const unsubscribeBranch = footerData.onBranchChange(requestRender);
       let costLeaf: string | null | undefined;
       let cost = 0;
+      let totalTokens = 0;
 
       return {
         invalidate() {},
@@ -50,14 +51,15 @@ export default function (pi: ExtensionAPI) {
           if (costLeaf !== leaf) {
             costLeaf = leaf;
             cost = 0;
+            totalTokens = 0;
             // Match Pi's cumulative accounting without rescanning on every frame.
             for (const entry of ctx.sessionManager.getEntries()) {
-              if (entry.type === "message") {
-                if (entry.message.role === "assistant" || entry.message.role === "toolResult") {
-                  cost += entry.message.usage?.cost.total ?? 0;
-                }
-              } else if (entry.type === "usage" || entry.type === "compaction" || entry.type === "branch_summary") {
-                cost += entry.usage?.cost.total ?? 0;
+              const billed = entry.type === "message"
+                ? (entry.message.role === "assistant" || entry.message.role === "toolResult" ? entry.message.usage : undefined)
+                : (entry.type === "usage" || entry.type === "compaction" || entry.type === "branch_summary" ? entry.usage : undefined);
+              if (billed) {
+                cost += billed.cost.total;
+                totalTokens += billed.input + billed.output + billed.cacheRead + billed.cacheWrite;
               }
             }
           }
@@ -65,7 +67,7 @@ export default function (pi: ExtensionAPI) {
           const reviewing = footerData.getExtensionStatuses().get("rig-paired-review");
           const right = (reviewing ? theme.fg("accent", `${reviewing}  `) : "") +
             theme.fg(contextColor, context) +
-            theme.fg("dim", `  $${cost.toFixed(3)}  ${fast} │ `) +
+            theme.fg("dim", `  used ${totalTokens.toLocaleString("en-US")} tok  $${cost.toFixed(3)}  ${fast} │ `) +
             theme.fg("accent", thinking) + theme.fg("dim", ` │ ${model} `);
           const rightWidth = visibleWidth(right);
           if (rightWidth >= width) return [truncateToWidth(right, width)];
