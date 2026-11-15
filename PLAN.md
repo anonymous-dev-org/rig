@@ -1,6 +1,7 @@
 ## Overview
 - Support mixed multi-file guarded edits and teach the model the request format; retain single-file compatibility.
 - Validate every file before writing; disk-write failures can still partially apply a batch. Reject duplicate resolved paths (including hard-link aliases).
+- Preserve the merged sync-output task notes below; updating from main conflicted only in this shared plan. No source conflicts.
 
 ## Todos
 - [x] Multi-file edits work with existing freshness guarantees and clear model guidance.
@@ -18,3 +19,10 @@
   - Per-field usage moved into schema descriptions (start, deleteCount, lines, changes, edits) so the main description covers only call shape, mode choice and failure handling.
   - Added the case that failed twice in this session: replacing lines and inserting in the same file. Description and the exactly-one error now say to use splices for all of it and to omit, not empty, the unused field.
   - Suggestion: the reread policy still says to attempt edits below an insertion and reread on rejection. Telling the model to reread those ranges up front would save a rejected call; left unchanged because it is the benchmarked policy.
+- [x] Clean sync output end to end.
+  - Requirement: readable progress, green successes/red failures on terminals, actual subprocess errors, plain redirected output and explicit preview outcomes.
+  - Definition of done: syntax/diff checks and isolated preview, apply, repeat, component failure, subprocess failure, quiet success, plain output, and green/red pseudo-terminal checks passed. Existing checks evaluated below.
+  - Use captured subprocess output to suppress successful tool chatter; print it only on failure. Keep file operations as indented details.
+  - Existing Pi checks: 41 passed; two unrelated failures expect removed `--headless` and missing `init.sh`.
+  - Verified with isolated HOME and fake Brew commands; no real package installation or personal configuration changes.
+  - Captured commands retain up to 64 MiB; long-running commands show their step, not live tool output.
