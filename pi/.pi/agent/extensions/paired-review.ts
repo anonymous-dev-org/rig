@@ -12,7 +12,6 @@ const REVIEWERS = [
 	{ name: "Fable", provider: "pi-sub-anthropic", id: "claude-fable-5-2" },
 ] as const;
 const CADENCE = 20;
-const TIMEOUT_MS = 180_000;
 
 type ReviewResult = { require_changes: boolean; message?: string };
 
@@ -100,7 +99,6 @@ export default function (pi: ExtensionAPI) {
 		const cancel = () => controller.abort();
 		const parentSignal = ctx.signal;
 		parentSignal?.addEventListener("abort", cancel, { once: true });
-		const timeout = setTimeout(() => controller.abort(new Error("Paired review exceeded three minutes.")), TIMEOUT_MS);
 		try {
 			ctx.ui.setStatus(REVIEW_TYPE, "reviewing");
 			if (parentSignal?.aborted) controller.abort();
@@ -131,7 +129,6 @@ export default function (pi: ExtensionAPI) {
 		} catch (error) {
 			if (generation === epoch && !parentSignal?.aborted) ctx.ui.notify(`Paired review failed: ${String(error)}`, "error");
 		} finally {
-			clearTimeout(timeout);
 			parentSignal?.removeEventListener("abort", cancel);
 			if (active === controller) {
 				active = undefined;
