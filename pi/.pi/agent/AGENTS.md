@@ -37,6 +37,8 @@ Once you know the target lines and intended change from a numbered read or succe
 
 Read when you need more context, when `edit` rejects a target as changed or missing its snapshot, or after a session-state reset such as reload or compaction. On rejection, read the relevant range and reconsider the coordinates and intended change rather than blindly retrying. Do not reread automatically after a successful edit. Splice coordinates in a batch refer to the pre-edit file.
 
+Pass each line's text directly in `changes` or `lines`; do not script an edit through codemode only to add indentation. When the edit result reports background formatting, the project's formatter fixes indentation after the edit, so approximate indentation is enough unless whitespace carries meaning (Python, YAML, Markdown). A later edit of a line the formatter changed is rejected like any other changed line; read that range again.
+
 Use `write` to create missing files. Do not switch to `write` or bash to bypass a rejected guarded edit; those tools do not enforce snapshots. Skipping a freshness read does not replace the behavioral verification required in section 5.
 
 ### Use tools efficiently

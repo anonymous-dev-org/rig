@@ -1,13 +1,20 @@
 ## Overview
-- Add `read({reads: [{path, start?, end?}, ...]})` alongside legacy single-file reads.
-- Preserve text/image handling and edit snapshots. Batch results identify each path; reject mixed request forms and empty batches.
-- Batch reads run in order and stop on failure; earlier successful reads retain snapshots. Keep the 50 KiB text budget across the batch; no live deployment.
+- Goal: the model passes `lines: [...]` straight to `edit` without scripting indentation; the edit tool formats the file afterwards like an editor's format on save.
+- In scope: background format job in `pi/.pi/agent/extensions/line-file-tools/index.ts`, model guidance, README. Out of scope: indentation inference, other save actions (lint autofix, organise imports), the stock `write` tool.
+- Decisions (agreed with user):
+  - Format only when the project opted in: a Biome or Prettier config file in a directory above the edited file. Nearest config wins.
+  - Fully async: edit returns at once. The job runs in the same per-file queue as reads/edits, so they wait for it. Failure, timeout (10 s) or empty output is ignored.
+  - Snapshots are not touched by the formatter. A line it changed is rejected on the next edit by the normal per-line check.
+- Own decisions:
+  - Formatter gets the file on stdin and the tool writes stdout back only if the file is still what was sent, so an outside change during formatting is not overwritten.
+  - Edit result names the files being formatted, so the model knows when approximate indentation is acceptable.
+  - Binary: nearest `node_modules/.bin/<name>`, else PATH.
 
 ## Todos
-- [x] Multi-file reads work and are discoverable.
-  - Requirement: backwards-compatible schema, ordered labelled results and structured data, text/image support, clear errors and model guidance.
-  - Definition of done: direct registered-tool exercises cover single/batch reads, ranges, images, edits after batch, invalid forms, failure, cancellation and output budget; review diff and commit.
-  - Use an isolated worktree on feat/multiread after fast-forwarding main. No persistent test files requested.
-  - Verified direct calls: legacy/batch text, ranges/repeated paths, mixed PNG attachments, edit snapshots, invalid forms, missing files, cancellation, lifecycle reset, aggregate text limit and public input/output schemas. Log: .local/check.log.
-  - Independent review found epoch capture needed to span the entire batch and image labels needed budget accounting. Fixed both; targeted checks passed for reset between entries and oversized image-label batches.
-  - No dedicated extension test suite exists; unrelated sync/settings tests were not run. Throwaway exercise script removed after verification; no live installation changed.
+- [x] Edits are formatted in the background in opted-in projects.
+  - Verified with a throwaway script calling the registered tools (Biome 2.6.7 on PATH): all four definition-of-done cases behaved as stated. Prettier path not exercised (not installed here).
+  - Requirement: as in Overview; no behaviour change for projects without a formatter config.
+  - Definition of done: in a temp Biome project, an unindented splice ends up formatted; an immediate second edit waits and is rejected only on formatter-changed lines; no config or a broken formatter leaves the file as edited and the edit still succeeds.
+  - Shortcoming: lines the model wrote and the formatter re-indented need a reread before they can be edited again. Suggestion: refresh the snapshot when only whitespace changed and the line count is the same.
+  - Shortcoming: a `prettier` key in `package.json` and formatters without a config file (gofmt, rustfmt, ruff) are not detected. Suggestion: add them, or an override file, when needed.
+  - Suggestion: no lasting tests exist for this extension; the queue/snapshot interplay would justify some.
