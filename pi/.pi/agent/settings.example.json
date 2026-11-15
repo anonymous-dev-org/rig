@@ -13,6 +13,15 @@
   },
   "subagents": {
     "defaultModel": "openai/gpt-6.1-sol",
+    "watchdog": {
+      "enabled": true,
+      "main": { "enabled": true },
+      "cadence": { "everyNTools": 20 },
+      "scope": { "enabled": true },
+      "guidance": { "watchdogMd": true },
+      "clarification": false,
+      "children": { "enabled": false }
+    },
     "defaultSubagentOnlyExtensions": [
       "npm:pi-fast@0.3.0"
     ],
