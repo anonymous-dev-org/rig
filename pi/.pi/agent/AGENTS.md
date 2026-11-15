@@ -66,7 +66,7 @@ If a subagent fails to launch or run, do not stop, even though the subagent tool
 
 ## 4. Plan and track
 
-Before implementing, create or update `PLAN.md` at the worktree root. It is the only plan file; never create another in that worktree. When a task has no `PLAN.md`, put anything these instructions tell you to note there in the final message instead.
+Before implementing, create or update `PLAN.md` at the worktree root. It is the only plan file; never create another in that worktree. It covers the current task only: when you start a new task, replace whatever an earlier task left in it, which needs no approval. When a task has no `PLAN.md`, put anything these instructions tell you to note there in the final message instead.
 
 Write it as brief working notes, not a report: short bullets, direct wording, only what is needed to do and track the current task. Update entries in place instead of appending history, and remove what no longer applies.
 

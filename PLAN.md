@@ -3,19 +3,19 @@
 - In scope: wording, structure, removing duplication between surfaces, making implied rules explicit. Out of scope: changing what the user wants the agent to do, and text owned by pi itself or npm packages.
 - Version 1 covered AGENTS.md alone; version 2 read every model-facing text in the repo together and fixed what conflicts or confuses across them.
 - Rule for duplicates: each rule lives in one place. How to call a tool lives in that tool's description; when to use it and workflow rules live in AGENTS.md.
-- Open question for the user: this PLAN.md is tracked and still carries finished tasks' notes (below). AGENTS.md says the plan covers the current task only, but earlier branches kept old notes through merges. Left the old notes as found; decide whether PLAN.md should be reset per task or left out of Git.
-- Earlier, finished tasks (kept as found): multi-file guarded edits; sync output cleanup. Their notes are under the checked todos at the end.
+- The user left three policy calls to me; each is recorded with its reason under the todo it belongs to ("Decided").
 
 ## Todos
 - [x] Version 1: AGENTS.md is restructured, deduplicated and unambiguous, with no rule lost.
   - Requirement: same intended behavior; simple wording; shorter; references by section name; fits with the read/edit tool text instead of repeating it.
   - Definition of done: every rule in the old file is present in the new file or in the edit tool text; section references resolve; extension file still parses; committed on `docs/agents-optimize`.
-  - Result: 3597 to 3184 words (-11%). Further cuts would mean dropping rules or the reasons behind them, which is the user's call (candidates below).
+  - Result: 3597 to 3324 words. Decided: no rules dropped for length. Each remaining rule was added by its own commit after an observed failure, the file loads once per session, and a missing rule costs more than about 200 words. Candidates if the user ever wants it shorter: the polling and watcher bullets under "Run commands and wait" (they matter only for CI and deploy jobs) and the `rg`/`find` flag hints under "Search narrowly".
   - Structure: tool-efficiency rules moved out of "Simplicity" into their own last section, so sections 1 to 6 read as the workflow in order. Section 3 now opens with which tasks need a worktree and a PLAN.md. PLAN.md notes (decisions, assumptions, debt, suggestions) are now assigned to one place: under the relevant todo.
-  - Made explicit what the old text only implied (confirm with user): pushing, opening a pull request and merging are ask-first; an action the user already asked for needs no second confirmation; an explicit user instruction overrides the file; commit on the task branch at finish; updating an existing test for an intended behavior change is allowed; verification is "try it, or a throwaway check when that is impractical, plus existing checks" instead of an ambiguous numbered list.
+  - Made explicit what the old text only implied: an action the user already asked for needs no second confirmation; an explicit user instruction overrides the file; commit on the task branch at finish; updating an existing test for an intended behavior change is allowed; verification is "try it, or a throwaway check when that is impractical, plus existing checks" instead of an ambiguous numbered list.
+  - Decided: pushing a branch, opening a pull request and merging the task branch stay ask-first. The old text already made "sending something to outside services" and "reaching beyond this worktree" ask-first, these actions are visible to others, and the user can lift it for a task by saying "push and open a PR" up front.
+  - Decided: PLAN.md covers the current task only and is replaced at the start of each task, without approval. That matches the existing "update in place, remove what no longer applies" rule, and finished notes stay in Git history. Applied here: the notes of the two earlier tasks (multi-file edits, sync output) were removed from this file; they remain in `main`'s history. Known shortcoming: PLAN.md is tracked, so two branches open at once will still conflict on it at merge; keep the merging branch's version.
   - Dedupe: removed the "Use the active file tools" subsection (edit call format and reread policy), which repeated the edit tool description and its prompt guidelines. Removed "read with the read tool, not cat or sed", which the read tool's stock guideline already says.
   - Left as is, unclear intent: a new dependency has no place in the "prefer, in this order" list; "Pull origin/main" assumes the default branch is `main` (the adapt clause covers other cases).
-  - Suggestions for further shortening (each drops rules): the polling and watcher bullets under "Run commands and wait" matter only for CI and deploy jobs; the `rg`/`find` flag hints under "Search narrowly" restate tool knowledge.
 - [x] Version 2: all model-facing texts in the repo agree when read together.
   - Requirement: no rule in one text contradicts or blurs a rule in another; one term per concept; plain full sentences everywhere; no change to what the user wants the agent to do.
   - Definition of done: AGENTS.md, read/edit tool text, the five agent prompts, WATCHDOG.md, extension-injected strings and the skills were read side by side; each conflict is fixed or listed here; frontmatter keys intact; extension parses; committed.
@@ -32,25 +32,3 @@
   - Open, minor: `pi/README.md` (Council advisors) says the roster is pinned in AGENTS.md, which no longer mentions it. `edit` guideline says to attempt edits below an insertion, yet line snapshots do not shift, so such an attempt is rejected unless reread (seen in this task).
   - Not verified in a live session: agent prompts and tool text were checked by reading and by parsing the extension (`bun build --no-bundle`), not by launching agents. No live installation changed; run the repo sync to install.
 - Not editable here: pi's built-in system prompt and stock tool text, and tool descriptions from npm packages (`pi-subagents`, codemode, web access).
-- [x] Multi-file edits work with existing freshness guarantees and clear model guidance.
-  - Requirement: nonempty edits array, exactly one mode per file, no mixing batch and single-file fields, deterministic mutation locking, validation before writes, actionable partial-write errors.
-  - Definition of done: direct tool exercises cover mixed success, validation rejection without writes, aliases, legacy calls, and model-facing schema/instructions; existing checks assessed; commit changes.
-  - Verified: direct registered-tool calls passed mixed changes/splices, legacy calls, invalid/stale/missing snapshots without writes, alias rejection, reversed overlapping batches, cancellation, lifecycle reset, and empty files. Injected partial-write failure confirmed completed/failed paths, untouched later files, and snapshot handling.
-  - Model guidance is in schema descriptions, tool description, prompt snippet/guidelines, managed AGENTS.md, and README examples. Existing optional-field schema style retained for provider compatibility; cross-field constraints checked at execution.
-  - Existing settings suite: 41/43 passed; both failures reproduced on unchanged main (--headless expectation and missing init.sh). Logs: .local/sync-tests.log and .local/base-sync-tests.log.
-  - No live installation changed. Try via pi --no-extensions -e <worktree>/pi/.pi/agent/extensions/line-file-tools/index.ts in a new session.
-  - Follow-up suggestion: retain focused regression tests if requested; current verification scripts are throwaway, not committed.
-  - Public schema checks passed both request formats and rejected empty batches, missing entry paths, and invalid splice coordinates. Independent reviewer found no issues.
-- [x] Tool descriptions are short and say what each tool does and how to call it.
-  - Requirement: rewrite read/edit descriptions, prompt snippets, edit guidelines and schema field descriptions; no behavior change; drop internals the model cannot act on (hashes, terminator rules), which stay in the README.
-  - Definition of done: extension loads, schema accepts both formats, descriptions printed for review; commit.
-  - Per-field usage moved into schema descriptions (start, deleteCount, lines, changes, edits) so the main description covers only call shape, mode choice and failure handling.
-  - Added the case that failed twice in this session: replacing lines and inserting in the same file. Description and the exactly-one error now say to use splices for all of it and to omit, not empty, the unused field.
-  - Suggestion: the reread policy still says to attempt edits below an insertion and reread on rejection. Telling the model to reread those ranges up front would save a rejected call; left unchanged because it is the benchmarked policy.
-- [x] Clean sync output end to end.
-  - Requirement: readable progress, green successes/red failures on terminals, actual subprocess errors, plain redirected output and explicit preview outcomes.
-  - Definition of done: syntax/diff checks and isolated preview, apply, repeat, component failure, subprocess failure, quiet success, plain output, and green/red pseudo-terminal checks passed. Existing checks evaluated below.
-  - Use captured subprocess output to suppress successful tool chatter; print it only on failure. Keep file operations as indented details.
-  - Existing Pi checks: 41 passed; two unrelated failures expect removed `--headless` and missing `init.sh`.
-  - Verified with isolated HOME and fake Brew commands; no real package installation or personal configuration changes.
-  - Captured commands retain up to 64 MiB; long-running commands show their step, not live tool output.
