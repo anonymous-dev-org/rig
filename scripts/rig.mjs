@@ -19,6 +19,11 @@ function destination(relative) {
 }
 const value = flag => { const i = args.indexOf(flag); return i < 0 ? undefined : args[i + 1]; };
 const fail = message => { throw new Error(message); };
+function status(label, message, stream = process.stdout) {
+  const color = {SUCCESS:32, ERROR:31, PREVIEW:36}[label];
+  const text = `${{SUCCESS:'✅', ERROR:'❌', PREVIEW:'🔎'}[label]} [${label}] ${message}`;
+  stream.write(`${stream.isTTY && process.env.NO_COLOR === undefined && process.env.TERM !== 'dumb' ? `\x1b[1;${color}m${text}\x1b[0m` : text}\n`);
+}
 function run(command, argv, options = {}) {
   const result = spawnSync(command, argv, {cwd: root, stdio: 'inherit', ...options});
   if (result.error || result.status !== 0) fail(`${command} failed; correct the error and rerun (completed components remain applied).`);
@@ -314,18 +319,20 @@ try {
     if (/^(1|true|yes)$/i.test(process.env.PI_OFFLINE || '')) fail('Unset PI_OFFLINE before installing Pi packages, or deselect pi.');
     if (process.env.PI_CODING_AGENT_DIR && path.resolve(process.env.PI_CODING_AGENT_DIR) !== path.join(home, '.pi/agent')) fail('Rig deploys Pi to ~/.pi/agent. Unset PI_CODING_AGENT_DIR or deselect pi.');
   }
-  console.log(`${preview ? 'Preview' : 'Apply'} ${mode}: ${state.components.join(', ') || '(none)'}.`);
-  console.log('AeroSpace, Lazysql and macOS config are untouched: adopt/update them manually. Principle skills are copied with Pi; other vendored skills are disabled.');
   if (stat(stateFile)) {
     const dirty = spawnSync('git', ['status','--porcelain','--untracked-files=normal'], {cwd:root, encoding:'utf8'});
     if (dirty.status !== 0 || dirty.stdout.trim()) fail('Checkout is dirty. Commit or move changes yourself before syncing; rig will not stash/reset them.');
-    console.log('git pull --ff-only (preview does not fetch or pull)');
+    if (preview) console.log('Would run git pull --ff-only (preview does not fetch or pull).');
     if (!preview && !process.env.RIG_AFTER_PULL) {
+      console.log('Updating checkout: git pull --ff-only');
       run('git', ['pull','--ff-only']);
-      run(process.execPath, [fileURLToPath(import.meta.url), mode, ...args], {env:{...process.env,RIG_AFTER_PULL:'1'}});
-      process.exit(0);
+      const child = spawnSync(process.execPath, [fileURLToPath(import.meta.url), mode, ...args], {cwd:root, stdio:'inherit', env:{...process.env,RIG_AFTER_PULL:'1'}});
+      if (child.error) fail(`Cannot restart sync: ${child.error.message}`);
+      process.exit(child.status ?? 1);
     }
   }
+  console.log(`${preview ? 'Preview' : 'Apply'} ${mode}: ${state.components.join(', ') || '(none)'}.`);
+  console.log('AeroSpace, Lazysql and macOS config are untouched: adopt/update them manually. Principle skills are copied with Pi; other vendored skills are disabled.');
   let lock;
   if (!preview) {
     fs.mkdirSync(stateRoot, {recursive:true,mode:0o700});
@@ -380,7 +387,8 @@ try {
             if (!preview) await reconcilePiPackages(piBin, state.brew.noUpgrade);
           }
         }
-      } catch (error) { failures.push(component); console.error(`${component}: ${error.message}`); }
+        status(preview ? 'PREVIEW' : 'SUCCESS', `${component}: ${preview ? 'preview complete' : 'complete'}.`);
+      } catch (error) { failures.push(component); status('ERROR', `${component}: ${error.message}`, process.stderr); }
     }
     if (args.includes('--install-hooks')) {
       const hooks = spawnSync('git', ['config','--get','core.hooksPath'], {cwd:root,encoding:'utf8'});
@@ -389,6 +397,6 @@ try {
       if (!preview) run('git', ['config','--local','core.hooksPath','.githooks']);
     }
     if (failures.length) fail(`${preview ? 'Preview conflicts' : 'Partial success'}; failed components: ${failures.join(', ')}. ${preview ? 'No selections saved.' : 'Selections saved;'} Resolve reported conflicts and rerun.`);
-    console.log(preview ? 'Preview complete; no rig state written.' : 'Selected components complete. Deselected components were not removed.');
+    status(preview ? 'PREVIEW' : 'SUCCESS', preview ? 'Preview complete; no changes applied or rig state written.' : 'Sync completed successfully. Deselected components were not removed.');
   } finally { if (lock !== undefined) { fs.closeSync(lock); fs.unlinkSync(path.join(stateRoot,'lock')); } }
-} catch (error) { console.error(error.message); process.exitCode = 1; }
+} catch (error) { status('ERROR', `${preview ? 'Preview' : 'Sync'} failed: ${error.message}`, process.stderr); process.exitCode = 1; }
