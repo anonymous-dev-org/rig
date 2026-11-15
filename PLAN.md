@@ -1,7 +1,7 @@
 # Overview
 - Replace the static every-20-model-call reminder with automatic independent pair review of goal alignment, unnecessary complexity, simpler safe solutions, and correctness.
 - Use installed pi-subagents watchdog rather than custom launch/orchestration code. Keep clean reviews silent and route actionable findings to the main agent.
-- Scope: managed settings, reviewer guidance, reminder retirement, deployment inventory, documentation. No live HOME deployment, package changes, or paid provider validation.
+- Scope: managed settings, reviewer guidance, reminder retirement, deployment inventory, documentation, and approved merge/live Pi deployment. No package upgrades or paid provider validation.
 - Main pulled/current at 22d5356; .local/ ignored; worktree feat/automatic-pair-review created from main.
 
 # Todos
@@ -19,4 +19,7 @@
   - Verification adjustment: direct Node import needs Pi's host peer-package aliases; scratch check used existing installed peers. Updated the mock to current system-message transcript format and waited for its immediate completion rather than runtime idle (cadence retains pending evidence). Scratch code removed after successful check.
   - Full-sync preview declined the uncommitted worktree as designed; no installation attempted. Source inventory and merge behavior verified directly instead.
   - Known limits: native cadence is per-run tool-result count; busy reviews can skip opportunities. Evidence is bounded, not full history. Importance routing and quality depend on model judgment; real-provider review is not exercised.
-  - Ready for handover on feat/automatic-pair-review. Live HOME configuration and main checkout remain unchanged; merge/deployment require approval.
+- [ ] Approved change is merged and deployed to the live Pi configuration.
+  - Requirement: user approved merge/deployment; use Pi-only full sync with no upgrades, verify deployed assets and effective watchdog configuration, then remove the merged task worktree.
+  - Definition of done: main contains the change, sync succeeds, installed guidance/no-op/settings match repo, native config resolves enabled with cadence 20 and questions/child reviews off, main is clean and task worktree removed.
+  - Main pulled/current at 22d5356 before deployment; source worktree clean at 7c4ffcb.
