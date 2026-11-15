@@ -244,6 +244,18 @@ no automatic rotation. To watch both reviewers:
 tail -f ~/.pi/agent/logs/paired-review.jsonl | jq .
 ```
 
+Every reviewer model response also records its reported token usage and price in
+the parent session's native usage entries, including intermediate tool rounds and
+clean approvals. Reported usage on failed or cancelled responses counts too; no
+usage can be recovered if the provider does not report it. These entries contribute
+to `/session` totals and the footer's cumulative `used … tok` and dollar amount.
+The separate `ctx` counter still describes only the main agent's context window,
+not tokens consumed by reviewers. Prices use Pi's provider/model usage data.
+
+If a provider ignores cancellation and reports usage only after session replacement,
+that usage is retained in the log as `review_usage_unattributed`, never charged to
+the replacement session. Historical reviews without recorded usage are not backfilled.
+
 Use full Pi sync to deploy settings, guidance, the extension, and reviewer-file
 retirements (with private backups), then reload/restart Pi. The JSON-only settings
 sync cannot deploy this mechanism. Project overrides must not re-enable the old

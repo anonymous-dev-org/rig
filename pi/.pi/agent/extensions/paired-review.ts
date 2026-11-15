@@ -3,9 +3,10 @@ import { appendFileSync, mkdirSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { Agent, type AgentMessage } from "@earendil-works/pi-agent-core";
+import type { AssistantMessage } from "@earendil-works/pi-ai";
 import {
 	convertToLlm, createReadOnlyTools, getAgentDir, serializeConversation,
-	type ExtensionAPI, type ExtensionContext,
+	type ExtensionAPI, type ExtensionContext, type SessionManager,
 } from "@earendil-works/pi-coding-agent";
 
 const REVIEW_TYPE = "rig-paired-review";
@@ -42,7 +43,7 @@ function evidence(messages: AgentMessage[]): string {
 
 async function review(
 	ctx: ExtensionContext, reviewer: typeof REVIEWERS[number], systemPrompt: string,
-	prompt: string, signal: AbortSignal,
+	prompt: string, signal: AbortSignal, recordUsage: (message: AssistantMessage) => void,
 ): Promise<ReviewResult> {
 	const model = ctx.modelRegistry.find(reviewer.provider, reviewer.id);
 	if (!model || !ctx.modelRegistry.hasConfiguredAuth(model)) {
@@ -56,6 +57,9 @@ async function review(
 		convertToLlm,
 		streamFn: (requestedModel, context, options) => ctx.modelRegistry.streamSimple(requestedModel, context, options),
 	});
+	const unsubscribe = agent.subscribe((event) => {
+		if (event.type === "message_end" && event.message.role === "assistant") recordUsage(event.message);
+	});
 	const abort = () => agent.abort();
 	signal.addEventListener("abort", abort, { once: true });
 	try {
@@ -68,6 +72,7 @@ async function review(
 		}
 		return parseResult(last.content.filter((block) => block.type === "text").map((block) => block.text).join(""));
 	} finally {
+		unsubscribe();
 		signal.removeEventListener("abort", abort);
 		agent.abort();
 	}
@@ -109,6 +114,8 @@ export default function (pi: ExtensionAPI) {
 		const runId = randomUUID();
 		const startedAt = new Date().toISOString();
 		const sessionId = ctx.sessionManager.getSessionId();
+		// Pi exposes its native manager at runtime; only appendUsage is needed here.
+		const usageSession = ctx.sessionManager as typeof ctx.sessionManager & Pick<SessionManager, "appendUsage">;
 		const entryId = ctx.sessionManager.getLeafId();
 		const prompt = evidence(event.context.contextMessages);
 		const logDir = join(getAgentDir(), "logs");
@@ -127,6 +134,7 @@ export default function (pi: ExtensionAPI) {
 		// Do not return this promise: the parent must be free to continue.
 		void (async () => {
 			try {
+				if (typeof usageSession.appendUsage !== "function") throw new Error("This Pi version cannot record reviewer usage.");
 				log({ event: "pair_started", startedAt });
 				const guidance = await readFile(join(getAgentDir(), "WATCHDOG.md"), "utf8");
 				controller.signal.throwIfAborted();
@@ -144,7 +152,16 @@ export default function (pi: ExtensionAPI) {
 					log({ event: "review_started", reviewer: reviewer.name, model });
 					controller.signal.addEventListener("abort", cancel, { once: true });
 					try {
-						const result = await review(ctx, reviewer, systemPrompt, prompt, controller.signal);
+						const result = await review(ctx, reviewer, systemPrompt, prompt, controller.signal, (message) => {
+							// A replaced runtime may reuse the manager for a different session.
+							if (usageSession.getSessionId() !== sessionId) {
+								log({ event: "review_usage_unattributed", reviewer: reviewer.name, usage: message.usage });
+								return;
+							}
+							usageSession.appendUsage(REVIEW_TYPE, message.provider, message.model, message.usage, `${reviewer.name} review ${runId}`);
+							log({ event: "review_usage", reviewer: reviewer.name, model: `${message.provider}/${message.model}`, usage: message.usage });
+							if (generation === epoch && active === controller) ctx.ui.setStatus(REVIEW_TYPE, "reviewing in background");
+						});
 						finish({ event: "review_finished", ...result });
 						return result;
 					} catch (error) {
