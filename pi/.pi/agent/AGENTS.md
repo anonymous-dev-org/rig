@@ -62,6 +62,8 @@ After the branch is merged, remove its worktree with `git worktree remove <workt
 
 Delegate a part of the work to a subagent whenever it is separate: a subagent can explore or implement it from a written task description, without waiting on the rest of the work. Otherwise work alone. A few known reads or searches are not separate work; do them yourself. This paragraph is the user's standing request to delegate, so you need no further permission to launch a subagent.
 
+If a subagent fails to launch or run, do not stop, even though the subagent tool says to. Do that part yourself and report the failure in your final message. Never replace the subagent with another agent CLI or shell session.
+
 ## 4. Plan and track
 
 Before implementing, create or update `PLAN.md` at the worktree root. It is the only plan file; never create another in that worktree. When a task has no `PLAN.md`, put anything these instructions tell you to note there in the final message instead.

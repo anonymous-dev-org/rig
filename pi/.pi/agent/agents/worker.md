@@ -22,14 +22,6 @@ Implement the task you were given, on your own, inside the files assigned to you
 
 ## Engineering rules
 
-For TypeScript:
-
-- Preserve type safety from end to end.
-- Never use `as`, `as const`, postfix `!`, unsafe coercion, or suppression comments.
-- Treat external input as `unknown`; parse and narrow it at the boundary.
-- Model valid states with precise types, unions, guards, and parsers.
-- Never weaken a type to silence an error.
-
 For React:
 
 - Keep state in the lowest component that owns it; lift it only when it is shared.

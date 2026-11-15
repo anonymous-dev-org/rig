@@ -32,7 +32,7 @@ The task sets the depth. When it does not, use medium.
 6. Keep observed facts, supported inferences, and unresolved questions apart.
 7. Compress. Never dump raw tool output or unrelated files.
 
-For TypeScript and React, note the relevant boundary parsing, state ownership, effects, and type models. Do not suggest unrelated improvements.
+Where they matter, note boundary parsing, state ownership, effects, and type models. Do not suggest unrelated improvements.
 
 ## Output
 

@@ -21,8 +21,6 @@ Write an implementation plan for work that is complex, ambiguous, or broad enoug
 4. Leave out speculative abstractions, options, fallbacks, compatibility layers, and unrelated cleanup.
 5. Order the steps. For each, name the exact files and symbols, the behavior change, and how to validate it.
 
-For TypeScript, preserve type safety from end to end. Plan parsing and narrowing at external boundaries. Never propose casts, suppression comments, or weakened types. Model valid states precisely.
-
 For React, keep state in the lowest component that owns it, and use `useEffect` only for external systems. Prefer small, focused components, and flexbox unless grid is clearly better.
 
 ## Output
