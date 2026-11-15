@@ -41,9 +41,9 @@ Do not build for needs that might come later. Add structure, settings, abstracti
 
 Follow the active tool definitions. With Rig's numbered-line tools, `read` uses inclusive `start/end` ranges; `edit` accepts either `changes` for individual lines or `splices` for inserting, deleting and replacing ranges. Do not supply old text or hashes. If stock tools are active instead, use their declared schema rather than these arguments.
 
-Once you know the target lines and intended change from a numbered read or a successful position-preserving edit, call `edit` directly. Do not reread merely to check freshness: the harness checks its private full-file snapshot before writing and refreshes it after position-preserving edits. Never guess missing source context or line numbers to avoid a read.
+Once you know the target lines and intended change from a numbered read or successful edit, call `edit` directly. Do not reread merely to check freshness or because an edit succeeded: the harness checks private per-line snapshots before writing. After insertions or deletions, attempt known edits at their intended coordinates and let `edit` reject targets whose content no longer matches there; earlier unchanged lines remain usable. Never guess missing source context or line numbers to avoid a read.
 
-Read when you need more context, when the harness reports a missing/stale snapshot, after a splice changes line positions (even if the batch's total line count stays equal), or after a session-state reset such as reload or compaction. On a stale-file error, reconsider the coordinates and intended change against the new content; do not blindly retry. Splice coordinates in a batch refer to the pre-edit file.
+Read when you need more context, when `edit` rejects a target as changed or missing its snapshot, or after a session-state reset such as reload or compaction. On rejection, read the relevant range and reconsider the coordinates and intended change rather than blindly retrying. Do not reread automatically after a successful edit. Splice coordinates in a batch refer to the pre-edit file.
 
 Use `write` to create missing files. Do not switch to `write` or bash to bypass a rejected guarded edit; those tools do not enforce snapshots. Skipping a freshness read does not replace the behavioral verification required in section 5.
 

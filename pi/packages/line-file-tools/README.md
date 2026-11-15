@@ -22,7 +22,7 @@ read({ path: "file.ts", start: 50, end: 150 })
 edit({ path: "file.ts", changes: { "50": "new source text", "72": "other source text" } })
 ```
 
-Once the target lines and intended change are known from a numbered read, **call edit directly**. Do not reread merely to check whether the file changed: the harness checks that before writing. Successful position-preserving edits refresh the snapshot, so further edits can also proceed directly. Read when more source context is needed, after a position-changing splice/session reset, or when edit reports a missing/stale snapshot. After a stale-file error, reconsider the edit against the newly read content rather than blindly retrying.
+Once the target lines and intended change are known, **call edit directly**. Do not reread merely to check freshness or because an edit succeeded, including after insertions/deletions. The harness checks each target before writing; earlier unchanged lines remain usable after later insertions/deletions. Attempt known coordinates first and let edit reject targets whose content no longer matches there. Read when more context is needed, after a session reset, or when a target is rejected as stale/missing; then reconsider the relevant range and coordinates rather than blindly retrying.
 
 Read ranges are inclusive and 1-based; default is 1–200. An end beyond EOF is clamped. An empty file has zero lines. `changes` replaces existing lines without shifting positions: each value is exactly one line with no CR/LF. `""` blanks a terminated line. Blanking an unterminated final line with `changes` is refused because it would remove that physical line; use a splice instead.
 
@@ -35,10 +35,11 @@ A **splice** removes a count of existing lines at a position and puts new lines 
 edit({ path: "file.ts", splices: [
   { start: 12, deleteCount: 0, lines: ["const enabled = true;", ""] }
 ] })
-// Read again: the insertion changed subsequent line numbers.
-read({ path: "file.ts", start: 1, end: 60 })
+// Original lines before 12 are still usable without another read.
+edit({ path: "file.ts", changes: { "5": "// updated heading" } })
 
-// In one batch: replace original lines 20–22, and delete original line 40.
+// Attempt another known edit directly. Original line 20 may now be stale;
+// if edit rejects it, read the relevant range and reconsider its coordinates.
 edit({ path: "file.ts", splices: [
   { start: 20, deleteCount: 3, lines: ["return result;"] },
   { start: 40, deleteCount: 1, lines: [] }
@@ -49,11 +50,11 @@ edit({ path: "file.ts", splices: [
 
 Every splice in a batch addresses the **pre-edit file**, regardless of array order. Overlapping removed ranges, insertions inside a removed range, and duplicate start positions are rejected. Adjacent ranges and an insertion immediately after a removed range are allowed. Combine operations at the same position into one splice. Empty batches and insertions with no new lines are refused. All changes/splices and the resulting size are validated before writing any bytes.
 
-New rows use the file's first line terminator, or LF when none exists. Untouched mixed terminators remain intact except at the new EOF or when separating an old unterminated final row from appended rows. Nonempty final text preserves the original final-newline presence; an originally empty file gains LF-terminated rows. **An empty final row always needs a terminator to exist:** replacing an unterminated `x` with `lines: [""]` produces `\n`, not an empty file. Deleting every row produces an empty body (retaining any BOM). The tool reports the resulting line count. Its terminal display shows this summary and any reread warning or error; it does not yet provide a diff preview.
+New rows use the file's first line terminator, or LF when none exists. Untouched mixed terminators remain intact except at the new EOF or when separating an old unterminated final row from appended rows. Nonempty final text preserves the original final-newline presence; an originally empty file gains LF-terminated rows. **An empty final row always needs a terminator to exist:** replacing an unterminated `x` with `lines: [""]` produces `\n`, not an empty file. Deleting every row produces an empty body (retaining any BOM). Successful edits return exactly `Edit succeeded.`; the terminal displays that acknowledgement, not a diff or a reread warning.
 
-If any splice inserts/deletes a different number of rows, the tool requires a **fresh read before another edit**, even if other splices make the total line count unchanged. This prevents queued edits from silently using old coordinates after a shift. Equal-length replacements refresh the snapshot normally. A reread establishes freshness, not proof that all later coordinates were correctly recomputed.
+The harness stores private SHA-256 hashes of each row's **text and terminator**, indexed by numeric line position, plus the observed EOF position. Edits need no old text or hashes. A change to an unrelated row does not block an unchanged target. `changes` checks each target; splices check every removed/replaced row. Pure insertions check their immediate neighboring rows where present; appends also check EOF, and empty-file insertion requires an empty-file observation. Any retained boundary row whose terminator changes is checked too. A stale/missing target or anchor rejects the entire call before writing, without discarding other usable snapshots.
 
-The harness stores a SHA-256 of the **entire file** privately in memory on a successful read. Edits need no old text or hash. Before writing, the harness compares the file to that snapshot. A change anywhere in the file rejects the edit and requires a fresh read. Successful position-preserving edits update the private snapshot, allowing another edit without rereading. Position-changing splices invalidate it as described above. No seen-line restriction: a read of any range establishes the full-file snapshot.
+Successful edits refresh only the rows the tool authored, not unrelated externally changed rows. Other baseline hashes stay at their existing numeric coordinates rather than following moved lines. After an insertion/deletion, later targets may therefore reject while earlier unchanged targets still work; there is no blanket reread requirement. This checks **content at a coordinate, not semantic identity**: identical repeated rows can still match after a shift. Do not guess source context or assume that a matching hash proves the intended occurrence. A successful explicit read of any range refreshes hashes for the entire loaded file, retaining the existing no-seen-line-restriction behavior.
 
 Snapshots are cleared on startup, session switching/forking, tree navigation, compaction and shutdown. Reload/resume require rereading; hashes are not restored from conversation history or exposed to the model. Queued operations from before a reset are rejected as well. Canonical paths unify symlink aliases. Paths support ordinary relative/absolute paths and `~/`; stock Pi's `@` prefix and Unicode filename fallback are not implemented.
 
@@ -69,4 +70,4 @@ Programmatic callers such as codemode receive the numbered text as a string, or 
 
 Pi's shared file mutation queue serializes cooperating tools. Hash comparison and writing run synchronously without an intervening async yield, but **this is optimistic protection, not an OS-level compare-and-swap**: an external process can still race the check/write. In-place writes preserve the inode and hard links; I/O failure can leave a partial write. A write attempt invalidates the snapshot until successful completion, so failures require rereading. Image detection/delegation also reopens paths; the regular-file precheck rejects static special files but cannot protect against hostile external path replacement. Lifecycle resets and cancellation during async reads reject results before a text snapshot can be published. Use ordinary version control/backups for recovery.
 
-The [controlled token/time benchmark](../../docs/line-file-tools-benchmark.md) compares the earlier replacement-only version (`93b2753`) with stock Pi. The expanded splice schema, reread policy, image delegation and structured outputs have not been benchmarked. It completed 17 paired comparisons before a provider subscription limit stopped the planned batch. Results are scoped to those tasks, not a universal performance claim.
+The [controlled token/time benchmark](../../docs/line-file-tools-benchmark.md) compares the earlier replacement-only version (`93b2753`) with stock Pi. The expanded splice schema, per-line freshness policy, image delegation and structured outputs have not been benchmarked. It completed 17 paired comparisons before a provider subscription limit stopped the planned batch. Results are scoped to those tasks, not a universal performance claim.
