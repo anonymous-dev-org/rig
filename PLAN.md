@@ -14,3 +14,7 @@
   - Existing sync suite: 41/43 pass; unrelated failures at pi/sync-settings.test.mjs:387 (stale Playwright --headless expectation) and :513 (removed init.sh). Full log: .local/sync-settings-test.log. No test changes.
   - Not live-deployed; native provider calls from the extension were not exercised. Public Agent transport and event behavior were checked locally without external model calls. Full Pi sync and reload are needed to activate.
   - Follow-up suggestion: add lasting regression coverage for this mechanism if requested. Review usage is not currently included in the main session's token totals.
+- [x] Footer shows reviewing only while the paired review is running.
+  - Requirement: plain reviewing text, no spinner or additional model messages; clear on completion, failure, cancellation and session reset.
+  - Definition of done: local real-Agent/fake-provider lifecycle checks passed success, failure, cancellation, reset and shutdown; footer renders fit widths 9/20/80/120 (normal truncation at 9). Independent review found no issues; diff checks passed.
+  - Continue the existing unmerged paired-review worktree; origin/main is up to date. Use native setStatus and the existing custom footer's status map, without extra events or timers.

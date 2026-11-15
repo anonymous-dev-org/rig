@@ -79,7 +79,8 @@ export default function (pi: ExtensionAPI) {
 	let toolResults = 0;
 	let active: AbortController | undefined;
 	let epoch = 0;
-	const reset = () => {
+	const reset = (_event: unknown, ctx: ExtensionContext) => {
+		ctx.ui.setStatus(REVIEW_TYPE, undefined);
 		epoch++;
 		toolResults = 0;
 		active?.abort();
@@ -101,6 +102,7 @@ export default function (pi: ExtensionAPI) {
 		parentSignal?.addEventListener("abort", cancel, { once: true });
 		const timeout = setTimeout(() => controller.abort(new Error("Paired review exceeded three minutes.")), TIMEOUT_MS);
 		try {
+			ctx.ui.setStatus(REVIEW_TYPE, "reviewing");
 			if (parentSignal?.aborted) controller.abort();
 			controller.signal.throwIfAborted();
 			const guidance = await readFile(join(getAgentDir(), "WATCHDOG.md"), "utf8");
@@ -131,7 +133,10 @@ export default function (pi: ExtensionAPI) {
 		} finally {
 			clearTimeout(timeout);
 			parentSignal?.removeEventListener("abort", cancel);
-			if (active === controller) active = undefined;
+			if (active === controller) {
+				active = undefined;
+				ctx.ui.setStatus(REVIEW_TYPE, undefined);
+			}
 		}
 	});
 
