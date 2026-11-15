@@ -26,3 +26,7 @@
   - Verified installed WATCHDOG.md and no-op reminder byte-match repo; native installed config resolver confirms main enabled, cadence 20, scope/guidance enabled, questions/child watchdogs off, active model/thinking inherited.
   - Upstream race: after the initial up-to-date pull, origin/main gained unrelated per-line-edit commits (7139006). Sync's repeated ff-only pull stopped before deployment. Used existing RIG_AFTER_PULL=1 guard to deploy the already-reviewed local merge without incorporating unrelated changes; local main remains divergent from origin/main and nothing was pushed.
   - Finalize deployment notes, fast-forward local main, and remove merged worktree; no further source/runtime changes needed. Reload/restart Pi to replace the already-loaded reminder; inspect /subagents-watchdog status afterwards.
+- [ ] Publish and merge the GitHub pull request into upstream main.
+  - Requirement: user authorized PR creation and merge; reconcile current origin/main on the task branch without rewriting history, preserve both changes, and update local main after remote merge.
+  - Definition of done: PR is merged with checks resolved, local main matches origin/main, and the task worktree is removed.
+  - Recreated the task worktree at ddd9748; origin/main fetched. Local main is already divergent, so integrate upstream on the task branch before fast-forwarding main.
