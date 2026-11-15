@@ -1,13 +1,16 @@
 ## Overview
-- Add `read({reads: [{path, start?, end?}, ...]})` alongside legacy single-file reads.
-- Preserve text/image handling and edit snapshots. Batch results identify each path; reject mixed request forms and empty batches.
-- Batch reads run in order and stop on failure; earlier successful reads retain snapshots. Keep the 50 KiB text budget across the batch; no live deployment.
+- Goal: clear, consistent model-facing instructions across AGENTS.md, tools and agent prompts.
+- Keep tool call formats in tool descriptions; keep workflow in AGENTS.md. Skills explicitly invoked by the user override the defaults.
 
 ## Todos
-- [x] Multi-file reads work and are discoverable.
-  - Requirement: backwards-compatible schema, ordered labelled results and structured data, text/image support, clear errors and model guidance.
-  - Definition of done: direct registered-tool exercises cover single/batch reads, ranges, images, edits after batch, invalid forms, failure, cancellation and output budget; review diff and commit.
-  - Use an isolated worktree on feat/multiread after fast-forwarding main. No persistent test files requested.
-  - Verified direct calls: legacy/batch text, ranges/repeated paths, mixed PNG attachments, edit snapshots, invalid forms, missing files, cancellation, lifecycle reset, aggregate text limit and public input/output schemas. Log: .local/check.log.
-  - Independent review found epoch capture needed to span the entire batch and image labels needed budget accounting. Fixed both; targeted checks passed for reset between entries and oversized image-label batches.
-  - No dedicated extension test suite exists; unrelated sync/settings tests were not run. Throwaway exercise script removed after verification; no live installation changed.
+- [x] Simplify and align instructions.
+  - Requirement: plain wording, explicit precedence, no duplicate tool instructions or TypeScript rules in subagent prompts.
+  - Definition of done: texts reviewed together, extension parses, changes committed.
+  - Decisions: publishing and merging need permission; local commits do not. PLAN.md covers only the current task. Keep the remaining workflow rules rather than shorten by dropping requirements.
+  - Subagents follow their assigned scope and report to the main agent. React and general naming rules remain in agent profiles; TypeScript rules belong in skills.
+  - Verification: editorial review and extension parse check, not live agent trials.
+  - Suggestions: correct the stale council roster reference in pi/README.md; separately revisit rereading shifted lines after insertions.
+- [ ] Publish and merge the pull request, as requested.
+  - Requirement: preserve the new multi-file read implementation from origin/main; merge only this task's changes.
+  - Definition of done: PR merged, local main updated, task worktree removed.
+  - Merged origin/main before publishing. Kept this task's PLAN.md and restructured AGENTS.md; incoming batch-read call guidance already lives in the read tool description, so it is not repeated in AGENTS.md. No implementation changes discarded.
