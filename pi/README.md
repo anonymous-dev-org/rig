@@ -140,6 +140,33 @@ extensions are disabled). To roll back just this extension, move its installed
 directory outside `~/.pi/agent/extensions/` and restart; preserve the moved copy
 without overwriting another path. Full sync restores managed files on the next run.
 
+## Delegation tools and result delivery
+
+The managed `extensions/subagent/config.json` sets `"toolActivation": "eager"`.
+A fresh Pi session exposes `subagent` immediately, without a
+`subagents_enable` round trip. This makes the tool available; it does not launch
+children or change delegation authorization. The full tool declaration is present
+even in sessions that never delegate, so lower total token cost is not guaranteed.
+
+`AGENTS.md` distinguishes work assigned to a child, independent review of a named
+risk, and a decision the parent needs before proceeding. A parent can continue
+unaffected work during a review, but must accept a prerequisite answer before
+implementing the part that depends on it. Children return findings and evidence
+in their final report; ordinary async completion wakes the parent without polling.
+
+With pi-subagents 0.88.1, `contact_supervisor(reason: "progress_update")` is activity
+reporting, not a message to the parent model. A child blocked on a decision uses
+`reason: "need_decision"` and waits for a reply; completed work returns its final
+report. The parent answers through `subagent_supervisor` within existing authority.
+This uses the package's native channels, without changing its message-delivery code.
+
+Full Pi sync deploys this configuration and `AGENTS.md`; the JSON-only
+`sync-settings.mjs` command does not deploy these assets. Restart Pi after deployment
+and start a fresh session. If resuming an old session whose recorded tools lack
+`subagent`, run `/reload` after restarting to activate it. Explicit tool exclusions
+still apply. These settings remove the activation step, not the skill read or
+review work; timing and quality improvements require a separate measured comparison.
+
 ## Council advisors
 
 Council mode uses exactly two managed profiles: `council-astra` with
