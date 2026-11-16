@@ -1,19 +1,20 @@
 ## Overview
-- Run configured Pi, bare Pi and Codex on the same five Terminal-Bench 2.0 tasks, one attempt each, gpt-6.1-sol / low thinking. User explicitly requests concurrent execution.
-- Freshly snapshot current active Mac Pi configuration and resolved packages. Preserve configured behavior; bare Pi gets no custom instructions/packages/skills. No host histories, live mounts, cloud execution or upload.
-- Measure verifier quality, execution/setup/total time, tokens and estimated model cost. Distinguish estimates from subscription billing, and disclose concurrency contention and small-sample limitations.
+- Rerun the same five Terminal-Bench 2.0 tasks using the newly active configured Pi, Sol 6.1 / low, one attempt each. All five task containers run together (1 CPU / 2G each; Docker 10CPU / 16GB).
+- Compare time, estimated cost, verifier quality and edit-tool rejections with the previous configured-Pi run. Saved bare-Pi/Codex results remain historical references, not rerun.
+- Fresh active config differs only in extensions/line-file-tools/index.ts: splices-only edits and explicit snapshot/coordinate recovery notices. Settings and four active package versions unchanged.
 
 ## Todos
-- [x] Fifteen concurrent benchmark trials finish with an auditable configuration and comparison report.
-  - Requirement: three isolated arms x five fixed tasks; current configured Pi; same main model/thinking/attempt count; bounded concurrency fitting Docker resources; saved logs and verifier results.
-  - Definition of done: inspect all fifteen results, model/effort/config evidence and errors; aggregate timing/cost/quality; document limitations and repeat command; commit.
-  - Delegated: workers selected five varied low-resource tasks and implemented the result summarizer; parent integrated adapters, fresh snapshot, execution and verification.
-  - Verified: 15/15 trials passed, all 60 verifier tests passed; zero exceptions/retries. Sol 6.1 / low confirmed in all Pi sessions and Codex native turn contexts. Identical five task revisions across arms; all primary assistant sessions completed normally.
-  - Active config: fresh 45-file snapshot, source hashes unchanged before/after, Bun lockfile preserved; four active package versions confirmed in all configured trials. Same archive hash 707a94d516fa27a78274c2d01af76486d5501dff26c88abff0244ea6cc7d5c09. Bare Pi gets no user settings/resources/packages; catalog is shared. Offline startup prevents catalog/package drift.
-  - Execution: 3 concurrent arms x 2 tasks = 6 simultaneous containers; 1 CPU/2G each on 10CPU/16GB Docker. Fifteen at once would permit 30G. Images pre-pulled in parallel. Matrix 1045.57s; job wall time dominated by repeated setup. Published images are AMD64 under emulation.
-  - Results: configured / bare / Codex all 5/5. Median agent seconds 62.31 / 41.45 / 49.97. Estimated USD totals 0.2911036 / 0.11553 / 0.1458972; total 0.5525308. Cost/token sums reconcile exactly with Harbor aggregates.
-  - Auxiliary-model decision: retained current review/delegation config instead of silently changing it. None triggered (4–12 configured model calls; review cadence 40); no auxiliary usage records/sessions/logs. All actual model calls were primary Sol 6.1 / low.
-  - Evidence: ~/.local/share/terminal-bench/comparison-20261116-233339/. Report: terminal-bench/RESULTS.md and committed summary JSON. Scripts: prepare.py, run-comparison.sh, summarize.py, configured_pi.py.
-  - Limitations: quality is verifier correctness only; curated five-task single-attempt sample, not general ranking. Parallel contention/emulation and cache/tier differences affect time. USD are public-token-price estimates, not actual ChatGPT credits; configured pi-fast requests priority but delivered tier was not measured. Browser/MCP and long-run review/delegation paths not exercised.
-  - Verification: source/snapshot hashes, package listings, clean Pi diagnostics, versions/effort, native stop reasons, all task revisions/test counts, token/cost reconciliation, Python/Bash syntax and git whitespace checks. No new test files.
-  - Suggestions: harder fixed sample or repeated runs to measure variance; warm/bake common setup if measuring end-to-end wall time. Do not change the Mac config or optimize it based only on this sample.
+- [x] Five concurrent new-config trials finish with verified provenance and before/after metrics.
+  - Requirement: fresh snapshot of actual Mac configuration, unchanged task revisions/model/effort, local Docker, five simultaneous tasks initially, no solver retries or host config edits.
+  - Definition of done: inspect five result/verifier/session records and snapshot identity, compare timing/cost/quality and editor errors, save report and commit.
+  - Snapshot: ~/.local/share/terminal-bench/comparison-20261117-000121/, archive 9b46c035d91a2e0ca479542b067e7006f7a6412666a3da5cf0ddfbf721245834; source comparison confirms only the file-tool extension changed.
+  - Delegated: worker measures baseline tool/rejection counts from old configured transcripts; parent runs and verifies new trials.
+  - Limitations: single attempts, concurrency differs from previous two-slots-per-arm matrix, AMD64 emulation and cache/priority-tier effects limit timing conclusions. Dollar costs are token-price estimates, not actual ChatGPT subscription charges.
+  - Infrastructure failure: initial five-way run finished with one passed task (multi-source-data-merger) and four AgentSetupTimeoutError failures at 360s, while installing Pi before inference. Harbor returned exit 0 despite exceptions; inspected trial records rather than treating exit status/mean as success.
+  - Recovery: retain original job unchanged; rerun only the four unstarted tasks concurrently with --agent-setup-timeout-multiplier 3 (1080s). Task-solving/verifier limits and frozen config unchanged; retain one solver attempt per task.
+  - Verified: five solver trials passed all 20 checks. Initial merger pass + four recovery passes, one solver attempt per task. Native session model/effort/version, stop reasons, task revision equality, package listings and snapshot identity all checked. Active source hashes unchanged after execution.
+  - Results: old → new cost $0.2911036 → $0.2510352 (-13.8%); accumulated agent time 265.13s → 246.29s (-7.1%); median 62.31s → 52.65s; edit rejections 3 → 0; read calls 8 → 6. Quality unchanged at maximum. Two remaining tool error events are bash, not edit failures.
+  - No auxiliary sessions/review logs; configured sessions made 5–9 assistant calls. Five solver costs reconcile with both Harbor job totals; four setup-only failures had no recorded model usage.
+  - Timing: initial command 448.34s, recovery 344.26s; active total 792.60s, elapsed including diagnosis 843.64s. Preserve both phases; do not present a clean first-pass success or compare this wall time to the full old matrix.
+  - Deliverables: terminal-bench/NEW-CONFIG-RESULTS.md and results/new-config-20261117-000121.json; README links latest rerun. Baseline three-arm results unchanged. No benchmark/harness code changed, new tests added, or Mac config edited.
+  - Follow-up suggestion: allow setup multiplier 3 for future five-way runs; repeated/harder tasks needed before claiming causal speed/quality improvements.

@@ -93,3 +93,9 @@ python3 terminal-bench/summarize.py "$root"
 ```
 
 This writes `summary.json` and `summary.md`, checks for all 15 results and matching task names, and reports quality, timing, tokens and estimated costs. Missing costs remain unavailable rather than silently becoming zero. A verifier failure is a benchmark result, not a reason to retry until it passes. Other dataset images may need different resources or x86 emulation on Apple Silicon.
+
+## Latest configured-Pi rerun
+
+The new splices-only editor configuration passed all five tasks, with zero edit rejections versus three previously. Estimated cost was $0.2510 versus $0.2911; verifier quality remained 20/20. Four initial installation timeouts were preserved and recovered before those tasks reached inference.
+
+See [NEW-CONFIG-RESULTS.md](NEW-CONFIG-RESULTS.md) for the complete before/after results, infrastructure caveat, and five-way parallel command with a longer setup allowance. Bare Pi and Codex were not rerun.
