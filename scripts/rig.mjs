@@ -8,7 +8,7 @@ import {enforceDefaults} from '../pi/sync-settings.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const home = process.env.HOME && path.normalize(process.env.HOME);
-const names = ['brew', 'neovim', 'zsh', 'kitty', 'git', 'pi'];
+const names = ['brew', 'neovim', 'zsh', 'kitty', 'git', 'pi', 'aerospace', 'lazysql', 'macos'];
 const args = process.argv.slice(2);
 const mode = args.shift();
 const preview = args.includes('--preview');
@@ -77,6 +77,8 @@ function parseList(text) {
   return list;
 }
 const manifests = {
+aerospace: ['.aerospace.toml', ...['auto-grid', 'focus-display.sh', 'move-to-display.sh', 'move-to-workspace.sh', 'new-workspace.sh', 'open-finder.sh', 'open-kitty.sh', 'open-safari.sh', 'switch-group.sh', 'switch-workspace.sh', 'workspace-groups-lib.sh'].map(name => `.config/aerospace/scripts/${name}`)],
+lazysql: ['Library/Application Support/lazysql/config.example.toml'],
   git: ['.config/git/rig.conf', '.config/git/ignore'],
 zsh: ['.zshrc', '.local/lib/rig/pi-launcher.sh'],
   kitty: ['.config/kitty/kitty.conf', '.config/kitty/ghosty.conf', '.config/kitty/open-actions.conf'],
@@ -102,6 +104,8 @@ function snapshot(file, bytes) {
 }
 function ownedBy(file, component) {
   const roots = {
+aerospace: ['.aerospace.toml', '.config/aerospace/scripts/'],
+lazysql: ['Library/Application Support/lazysql/config.example.toml'],
 git:['.config/git/'], zsh:['.zshrc', '.local/lib/rig/pi-launcher.sh'], kitty:['.config/kitty/'],
     neovim:['.config/nvim/'], pi:['.pi/agent/', '.pi-lens/config.json', '.config/billion-context/billion-context.json']
   };
@@ -228,6 +232,7 @@ function adoptGit() {
   }
   fs.renameSync(next,file);
 }
+let aerospaceChanged = false;
 function deploy(component, relative) {
   const source = path.join(root, component, relative);
   const dest = destination(relative);
@@ -236,7 +241,7 @@ function deploy(component, relative) {
   if (!stat(source)?.isFile()) fail(`Missing declared source ${source}`);
   const bytes = fs.readFileSync(source);
   const detached = parents(component, relative);
-  if (detached) return;
+if (detached) { if (component === 'aerospace') aerospaceChanged = true; return; }
   safe(path.dirname(dest));
   const current = stat(dest);
   let prior;
@@ -264,6 +269,7 @@ function deploy(component, relative) {
   }
   const digest = hash(effective);
   if (prior && !linked && hash(prior) === digest) { record(dest, digest, component, defaults); return; }
+if (component === 'aerospace') aerospaceChanged = true;
   console.log(`  ${preview ? 'Would ' : ''}${linked ? 'replace rig link' : current ? 'update' : 'create'} ${dest}`);
   if (preview) return;
   fs.mkdirSync(path.dirname(dest), {recursive:true, mode:0o700});
@@ -279,6 +285,72 @@ function deploy(component, relative) {
   }
   fs.renameSync(next, dest);
   record(dest, digest, component, defaults);
+}
+
+function seedLazysql() {
+const relative = 'Library/Application Support/lazysql/config.toml';
+const dest = destination(relative);
+safe(dest);
+if (stat(dest)) {
+if (!stat(dest).isFile()) fail(`Not a regular Lazysql config: ${dest}`);
+console.log('Existing private Lazysql config retained (connections and credentials are not managed).');
+return;
+}
+console.log(`  ${preview ? 'Would create' : 'Create'} private Lazysql config from shared example: ${dest}`);
+if (!preview) {
+fs.mkdirSync(path.dirname(dest), {recursive:true, mode:0o700});
+fs.writeFileSync(dest, fs.readFileSync(destination('Library/Application Support/lazysql/config.example.toml')), {flag:'wx', mode:0o600});
+}
+}
+
+function checkAerospacePaths() {
+if (configHome !== path.join(home, '.config')) fail('AeroSpace bindings require ~/.config/aerospace/scripts. Unset XDG_CONFIG_HOME or omit aerospace.');
+for (const relative of ['.config/aerospace/aerospace.toml']) {
+if (stat(destination(relative))) fail(`Competing AeroSpace config: ${destination(relative)}. Preserve/migrate it manually before syncing aerospace.`);
+}
+}
+function activateAerospace(stateRoot) {
+if (preview) {
+console.log('Would ensure executable helpers and reload running AeroSpace if configuration changed or a previous reload is pending.');
+return;
+}
+for (const relative of manifests.aerospace.slice(1)) {
+const dest = destination(relative);
+safe(dest);
+const mode = fs.statSync(dest).mode;
+const required = fs.statSync(path.join(root, 'aerospace', relative)).mode & 0o111;
+if ((mode & required) !== required) {
+console.log(`  Repair helper execute permissions: ${dest}`);
+fs.chmodSync(dest, (mode & 0o777) | required);
+aerospaceChanged = true;
+}
+}
+const digest = hash(Buffer.from(manifests.aerospace.map(relative => {
+const dest = destination(relative);
+safe(dest);
+return `${relative}:${hash(fs.readFileSync(dest))}:${fs.statSync(dest).mode & 0o777}`;
+}).join('\n')));
+const marker = path.join(stateRoot, 'aerospace-reloaded.sha256');
+safe(marker);
+if (!aerospaceChanged && stat(marker) && fs.readFileSync(marker, 'utf8') === digest) {
+console.log('AeroSpace configuration unchanged; no reload needed.');
+return;
+}
+// Clear previous activation before attempting changes, so failures retry even
+// when repairing local drift back to the last successfully loaded bytes.
+if (stat(marker)) fs.unlinkSync(marker);
+if (!available('aerospace') || spawnSync('pgrep', ['-x', 'AeroSpace'], {stdio:'ignore'}).status !== 0) {
+console.log('AeroSpace reload deferred: CLI missing or app not running. Launch it and rerun sync.');
+return;
+}
+const active = run('aerospace', ['config', '--config-path']).trim();
+if (!stat(active) || fs.realpathSync(active) !== fs.realpathSync(destination('.aerospace.toml'))) fail(`AeroSpace uses '${active}', not ~/.aerospace.toml. Remove custom --config-path overrides and relaunch manually.`);
+run('aerospace', ['reload-config', '--dry-run']);
+run('aerospace', ['reload-config']);
+const next = marker + '.next';
+fs.writeFileSync(next, digest, {flag:'wx', mode:0o600});
+fs.renameSync(next, marker);
+console.log('AeroSpace changed configuration reloaded; active config verified.');
 }
 
 try {
@@ -355,6 +427,10 @@ console.log(`Components: ${components.join(', ') || 'none'}\n`);
 for (const component of components) {
       try {
 console.log(`[${components.indexOf(component) + 1}/${components.length}] ${component} — ${component === 'brew' ? 'install packages' : 'sync configuration'}`);
+if (['aerospace', 'lazysql', 'macos'].includes(component) && process.platform !== 'darwin') {
+console.log(`Skip ${component}: macOS-only configuration.`);
+continue;
+}
         if (component === 'brew') {
           const env = {...process.env, ...state.brew.skip};
           for (const file of [path.join(root,'brew/Brewfile'), state.brew.file].filter(Boolean)) {
@@ -363,7 +439,11 @@ console.log(`[${components.indexOf(component) + 1}/${components.length}] ${compo
             if (Object.keys(state.brew.skip).length) console.log(`  Package exclusions: ${JSON.stringify(state.brew.skip)}`);
             if (!preview) run('brew', argv, {env});
           }
-        } else {
+} else if (component === 'macos') {
+console.log(`${preview ? 'Would apply' : 'Apply'} macOS defaults without restarting Dock/Finder; some changes need logout/restart.`);
+if (!preview) console.log(run('bash', ['macos/defaults.sh', '--no-restart']).trim());
+} else {
+if (component === 'aerospace') checkAerospacePaths();
           if (component === 'pi') {
             const skillsRoot = path.join(root, 'pi/.pi/agent/skills');
             safe(skillsRoot);
@@ -373,6 +453,8 @@ console.log(`[${components.indexOf(component) + 1}/${components.length}] ${compo
           }
           for (const relative of manifests[component]) deploy(component, relative);
           retireFiles(component);
+if (component === 'aerospace') activateAerospace(stateRoot);
+if (component === 'lazysql') seedLazysql();
           if (component === 'git') adoptGit();
           if (component === 'pi') {
             let piBin;

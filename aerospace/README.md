@@ -25,26 +25,21 @@ workspace routing or monitor-slot normalization.
 
 ## Install and safe legacy behavior
 
-Install/symlink `.aerospace.toml` to `~/.aerospace.toml` and the complete current
-`.config/aerospace/scripts/` directory to `~/.config/aerospace/scripts/`.
-A worktree alone does not change live symlink targets. After explicitly choosing
-to activate the update, validate and reload:
+`./sync.sh` copies `.aerospace.toml` and the explicit helper inventory into HOME,
+preserving private backups and migrating exact known rig links to ordinary files.
+Changed configuration is validated and reloaded when AeroSpace is running.
+Unchanged configuration is not reloaded. A failed/deferred reload is retried on
+the next sync. Sync never starts AeroSpace or the optional auto-grid helper.
 
-```sh
-aerospace reload-config --dry-run --warnings-as-errors
-aerospace reload-config --warnings-as-errors
-```
+A competing `~/.config/aerospace/aerospace.toml`, foreign link, or custom active
+`--config-path` fails with migration guidance rather than being silently replaced.
+Non-default `XDG_CONFIG_HOME` is rejected for this component because the bindings
+call `$HOME/.config/aerospace/scripts/` explicitly. Omit `aerospace` with an
+explicit `--components` list if necessary.
 
-This repository change does **not** reload the live config, move windows, or
-rename/migrate workspaces. Existing `n-g2`, `e2-g3`, etc. remain usable via
-native workspace commands or a user's external picker; group/cardinal shortcuts
-treat them as noncanonical. Existing `n2/e2/s2/w2` now mean **group 2**, even if
-they previously represented display 2. No automatic migration can safely infer
-that intent. If desired, manually move selected windows after inspecting
-`aerospace list-workspaces --all`; do not batch-rename or merge live workspaces.
-Old helper files left in an installed directory are not called by this config;
-remove obsolete `normalize-display-workspaces.sh` and `display-workspaces-lib.sh`
-when updating the installation so they cannot be invoked accidentally.
+Reload activates global shortcuts and runtime settings, but does not rename or
+migrate existing workspaces. Existing `n2/e2/s2/w2` mean group 2. Inspect old
+workspace names manually; sync never batch-renames or merges them.
 
 ## Shortcut cheat sheet
 
@@ -159,21 +154,17 @@ its installed single-instance handler focuses the new session's OS window.
 
 ## Install / start / reload
 
-`./sync.sh` deliberately leaves AeroSpace untouched. To install it separately,
-run `bash scripts/install-aerospace.sh` directly.
-It installs only the config and an explicit helper manifest, never tests/docs.
-Conflicting files or links receive unique timestamped `.backup-*` siblings;
-unrelated config files stay in place. Competing default/XDG `aerospace.toml`
-files are backed up individually. Folded directory links are detached before
-writes so installation cannot overwrite their source through HOME.
+`./sync.sh` includes AeroSpace by default on macOS. It copies only the config and
+the explicit helper manifest, never tests/docs, and repairs helper execute bits.
+Running applications reload only after changes (or a pending reload). Missing CLI
+or a stopped app defers activation; launch AeroSpace and rerun sync. Reload/parse
+errors fail the component. A private signature records successful activation, so
+a failed reload is not mistaken for an unchanged, already-applied configuration.
 
-The installer never starts/restarts AeroSpace. Missing CLI or a stopped app
-produces a deferred-reload warning; launch it manually and rerun the installer.
-For a running app, reload/parse failures and an active config path other than
-the installed repo config are fatal. A custom `--config-path` launch override
-must be removed manually before relaunching. A worktree alone does not change
-an existing installation's symlink targets. Run isolated installer checks with
-`bash scripts/install-aerospace.test.sh` (temporary HOME and mocked CLI).
+The old `scripts/install-aerospace.sh` is a legacy symlink installer; use the
+top-level sync for managed copy deployment. Its isolated legacy checks remain
+available with `bash scripts/install-aerospace.test.sh`. Foreign directory links
+or unlisted content in folded links require manual preservation/migration.
 
 The current config does **not** start this helper. Starting it manually is an
 explicit opt-in and can overwrite manual/accordion layouts. To opt in:

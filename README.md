@@ -11,11 +11,11 @@ Put Node on the **parent shell PATH** first. Selected `brew` also requires Homeb
 ./sync.sh
 ```
 
-Every sync defaults to all six supported components: `brew,neovim,zsh,kitty,git,pi`, regardless of saved selections. AeroSpace, Lazysql and macOS configuration are deliberately **untouched**: adoption/update is manual, not a new merger or preference engine. Homebrew may still install their apps from the shared Brewfile. Legacy component install commands (including the AeroSpace helper) are excluded from this no-symlink workflow; do not use them for copy deployment.
+Every sync defaults to all supported components: `brew,neovim,zsh,kitty,git,pi,aerospace,lazysql,macos`, regardless of saved selections. Brew installs/updates the shared package list; Pi installs/updates its CLI and configured packages unless the saved no-upgrade preference disables optional upgrades. AeroSpace, Lazysql and macOS settings participate on macOS and are skipped on other platforms.
 
 There are no prompts: inspect preview before applying. `--yes` remains accepted but never overrides conflicts. Later syncs refuse a dirty checkout (including untracked files), pull with `--ff-only`, then re-execute the new orchestrator. The first sync needs no saved state and uses the current checkout. Preview does not fetch/pull: it describes the current checkout, not remote changes.
 
-Use `--components` to **replace the full selection for this invocation only**. Component selections are not persisted or reused; the next invocation without this flag selects all six components again:
+Use `--components` to **replace the full selection for this invocation only**. Component selections are not persisted or reused; the next invocation without this flag selects all supported components again:
 
 ```sh
 ./sync.sh --components zsh,git,pi --preview
@@ -26,7 +26,7 @@ Use `--components` to **replace the full selection for this invocation only**. C
 Sync accepts:
 
 - `--preview`: report actions/conflicts without writing state or installing packages. Pi JSON sync has no preview CLI, so its action is listed but not run.
-- `--components <comma-separated-list>`: select from `brew,neovim,zsh,kitty,git,pi` for this invocation only; an empty list skips all components for this run.
+- `--components <comma-separated-list>`: select from `brew,neovim,zsh,kitty,git,pi,aerospace,lazysql,macos` for this invocation only; an empty list skips all components for this run.
 - `--brew-no-upgrade` / `--brew-upgrade`: persist the shared package upgrade preference, including the selected Pi CLI and configured Pi packages. Missing Pi packages still install; incompatible npm versions are repaired to match their declarations.
 - `--brewfile <absolute-private-file>`: persist an existing trusted private Brewfile outside rig.
 - `--pi-migrate-from <checkout>`: forward Pi's explicit legacy migration flag.
@@ -36,7 +36,7 @@ Unknown flags fail. Components report independent failures and partial success; 
 
 ## Adoption and customization
 
-Explicit file inventories replace Stow traversal. Repository docs, tests, examples, disabled skills and Pi browser captures are not deployed. Foreign links and unsafe paths fail closed. Selecting a component authorizes restoring its explicitly managed files, including changed or deleted copies; unrelated files stay untouched and nothing is adopted into Git. Rig never executes unknown config to infer intent. Do not blindly move old executable config into a startup hook.
+Explicit file inventories replace Stow traversal. Repository docs, tests, disabled skills and Pi browser captures are not deployed. Lazysql's shared example is explicitly deployed, but private connections are not managed. Foreign links and unsafe paths fail closed. Selecting a component authorizes restoring its explicitly managed files, including changed or deleted copies; unrelated files stay untouched and nothing is adopted into Git. Rig never executes unknown config to infer intent. Do not blindly move old executable config into a startup hook.
 
 Managed non-JSON files always receive repository bytes. Local edits are backed up before replacement under `~/.local/state/rig/orchestration/backups/`; deleted managed files are recreated. Add executable/text customizations in separate private hooks/files, not managed copies. Managed JSON objects keep local-only keys recursively, but repo-defined values win, including scalars and complete arrays (argument order matters). Pi packages are the exception: repo declarations win by package identity and additional local packages survive. Invalid JSON stops that publication. Previously managed files, JSON keys and package declarations removed from the repo are retired on sync, even if locally edited. Unrelated local additions remain. Retiring a JSON object removes that object, including local customizations within it. `copies.json` records file ownership and copied JSON defaults, not opt-outs; legacy hash-only entries establish file ownership but cannot identify old JSON fields. JSON retirement uses previous repo baselines, never guesses from effective home values.
 
@@ -47,8 +47,11 @@ Known rig links become ordinary files/directories with private snapshots and con
 - **Neovim:** private `pre.lua`, `deferred.lua` and native `after/` resources in the sibling `nvim-local` directory; see [Neovim](neovim/README.md). Plugin/tool downloads remain Neovim-owned. Managed edits/deletions are restored on sync; retain caches and private hooks.
 - **Pi:** [Pi settings migration and resource controls](pi/README.md). Direct agents/extensions/themes/instructions have a separate explicit inventory; personal additions remain untouched. Managed assets and JSON defaults are enforced; unsafe directory/path conflicts still stop Pi safely. Selected Pi installs a missing CLI with `bun add --global --ignore-scripts @earendil-works/pi-coding-agent`; existing CLI is retained in no-upgrade mode, otherwise that command can upgrade it. This is not a reproducible version lock. After settings sync, the installed Pi package-manager API reconciles configured packages (including missing pinned versions) before success is reported; failures fail the Pi component. No-upgrade suppresses optional package refreshes, not missing-package installation or npm version-constraint repair. Restart/reload Pi to load the resources. `--pi-migrate-from` imports only the explicitly named checkout. Omit Pi with `--components` to skip managing its local assets for that invocation, or add Pi-native controls for resources not defined by the repo. Keep personal instruction composition explicit.
 - **Skills:** the 24 `principle-*` skills remain active in `pi/.pi/agent/skills/` and deploy with Pi. The other 33 vendored pstack skills are disabled and retained in `pi/disabled-skills/`, outside Pi discovery and deployment. Full Pi sync backs up and removes the exact archived skill files from home, including on older installs without ownership history. Unlisted personal files and package-provided skills remain supported; empty directories may remain. The empty skills lock does not control these files.
+- **AeroSpace:** config and executable helpers are copied; changed configuration is validated and reloaded if the app is running. Missing CLI/stopped app defers activation; a failed/deferred reload is retried on the next sync. Competing configs, foreign links, custom active config overrides, and non-default `XDG_CONFIG_HOME` fail with guidance. Sync never starts the app or auto-grid. See [AeroSpace](aerospace/README.md).
+- **Lazysql:** shared `config.example.toml` is updated in `~/Library/Application Support/lazysql/`. A missing `config.toml` is seeded from it; an existing active config is private and never overwritten, so database connections and credentials survive. Later shared-default changes are available in the example for manual adoption.
+- **macOS:** `macos/defaults.sh` applies the shared Dock, Finder, keyboard, hot-corner and appearance preferences. Sync does not kill/restart Finder or Dock; some changes require logout/restart. Preview lists this action without running `defaults`.
 
-Paths under `.config` respect `XDG_CONFIG_HOME` (default `~/.config`); Zsh and Pi keep their existing HOME-based contracts. Private hooks may still override behavior at application runtime; sync enforces deployed files, not application behavior or project-local configuration. Do not delete private state/history to reset settings.
+Paths under `.config` respect `XDG_CONFIG_HOME` (default `~/.config`), except AeroSpace requires that default because its bindings use HOME-based helper paths. Zsh and Pi keep their existing HOME-based contracts. Private hooks may still override behavior at application runtime; sync enforces deployed files, not application behavior or project-local configuration. Do not delete private state/history to reset settings.
 
 ## Brew controls
 
