@@ -1,16 +1,13 @@
 ## Overview
-- Include all rig-owned configuration in default sync: add AeroSpace, Lazysql, and macOS alongside Brew, Neovim, Zsh, Kitty, Git, and Pi.
-- Preserve existing Brew upgrade preferences; normal upgrade mode already updates Brew, Pi CLI, and configured Pi packages. No live sync, push, or merge.
-- Accepted scout findings: explicit AeroSpace manifest, execute-bit repair, fail-closed link/discovery handling, and default-XDG prerequisite. User explicitly requested automatic reload after scout launch, overriding its manual-activation recommendation.
-- Lazysql contains only a public example; connection settings are private. Deploy/update the example and seed a missing active config, never overwrite an existing active config or database credentials.
-- Apply macOS defaults without restarting Finder/Dock during sync; standalone script keeps its existing restart behavior. Platform-specific components skip on non-macOS.
+- Set up Terminal-Bench on this Apple Silicon Mac and verify one task with Codex, using local Docker and existing ChatGPT login.
+- Harbor 0.26.0, Docker 29.8.2, uv and Codex 0.169.0 are already installed. No full benchmark, cloud runner, or results upload.
+- Keep downloaded tasks and results outside the repository; document a repeatable command without credentials.
 
 ## Todos
-- [x] All supported rig configuration participates in default sync safely.
-  - Requirement: explicit copy inventories; AeroSpace scripts executable; Lazysql private data preserved; macOS preview has no effects; existing subset flag and Brew controls preserved.
-  - Definition of done: isolated deployment and preview checks cover new components, private-config preservation, platform handling, and stubbed macOS defaults; existing AeroSpace checks and syntax/whitespace checks pass; documentation updated and committed.
-  - Implemented: nine default components; AeroSpace signature tracks successful activation and retries deferred/failed reloads, including restored local drift. Dry-run validation and active-path verification precede reload.
-  - Verification: isolated CLI orchestration with temporary HOME/repository and stubbed package/desktop commands passed: default preview, new-component deployment, private Lazysql preservation, executable repair, unchanged/changed/failed/deferred reloads, known-link migration, competing/active-path/XDG failures, non-macOS skips, macOS writes without restarts, standalone restart preservation.
-  - Existing checks passed: workspace-groups, binding-contract, aerospace-launchers, install-aerospace. Logs: `.local/logs/sync-all-{groups,bindings,launchers,installer}.log`. Node/Bash syntax and whitespace checks passed.
-  - Limitations: no live application reload or package upgrade was run. Existing Lazysql configs require manual adoption from the updated example. Restart/logout may be needed for macOS defaults; Pi reload/restart remains user-driven.
-  - Verification correction: an initial stubbed-defaults assertion expected 15 writes; the existing script has 14. Corrected the throwaway check; all 14 writes verified.
+- [x] One official Harbor smoke task runs through Codex and its verifier.
+  - Requirement: use the official runner, isolated Docker execution, existing authentication and one attempt; distinguish this from a benchmark dataset score.
+  - Definition of done: inspect trial result and verifier reward, document rerun instructions, and commit repository notes.
+  - Verified: hello-world/hello-world passed with Codex 0.169.0 and gpt-6.1-sol: reward 1.0, one completed trial, zero errors, 2m 11s. CODEX_FORCE_AUTH_JSON=1 used ChatGPT login. No installation changes needed.
+  - Results: ~/.local/share/terminal-bench/jobs/codex-smoke-20261116-231852/result.json; reward.txt is 1. Instructions: terminal-bench/README.md.
+  - First-version scope: actual terminal-bench@2.0 tasks and their ARM/x86 image compatibility remain unverified. Suggest one real dataset task next before a suite.
+  - Scout confirmed installed-source CLI/auth behavior but lacked web/shell tools; parent fetched official quick-start docs and ran the smoke test.
