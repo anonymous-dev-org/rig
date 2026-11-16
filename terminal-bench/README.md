@@ -30,16 +30,44 @@ Inspect saved runs with:
 harbor view "$HOME/.local/share/terminal-bench/jobs"
 ```
 
-## Next: actual benchmark tasks
+## Configured Pi: real Terminal-Bench task
 
-A one-task dataset run uses the following syntax (not yet verified on this Mac):
+The first configured-Pi run passed `log-summary-date-ranges` from `terminal-bench@2.0`: **reward 1.0, both verifier tests passed, zero exceptions**. Pi processed 164 log files and produced the required 15-row CSV summary.
+
+| Setting / measurement | Value |
+|---|---|
+| Pi | 1.5.2, verified from the actual launcher target and trial metadata |
+| Model / thinking | `openai/gpt-6.1-sol` / `low` |
+| Agent execution | 24.56 seconds |
+| Full job including setup and verification | 2 minutes |
+| Input / cached input / output tokens | 41,426 / 18,944 / 681 |
+| Attempts | 1; no retries |
+
+The shell alias's option **2** selects the main rig checkout, not another Pi build. Its noninteractive path invokes the same global binary directly. The benchmark uses that Pi version and active global configuration in Docker; it does not mount or run against rig's main checkout.
+
+`configured_pi.py` extends Harbor's Pi adapter to upload a frozen configuration archive and install Linux-native packages. It keeps the active instructions, `WATCHDOG.md`, custom extensions, skills, agent definitions, prompt templates, theme, model catalog, and native MCP configuration. The session's numbered `read` output confirms the custom file tools ran; the package listing records all four configured packages: `pi-subagents@0.88.1`, `pi-web-access@0.47.0`, `pi-fast@0.3.0`, and `pi-sub-anthropic@0.1.11`.
+
+### Repeat this frozen run
+
+Run from this checkout; Docker must be running:
 
 ```sh
-CODEX_FORCE_AUTH_JSON=1 harbor run \
-  -d terminal-bench@2.0 -l 1 \
-  -a codex -m openai/gpt-6.1-sol \
-  --ak version=0.169.0 -n 1 -k 1 \
-  --jobs-dir "$HOME/.local/share/terminal-bench/jobs"
+snapshot="$HOME/.local/share/terminal-bench/configured-pi-20261116-232520/snapshot.tar.gz"
+PYTHONPATH="$PWD/terminal-bench${PYTHONPATH:+:$PYTHONPATH}" harbor run \
+  -d terminal-bench@2.0 -i log-summary-date-ranges -l 1 \
+  -a configured_pi:ConfiguredPi -m openai/gpt-6.1-sol \
+  --ak version=1.5.2 --ak "snapshot_archive=$snapshot" \
+  --effort low -n 1 -k 1 \
+  --jobs-dir "$HOME/.local/share/terminal-bench/jobs" \
+  --job-name "configured-pi-$(date +%Y%m%d-%H%M%S)"
 ```
 
-Add `-i TASK_NAME` to select a particular task; `-t` instead selects a standalone registry task. Actual benchmark tasks can require large image downloads and x86 emulation on Apple Silicon. Passing hello-world does not establish compatibility with every dataset image. Start with one task before increasing concurrency or running a suite. Results stay local unless explicitly uploaded.
+The private snapshot and file-hash manifest are under `~/.local/share/terminal-bench/configured-pi-20261116-232520/`. The archive has no credentials, host sessions, histories, or caches. Package declarations were pinned to installed versions and the host device identifier removed; transitive dependencies were resolved for Linux, not frozen from the Mac. Bun 1.4.4 supports the unchanged package-manager and MCP commands. The executable reported Pi 1.5.2; an older managed-install marker saying 1.2.0 was not used.
+
+The adapter supplies only OpenAI and `pi-sub-anthropic` credentials at runtime, because paired review may use both. They are not included in the snapshot or an image layer. The Docker environment was deleted after the run. This short task did not exercise delegation, the 40-call paired-review cadence, or the Playwright MCP browser; preserving their configuration does not prove those integrations work on Linux. macOS TUI sound/display behavior does not apply in print mode.
+
+Saved job: `~/.local/share/terminal-bench/jobs/configured-pi-20261116-232520/`. The trial's `agent/pi.txt`, `agent/pi/sessions/`, `agent/configured-packages.txt`, and `verifier/test-stdout.txt` contain execution and verification evidence. Results stay local; Harbor's displayed cost is an estimate, not proof of a separate API charge.
+
+### Next comparison arms
+
+Run bare Pi and Codex on the **same task**, model, low thinking level, and one-attempt policy. The earlier Codex hello-world run is not a comparison result. One successful task cannot establish which harness is better; expand to a fixed multi-task sample only after all three arms work. Other dataset images may require different resources or x86 emulation on Apple Silicon.
