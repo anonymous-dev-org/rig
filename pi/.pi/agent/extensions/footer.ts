@@ -80,7 +80,7 @@ export default function (pi: ExtensionAPI) {
           const right = (turns ? theme.fg("dim", `${turns}  `) : "") +
             (reviewing ? theme.fg("accent", `${reviewing}  `) : "") +
             theme.fg(contextColor, context) +
-            theme.fg("dim", `  in ${tokenFormat.format(inputTokens).toLowerCase()} (${cachedPercent}% cached) - out ${tokenFormat.format(outputTokens).toLowerCase()} ($${cost.toFixed(3)})  ${fast} │ `) +
+theme.fg("dim", `  in ${tokenFormat.format(inputTokens).toLowerCase()} (${cachedPercent}%) - out ${tokenFormat.format(outputTokens).toLowerCase()} ($${cost.toFixed(3)})  ${fast} │ `) +
             theme.fg("accent", thinking) + theme.fg("dim", ` │ ${model} `);
           const rightWidth = visibleWidth(right);
           if (rightWidth >= width) return [truncateToWidth(right, width)];
