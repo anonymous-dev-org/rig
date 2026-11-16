@@ -1,6 +1,6 @@
-# Line file tools — managed read/edit defaults
+# Line file tools — managed read/edit/write defaults
 
-Pi 1.5.2 extension overriding `read` and `edit`, with one implementation at [`pi/.pi/agent/extensions/line-file-tools/index.ts`](../../.pi/agent/extensions/line-file-tools/index.ts). This directory retains its documentation, not a second implementation. No OMP/native addon dependency.
+Pi 1.5.2 extension overriding `read`, `edit` and `write`, with one implementation at [`pi/.pi/agent/extensions/line-file-tools/index.ts`](../../.pi/agent/extensions/line-file-tools/index.ts). `write` delegates to the stock implementation with format-on-save added. This directory retains documentation, not a second implementation. No OMP/native addon dependency.
 
 Rig's full sync with Pi selected deploys it to `~/.pi/agent/extensions/line-file-tools/index.ts`; Pi discovers that directory automatically after restart or `/reload`. The JSON-only `pi/sync-settings.mjs` command does not deploy it. Full sync can also install/update Pi packages; do not treat it as an extension-only installer. Adding this source and inventory entry does not itself change an existing live installation.
 
@@ -10,7 +10,7 @@ For an isolated trial without deployment or duplicate overrides:
 pi --no-extensions -e /absolute/path/to/rig/pi/.pi/agent/extensions/line-file-tools/index.ts
 ```
 
-Start a new session so previous stock-tool calls do not suggest the old schema. Do not load this via `-e` as well as automatic discovery, or combine it with another read/edit override. Other built-in tools remain available. This extension is not a sandbox: `write`, bash, or external editors can still change files.
+Start a new session so previous stock-tool calls do not suggest the old schema. Do not load this via `-e` as well as automatic discovery, or combine it with another read/edit/write override. Other built-in tools remain available. This extension is not a sandbox: `write`, bash, or external editors can still change files.
 
 For a temporary stock-tools session, use `pi --no-extensions` (this disables all automatic extensions). To roll back only this extension, move its installed directory outside `~/.pi/agent/extensions/`, retaining it as a backup without overwriting an existing path, then restart Pi. A later full Rig sync restores this managed default; deselecting Pi only stops future management and does not remove an installed extension.
 
@@ -81,19 +81,36 @@ edit({ path: "file.ts", splices: [
 ] })
 ```
 
-`start` is 1-based; `deleteCount` is nonnegative. A zero count inserts before `start`; empty `lines` deletes. To append to a file with N lines use `start: N+1, deleteCount: 0`. To populate an existing empty file, read it then use `start: 1, deleteCount: 0`. Use stock `write` to create a missing file.
+`start` is 1-based; `deleteCount` is nonnegative. A zero count inserts before `start`; empty `lines` deletes. To append to a file with N lines use `start: N+1, deleteCount: 0`. To populate an existing empty file, read it then use `start: 1, deleteCount: 0`. Use `write` to create a missing file.
 
 Every splice in a batch addresses the **pre-edit file**, regardless of array order. Overlapping removed ranges, insertions inside a removed range, and duplicate start positions are rejected. Adjacent ranges and an insertion immediately after a removed range are allowed. Combine operations at the same position into one splice. Empty batches and insertions with no new lines are refused. All changes/splices and the resulting size are validated before writing any bytes.
 
 New rows use the file's first line terminator, or LF when none exists. Untouched mixed terminators remain intact except at the new EOF or when separating an old unterminated final row from appended rows. Nonempty final text preserves the original final-newline presence; an originally empty file gains LF-terminated rows. **An empty final row always needs a terminator to exist:** replacing an unterminated `x` with `lines: [""]` produces `\n`, not an empty file. Deleting every row produces an empty body (retaining any BOM). Successful edits return `Edit succeeded.`, followed by the files being formatted when a formatter applies; the terminal displays that acknowledgement, not a diff or a reread warning.
 
-## Format after edit
+## Format after edit or write
 
-After a successful edit, each edited file is formatted in the background, like format on save in an editor. This happens only when a directory above the file holds a Biome config (`biome.json`, `biome.jsonc`), a Prettier config file (`.prettierrc*`, `prettier.config.*`) or an Oxfmt config (`.oxfmtrc.json`, `.oxfmtrc.jsonc`, `oxfmt.config.*`); the nearest one wins. The formatter is taken from the nearest `node_modules/.bin`, otherwise from `PATH`. A `prettier` key in `package.json` is not detected.
+Successful edits and writes schedule background formatting when an applicable project configuration exists above the file. The nearest applicable directory wins; same-directory priority is Biome, Prettier, Oxfmt, gofmt, rustfmt, Ruff. File-type filtering prevents a JavaScript formatter from claiming Python, Go or Rust files in mixed repositories.
 
-The edit returns without waiting. The format job runs in the same per-file queue as reads and edits, so the next read or edit of that file waits for it. The file is piped through the formatter and written back only if it still holds what was sent. A failing, missing or slow formatter (10 s limit) leaves the file as edited and is not reported.
+| Formatter | Project opt-in | File types |
+| --- | --- | --- |
+| Biome | `biome.json`, `biome.jsonc` | JS/TS (including JSX/TSX), JSON/JSONC, CSS, GraphQL |
+| Prettier | `.prettierrc*`, `prettier.config.*`, or a `prettier` key in `package.json` | JS/TS, JSON, CSS/SCSS/Less, GraphQL, Markdown, HTML/Vue, YAML |
+| Oxfmt | `.oxfmtrc.json`, `.oxfmtrc.jsonc`, `oxfmt.config.*` | Same extension allowlist as Prettier; unsupported inputs are skipped on failure |
+| gofmt | `go.mod` | `.go` |
+| rustfmt | `Cargo.toml`, `rustfmt.toml`, `.rustfmt.toml` | `.rs` |
+| Ruff | `ruff.toml`, `.ruff.toml`, or a `[tool.ruff]` / `[tool.ruff.*]` table in `pyproject.toml` | `.py`, `.pyi` |
 
-Formatting does not update snapshots. A line the formatter changed, including a line the edit itself wrote, no longer matches and the next edit of it is rejected until that range is read again. Lines it left alone stay editable.
+The nearest `node_modules/.bin/<formatter>` takes precedence over `PATH`; nothing is installed or downloaded. A dependency declaration alone is not a formatting configuration. Ruff detection recognises ordinary unquoted table headers, not every possible TOML spelling (such as inline tables or quoted dotted keys).
+
+The edit/write returns without waiting. The format job runs in the same per-file queue as reads, edits and writes, so later operations on that file wait for it. The file is piped through the formatter and written back only if it still holds what was sent. A failing or missing formatter leaves the file as written and is not reported. Jobs have a 10-second deadline and a 4 MiB output limit; over-limit processes are killed and their output discarded. A notice means a job was scheduled, not that it succeeded. Meaningful whitespace must still be authored correctly.
+
+Rust jobs run in the file's directory to respect nested rustfmt config. If a Cargo manifest exists, `cargo metadata --no-deps --frozen` resolves the package edition, including workspace inheritance, and passes it to rustfmt (as `cargo fmt` does). If frozen/offline metadata resolution fails, formatting is skipped. Config-only projects use rustfmt's configured/default edition. Child modules are not formatted. Ruff runs only `format`, not lint/import fixes.
+
+**Snapshots:** if formatting preserves row count, the tool refreshes a row's hash for an unchanged text/line-ending normalisation or a recognised spacing-only change. The row must have matched its pre-format baseline; external changes are never made editable by this refresh. Spacing comparison applies conservatively to JS/TS (not JSX/TSX), JSON/JSONC, Go and Rust. Quoted text is preserved verbatim; ambiguous multiline strings, templates, block comments and raw strings disable spacing comparison. Rows containing `/` also retain strict checks. Python, YAML, Markdown and other unsupported contexts keep strict text matching. Text changes and shifted rows still reject through the usual per-line guard. Formatter jobs cannot restore snapshots after a session reset.
+
+`write` keeps stock creation/overwrite and parent-directory behaviour, including its result/details shape. It invalidates any previous snapshot before writing and does not establish a new one; read before a later guarded edit. Formatting is best-effort for regular UTF-8 files within the 4 MiB limit, even though stock writing itself has no such limit.
+
+**Trust:** format-on-save executes project-local formatter binaries and may execute JavaScript formatter configs/plugins with your user permissions, without a model-issued bash call. Use this extension only in projects whose tools and configs you trust; a config file is opt-in, not a security boundary.
 
 The harness stores private SHA-256 hashes of each row's **text and terminator**, indexed by numeric line position, plus the observed EOF position. Edits need no old text or hashes. A change to an unrelated row does not block an unchanged target. `changes` checks each target; splices check every removed/replaced row. Pure insertions check their immediate neighboring rows where present; appends also check EOF, and empty-file insertion requires an empty-file observation. Any retained boundary row whose terminator changes is checked too. A stale/missing target or anchor rejects the entire call before writing, without discarding other usable snapshots.
 
