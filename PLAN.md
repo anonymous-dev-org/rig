@@ -1,15 +1,19 @@
 ## Overview
-- Compare configured Pi, bare Pi, and Codex eventually; current version runs only the Mac's configured Pi on one real Terminal-Bench task.
-- Preserve active instructions, skills, extensions, model and thinking settings in an isolated Linux copy. Do not expose host sessions or unrelated credentials; no cloud upload.
-- Harbor's stock Pi adapter does not transfer host configuration. Added a small subclass to upload a frozen archive, install Linux packages and inject only required OAuth providers at runtime.
+- Run configured Pi, bare Pi and Codex on the same five Terminal-Bench 2.0 tasks, one attempt each, gpt-6.1-sol / low thinking. User explicitly requests concurrent execution.
+- Freshly snapshot current active Mac Pi configuration and resolved packages. Preserve configured behavior; bare Pi gets no custom instructions/packages/skills. No host histories, live mounts, cloud execution or upload.
+- Measure verifier quality, execution/setup/total time, tokens and estimated model cost. Distinguish estimates from subscription billing, and disclose concurrency contention and small-sample limitations.
 
 ## Todos
-- [x] Configured Pi completes one real Terminal-Bench trial with auditable configuration and results.
-  - Requirement: Pi 1.5.2 with current active configuration, one fixed task/attempt, local Docker, saved verifier and execution logs.
-  - Definition of done: inspect loaded resources and trial result, document exact setup/deviations and repeat command, commit notes.
-  - Verified: log-summary-date-ranges from terminal-bench@2.0 passed, reward 1.0, both pytest checks passed, zero exceptions/retries. Agent 24.56s, full job 2m; Pi 1.5.2, gpt-6.1-sol, low thinking confirmed in trial/session metadata.
-  - Frozen config + hashes: ~/.local/share/terminal-bench/configured-pi-20261116-232520/. Job: ~/.local/share/terminal-bench/jobs/configured-pi-20261116-232520/. No credentials in snapshot or repository.
-  - Captured active global instructions, skills, custom extensions, agents, theme, model catalog and native MCP config. Four configured packages pinned to installed versions; Linux dependencies freshly resolved. Device ID omitted; Bun 1.4.4 added. Numbered read output proves custom file tools active; package log records all four packages.
-  - Main-launcher decision: option 2 only changes cwd to the primary checkout; noninteractive runs bypass the menu. Actual target pi --version is 1.5.2, overriding scout's stale 1.2.0 installer marker. Main checkout has no project Pi settings to transfer.
-  - Limitations: task did not exercise delegation, 40-call paired review, Playwright browser, or macOS TUI behavior. No claim of full integration parity or performance superiority. No lasting test files added; Python syntax and git whitespace checks pass.
-  - Next version: bare Pi, then Codex, using this exact task/model/effort and one attempt. Earlier Codex hello-world is not comparable. Broader suite and transitive dependency lock are future suggestions, not part of this version.
+- [x] Fifteen concurrent benchmark trials finish with an auditable configuration and comparison report.
+  - Requirement: three isolated arms x five fixed tasks; current configured Pi; same main model/thinking/attempt count; bounded concurrency fitting Docker resources; saved logs and verifier results.
+  - Definition of done: inspect all fifteen results, model/effort/config evidence and errors; aggregate timing/cost/quality; document limitations and repeat command; commit.
+  - Delegated: workers selected five varied low-resource tasks and implemented the result summarizer; parent integrated adapters, fresh snapshot, execution and verification.
+  - Verified: 15/15 trials passed, all 60 verifier tests passed; zero exceptions/retries. Sol 6.1 / low confirmed in all Pi sessions and Codex native turn contexts. Identical five task revisions across arms; all primary assistant sessions completed normally.
+  - Active config: fresh 45-file snapshot, source hashes unchanged before/after, Bun lockfile preserved; four active package versions confirmed in all configured trials. Same archive hash 707a94d516fa27a78274c2d01af76486d5501dff26c88abff0244ea6cc7d5c09. Bare Pi gets no user settings/resources/packages; catalog is shared. Offline startup prevents catalog/package drift.
+  - Execution: 3 concurrent arms x 2 tasks = 6 simultaneous containers; 1 CPU/2G each on 10CPU/16GB Docker. Fifteen at once would permit 30G. Images pre-pulled in parallel. Matrix 1045.57s; job wall time dominated by repeated setup. Published images are AMD64 under emulation.
+  - Results: configured / bare / Codex all 5/5. Median agent seconds 62.31 / 41.45 / 49.97. Estimated USD totals 0.2911036 / 0.11553 / 0.1458972; total 0.5525308. Cost/token sums reconcile exactly with Harbor aggregates.
+  - Auxiliary-model decision: retained current review/delegation config instead of silently changing it. None triggered (4–12 configured model calls; review cadence 40); no auxiliary usage records/sessions/logs. All actual model calls were primary Sol 6.1 / low.
+  - Evidence: ~/.local/share/terminal-bench/comparison-20261116-233339/. Report: terminal-bench/RESULTS.md and committed summary JSON. Scripts: prepare.py, run-comparison.sh, summarize.py, configured_pi.py.
+  - Limitations: quality is verifier correctness only; curated five-task single-attempt sample, not general ranking. Parallel contention/emulation and cache/tier differences affect time. USD are public-token-price estimates, not actual ChatGPT credits; configured pi-fast requests priority but delivered tier was not measured. Browser/MCP and long-run review/delegation paths not exercised.
+  - Verification: source/snapshot hashes, package listings, clean Pi diagnostics, versions/effort, native stop reasons, all task revisions/test counts, token/cost reconciliation, Python/Bash syntax and git whitespace checks. No new test files.
+  - Suggestions: harder fixed sample or repeated runs to measure variance; warm/bake common setup if measuring end-to-end wall time. Do not change the Mac config or optimize it based only on this sample.

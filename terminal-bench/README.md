@@ -68,6 +68,28 @@ The adapter supplies only OpenAI and `pi-sub-anthropic` credentials at runtime, 
 
 Saved job: `~/.local/share/terminal-bench/jobs/configured-pi-20261116-232520/`. The trial's `agent/pi.txt`, `agent/pi/sessions/`, `agent/configured-packages.txt`, and `verifier/test-stdout.txt` contain execution and verification evidence. Results stay local; Harbor's displayed cost is an estimate, not proof of a separate API charge.
 
-### Next comparison arms
+## Three-arm five-task comparison
 
-Run bare Pi and Codex on the **same task**, model, low thinking level, and one-attempt policy. The earlier Codex hello-world run is not a comparison result. One successful task cannot establish which harness is better; expand to a fixed multi-task sample only after all three arms work. Other dataset images may require different resources or x86 emulation on Apple Silicon.
+**Completed:** configured Pi, bare Pi and Codex each passed all five tasks and all 20 verifier checks, with Sol 6.1 / low thinking. See [RESULTS.md](RESULTS.md) for timing, cost, per-task quality and configuration evidence. Complete machine-readable metrics are in [results/comparison-20261116-233339.json](results/comparison-20261116-233339.json).
+
+From this checkout, capture the **current active config** and run all three arms together:
+
+```sh
+root="$(python3 terminal-bench/prepare.py)"
+bash terminal-bench/run-comparison.sh "$root"
+harbor view "$root/jobs"
+```
+
+This is a real account-consuming benchmark, not a dry run. The scripts currently pin Pi 1.5.2, Codex 0.169.0 and Bun 1.4.4; update these pins if intentionally changing harness versions. `prepare.py` freezes the current global configuration, hashes its source files, pins configured package sources to installed versions and preserves the current Bun lockfile. It does not copy credentials, histories or sessions. The snapshot contains private instructions/configuration: keep it local.
+
+`run-comparison.sh` starts all three jobs at once, with two task slots each. Six containers can reserve 12 GB of Docker's 16 GB, leaving headroom. Each arm runs the same five named Terminal-Bench 2.0 tasks once, without retries. The custom adapter gives all arms the same helper programs; bare Pi receives no user instructions, skills or packages. Pi startup refreshes are disabled for snapshot stability, while inference remains online.
+
+The configured arm preserves auxiliary review/delegation choices. The current run stayed below the automatic review threshold and made no auxiliary calls; future runs that do trigger auxiliary calls need those logs included in cost accounting. Priority processing is requested by the configured Pi's `pi-fast` extension; reported dollars remain token-price estimates, not measured subscription credits.
+
+To regenerate metrics from saved results without running any agents:
+
+```sh
+python3 terminal-bench/summarize.py "$root"
+```
+
+This writes `summary.json` and `summary.md`, checks for all 15 results and matching task names, and reports quality, timing, tokens and estimated costs. Missing costs remain unavailable rather than silently becoming zero. A verifier failure is a benchmark result, not a reason to retry until it passes. Other dataset images may need different resources or x86 emulation on Apple Silicon.
