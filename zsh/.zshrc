@@ -144,7 +144,7 @@ alias db='lazysql'
 alias n='nvim'
 alias nt='nvim +term'
 alias codex='caffeinate -i codex'
-alias pi='PI_SKIP_VERSION_CHECK=1 caffeinate -i pi'
+alias pi='bash "$HOME/.local/lib/rig/pi-launcher.sh"'
 alias ai='nvim "+lua require(\"agentic\").toggle()"'
 ###
 
