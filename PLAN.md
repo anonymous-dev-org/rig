@@ -1,8 +1,10 @@
-# Overview
-- Add a cached-input percentage beside the footer input/output totals. Keep existing totals and cost unchanged.
-- Interpret cached as cache reads divided by all input (uncached + cache reads + cache writes). Output has no cache metric.
+## Overview
+- Move checkout selection before Pi startup, using a deployed shell script, not an extension.
+- Bare interactive `pi` asks for a new named worktree or the primary checkout. Explicit arguments and noninteractive invocations pass through unchanged.
+- New branches start from primary checkout HEAD, without pulling or copying dirty files. Worktrees live in its `.pi/worktrees/`; native `--name` names the conversation.
+- Update shared agent instructions to respect the selected checkout. No live sync, push, or merge.
 
-# Todos
-- [x] Footer shows cumulative cached-input percentage.
-  - Requirement: display `in 120k (80% cached) - out 5k`; show 0% for no input; use the existing usage aggregation and render cache.
-  - Verified: five actual-render cases (zero, mixed, full cache, cache writes, leaf changes) and visible widths 1/20/80/250 passed. Throwaway check corrected to use installed dist imports and visibleWidth rather than ANSI string length.
+## Todos
+- [x] Launcher, shell deployment, and instructions work end to end.
+  - Requirement: safe names, no overwrites, ignored worktree directory, argument/exit preservation, no recursive invocation.
+  - Definition of done: syntax checks and throwaway Git/PTY checks cover both choices, validation failures, and passthrough; changes committed.

@@ -44,21 +44,13 @@ When something breaks in a small step, the cause is in that step. Building every
 
 ## 3. Worktree and delegation
 
-What a task needs depends on what it changes:
+The user chooses the checkout before Pi starts, either the primary checkout or a named worktree under `<repository-root>/.pi/worktrees/`. Work in the startup directory. Do not create another worktree, switch branches, or pull into another checkout unless explicitly asked.
 
-- **A question or review that changes no files:** no worktree, no `PLAN.md`.
-- **A mechanical edit**, where the result is known in advance and nothing needs investigating or deciding: a worktree, no `PLAN.md`.
-- **Any other change:** a worktree and a `PLAN.md`.
+- **A question or review that changes no files:** no `PLAN.md`.
+- **A mechanical edit**, where the result is known in advance and nothing needs investigating or deciding: no `PLAN.md`.
+- **Any other change:** create `PLAN.md` at the selected checkout root.
 
-Before planning or making a change:
-
-1. Pull `origin/main` into local `main`.
-2. Make sure Git ignores `.local/`.
-3. Create a worktree on a new task branch under `<repository-root>/.local/worktrees/`. Do all planning and editing there, never in the main checkout.
-
-These steps need no approval. If one cannot run as written, for example because there is no remote or the main checkout has uncommitted changes, adapt it in the way that best leaves the main checkout untouched, note what you did in `PLAN.md`, and continue. If the only way forward is a risky action, ask first.
-
-After the branch is merged, remove its worktree with `git worktree remove <worktree-path>`.
+When using a worktree, leave it in place for the user to merge and remove. Do not merge or remove it without their request.
 
 Delegate a part of the work to a subagent whenever it is separate: a subagent can explore or implement it from a written task description, without waiting on the rest of the work. Otherwise work alone. A few known reads or searches are not separate work; do them yourself. This paragraph is the user's standing request to delegate, so you need no further permission to launch a subagent.
 
