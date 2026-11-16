@@ -148,11 +148,16 @@ A fresh Pi session exposes `subagent` immediately, without a
 children or change delegation authorization. The full tool declaration is present
 even in sessions that never delegate, so lower total token cost is not guaranteed.
 
-`AGENTS.md` distinguishes work assigned to a child, independent review of a named
-risk, and a decision the parent needs before proceeding. A parent can continue
-unaffected work during a review, but must accept a prerequisite answer before
-implementing the part that depends on it. Children return findings and evidence
-in their final report; ordinary async completion wakes the parent without polling.
+`AGENTS.md` permits separate implementation, research and prerequisite-decision
+delegation, but review-only children require an explicit user request for delegated
+review. The parent must not add an audit, double-check or second-opinion child on its
+own, including by relabeling that review as research or a decision. The parent still
+performs the verification needed for its work. This does not disable the separate
+automatic `paired-review.ts` mechanism described below.
+
+A parent must accept a prerequisite answer before implementing the part that
+depends on it. Children return findings and evidence in their final report;
+ordinary async completion wakes the parent without polling.
 
 With pi-subagents 0.88.1, `contact_supervisor(reason: "progress_update")` is activity
 reporting, not a message to the parent model. A child blocked on a decision uses
