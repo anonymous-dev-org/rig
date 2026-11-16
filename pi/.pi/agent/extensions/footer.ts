@@ -27,6 +27,7 @@ export default function (pi: ExtensionAPI) {
       let cost = 0;
       let inputTokens = 0;
       let outputTokens = 0;
+      let cachedInputTokens = 0;
 
       return {
         invalidate() {},
@@ -58,6 +59,7 @@ export default function (pi: ExtensionAPI) {
             cost = 0;
             inputTokens = 0;
             outputTokens = 0;
+            cachedInputTokens = 0;
             // Match Pi's cumulative accounting without rescanning on every frame.
             for (const entry of ctx.sessionManager.getEntries()) {
               const billed = entry.type === "message"
@@ -66,17 +68,19 @@ export default function (pi: ExtensionAPI) {
               if (billed) {
                 cost += billed.cost.total;
                 inputTokens += billed.input + billed.cacheRead + billed.cacheWrite;
+                cachedInputTokens += billed.cacheRead;
                 outputTokens += billed.output;
               }
             }
           }
+          const cachedPercent = inputTokens > 0 ? (cachedInputTokens / inputTokens * 100).toFixed(0) : "0";
           const fast = footerData.getExtensionStatuses().get("pi-fast") ?? "Fast n/a";
           const reviewing = footerData.getExtensionStatuses().get("rig-paired-review");
           const turns = footerData.getExtensionStatuses().get("rig-paired-review-turns");
           const right = (turns ? theme.fg("dim", `${turns}  `) : "") +
             (reviewing ? theme.fg("accent", `${reviewing}  `) : "") +
             theme.fg(contextColor, context) +
-            theme.fg("dim", `  in ${tokenFormat.format(inputTokens).toLowerCase()} - out ${tokenFormat.format(outputTokens).toLowerCase()} ($${cost.toFixed(3)})  ${fast} │ `) +
+            theme.fg("dim", `  in ${tokenFormat.format(inputTokens).toLowerCase()} (${cachedPercent}% cached) - out ${tokenFormat.format(outputTokens).toLowerCase()} ($${cost.toFixed(3)})  ${fast} │ `) +
             theme.fg("accent", thinking) + theme.fg("dim", ` │ ${model} `);
           const rightWidth = visibleWidth(right);
           if (rightWidth >= width) return [truncateToWidth(right, width)];
