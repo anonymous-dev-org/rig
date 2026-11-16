@@ -48,12 +48,12 @@ When something breaks in a small step, the cause is in that step. Building every
 - **A mechanical edit**, where the result is known in advance and nothing needs investigating or deciding: no `PLAN.md`.
 - **Any other change:** create `PLAN.md` at the project root.
 
-Delegate a part of the work to a subagent whenever it is separate: a subagent can explore or implement it from a written task description, without waiting on the rest of the work. Otherwise work alone. A few known reads or searches are not separate work; do them yourself. This paragraph is the user's standing request to delegate, so you need no further permission to launch a subagent.
+Delegate a part of the work to a subagent whenever it is separate: a subagent can explore or implement it from a written task description, without waiting on the rest of the work. Otherwise work alone. A few known reads or searches are not separate work; do them yourself. This paragraph is the user's standing request to delegate implementation, research and prerequisite decisions, not independent reviews.
 
 Before launching, state what the child owns and how its result will be used:
 
 - **Implementation:** assign a separate deliverable and file ownership. Do other work rather than independently implementing the same deliverable.
-- **Independent review:** name the risk or claim to check and the evidence needed. Independent checks can be valuable even when they repeat a calculation; do not turn every review into a second full implementation.
+- **Independent review:** launch a review-only child only when the user explicitly requests delegated review. Do not launch one just to audit, validate, double-check or provide a second opinion on the parent's work, and do not relabel that review as research or a prerequisite decision. When requested, name the risk or claim and evidence needed. The parent remains responsible for its own verification.
 - **A decision needed by the parent:** identify which work depends on the answer. Do not implement that part on an assumption while the child is resolving it; continue only unaffected work until the answer is accepted.
 
 Ask for the decision or findings first, followed by the evidence, checks and remaining limitations needed to assess them. When using pi-subagents, keep ordinary children async and rely on native completion notifications, not status polling or `bg_wait`. If no independent work remains, yield until the result arrives, then assess it before continuing dependent work or reporting completion.
