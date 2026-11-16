@@ -211,12 +211,6 @@ export default function lineFileTools(pi: ExtensionAPI) {
 		epoch++; snapshots.clear();
 		reset = { event: event.type, reason: event.reason ?? "not supplied", at: new Date().toISOString() };
 	};
-	// One transient notice per request, never persisted or used to start a turn.
-	pi.on("context", event => ({ messages: [...event.messages, {
-		role: "custom" as const, customType: "line-file-tools-snapshots", display: false,
-		content: `Edit snapshots were cleared at ${reset.at} by ${reset.event} (reason: ${reset.reason}; generation ${epoch}); this does not mean files changed. Only reads after that boundary remain usable. For any other file you need to edit, read its target range again first (start at 1, end at 200 if the range is unknown).`,
-		timestamp: Date.now(),
-	}] }));
 	pi.on("session_start", clear);
 	pi.on("session_before_switch", clear);
 	pi.on("session_before_fork", clear);
@@ -437,7 +431,7 @@ export default function lineFileTools(pi: ExtensionAPI) {
 							if (identities.has(identity)) throw new Error("Each file must appear only once, including hard-link aliases.");
 							identities.add(identity);
 							const { bom, rows } = load(fd);
-							if (!expected) throw new Error(`No read snapshot (never read or cleared by write/reset). ${readAgain(target, splices![0].start, rows.length)}`);
+if (!expected) throw new Error(`No read snapshot (never read or cleared by write/reset). The snapshot cache was last cleared at ${reset.at} by ${reset.event} (reason: ${reset.reason}); this does not mean the file changed. ${readAgain(target, splices![0].start, rows.length)}`);
 							const checkLine = (line: number) => {
 								if (!rows[line - 1] || expected.lines[line - 1] !== hash(rows[line - 1])) {
 									throw new Error(`File changed or this coordinate has no matching snapshot (possibly moved by edit/formatting). ${readAgain(target, line, rows.length)}`);
