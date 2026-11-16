@@ -2,7 +2,7 @@
 
 An explicit instruction from the user, including a skill they invoke, overrides anything in this file.
 
-When you run as a subagent, the agent prompt and task you were given take precedence over this file. Work where you were told to, create no worktree or `PLAN.md` of your own, and report to the main agent in the format it asked for.
+When you run as a subagent, the agent prompt and task you were given take precedence over this file. Work where you were told to, create no `PLAN.md` of your own, and report to the main agent in the format it asked for.
 
 ## 1. Stay on the goal
 
@@ -42,15 +42,11 @@ When a task has several parts, such as several features or a main case plus vari
 
 When something breaks in a small step, the cause is in that step. Building everything at once leaves a lot of unverified code where a problem could be anywhere, and it invites structure for parts that do not exist yet. The pause is there because seeing a working version often changes what the user wants next.
 
-## 3. Worktree and delegation
-
-The user chooses the checkout before Pi starts, either the primary checkout or a named worktree under `<repository-root>/.pi/worktrees/`. Work in the startup directory. Do not create another worktree, switch branches, or pull into another checkout unless explicitly asked.
+## 3. Delegation
 
 - **A question or review that changes no files:** no `PLAN.md`.
 - **A mechanical edit**, where the result is known in advance and nothing needs investigating or deciding: no `PLAN.md`.
-- **Any other change:** create `PLAN.md` at the selected checkout root.
-
-When using a worktree, leave it in place for the user to merge and remove. Do not merge or remove it without their request.
+- **Any other change:** create `PLAN.md` at the project root.
 
 Delegate a part of the work to a subagent whenever it is separate: a subagent can explore or implement it from a written task description, without waiting on the rest of the work. Otherwise work alone. A few known reads or searches are not separate work; do them yourself. This paragraph is the user's standing request to delegate, so you need no further permission to launch a subagent.
 
@@ -58,7 +54,7 @@ If a subagent fails to launch or run, do not stop, even though the subagent tool
 
 ## 4. Plan and track
 
-Before implementing, create or update `PLAN.md` at the worktree root. It is the only plan file; never create another in that worktree. It covers the current task only: when you start a new task, replace whatever an earlier task left in it, which needs no approval. When a task has no `PLAN.md`, put anything these instructions tell you to note there in the final message instead.
+Before implementing, create or update `PLAN.md` at the project root. It is the only plan file; never create another in that project. It covers the current task only: when you start a new task, replace whatever an earlier task left in it, which needs no approval. When a task has no `PLAN.md`, put anything these instructions tell you to note there in the final message instead.
 
 Write it as brief working notes, not a report: short bullets, direct wording, only what is needed to do and track the current task. Update entries in place instead of appending history, and remove what no longer applies.
 
@@ -84,7 +80,7 @@ If the goal turns out to need more work than planned, do the smallest part that 
 
 ### Ask first only when the action is risky
 
-An action is risky when it is hard to undo or reaches beyond this worktree:
+An action is risky when it is hard to undo or reaches beyond the local project:
 
 - changing or deploying to production or any other live or shared system;
 - deleting or overwriting data, files, or branches that this task did not create;
@@ -110,7 +106,7 @@ Do not add test files, fixtures, or test infrastructure to the repository unless
 
 ### Finish
 
-When everything in the plan is done and verified, commit the work on the task branch, then stop and write the final message as "Communication" describes. Follow-up refactoring, optimization, or abstraction is the user's call: note it in `PLAN.md` as a suggestion and do not start it.
+When everything in the plan is done and verified, commit the work, then stop and write the final message as "Communication" describes. Follow-up refactoring, optimization, or abstraction is the user's call: note it in `PLAN.md` as a suggestion and do not start it.
 
 ## 6. Communication
 
@@ -162,11 +158,11 @@ These rules cut wasted tool time. They never justify skipping evidence or verifi
 Use the smallest search that can answer the question. The shell commands below are examples; a harness search tool with the same scope and exclusions is just as good.
 
 1. **Known paths first.** Use a path the harness, a tool result, skill metadata, or package configuration already gave you instead of searching for it.
-2. **Instructions by ancestry.** Beyond the instructions already in context, look for `AGENTS.md` only directly inside each directory from the worktree root up to the repository root (the main checkout) and, before editing a file, each directory between the worktree root and that file. Check each directory once, by exact path. Never look above the repository root or in sibling worktrees.
+2. **Instructions by ancestry.** Beyond the instructions already in context, look for `AGENTS.md` only directly inside each directory from the repository root to the current directory and, before editing a file, each directory between the repository root and that file. Check each directory once, by exact path. Never look above the repository root.
 3. **Paths before contents.** When you know a filename or extension but not the path, list matching paths first with `git ls-files -- '<pathspec>'` (tracked files only) or `rg --files <directory> -g '<glob>'` (skips ignored files). Because of those gaps, an empty result does not prove a file is absent.
-4. **Contents in the likely owner.** Start in the most relevant package or directory and widen one level at a time. Use `rg -l` for filenames only, `rg -n` for matching lines, and `rg -F` for literal text. Leave out dependencies, generated output, and other worktrees unless the question is about them.
+4. **Contents in the likely owner.** Start in the most relevant package or directory and widen one level at a time. Use `rg -l` for filenames only, `rg -n` for matching lines, and `rg -F` for literal text. Leave out dependencies and generated output unless the question is about them.
 5. **Prune instead of filtering.** Exclude directories with `find ... -prune` or the search tool's exclusions. `find -not -path`, `grep -v`, and `head` only hide output; the whole tree is still walked.
-6. **Narrow after a failure.** After a timeout, permission error, or truncated result, narrow the root, prune more, or use a known path. Do not just raise the timeout. Scan the home directory or sibling worktrees only when the task needs that coverage.
+6. **Narrow after a failure.** After a timeout, permission error, or truncated result, narrow the root, prune more, or use a known path. Do not just raise the timeout. Scan outside the repository only when the task needs that coverage.
 
 ### Batch independent reads
 
@@ -182,7 +178,7 @@ Reads are fast. Going back to the model between reads costs far more than the re
 - Before a call, decide what you need: filenames, matching lines, selected fields, a change summary, or complete evidence. Ask for that form instead of printing everything and relying on truncation.
 - When the scope is unknown, find it with a filename listing or a diff summary, then read the source or patch itself. A summary never replaces reading the full change when a full review is required.
 - Treat JSON and JSONL as data. For a narrow question, select records and fields with `jq` or a short parser instead of printing whole objects. Keep the full payload when completeness or failure diagnosis needs it. Leave session history out of implementation searches unless the history is the subject.
-- For long output, such as a build or test run, save it all to a log under the worktree's ignored `.local/` and print the exit status, a short result, the log path, and the relevant diagnostics. On failure, read the log around the error; the cause is often not in the last lines.
+- For long output, such as a build or test run, save it all to a log under the project's ignored `.local/` and print the exit status, a short result, the log path, and the relevant diagnostics. On failure, read the log around the error; the cause is often not in the last lines.
 - Truncated output, a timeout, or a permission error is incomplete evidence. Narrow or page through the result before any claim that needs full coverage. Never conclude "no errors", "no other matches", or "the file does not exist" from an incomplete result.
 
 ### Run commands and wait for completion
