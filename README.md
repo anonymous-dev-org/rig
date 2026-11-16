@@ -11,28 +11,28 @@ Put Node on the **parent shell PATH** first. Selected `brew` also requires Homeb
 ./sync.sh
 ```
 
-The first sync selects `brew,neovim,zsh,kitty,git,pi`. AeroSpace, Lazysql and macOS configuration are deliberately **untouched**: adoption/update is manual, not a new merger or preference engine. Homebrew may still install their apps from the shared Brewfile. Legacy component install commands (including the AeroSpace helper) are excluded from this no-symlink workflow; do not use them for copy deployment.
+Every sync defaults to all six supported components: `brew,neovim,zsh,kitty,git,pi`, regardless of saved selections. AeroSpace, Lazysql and macOS configuration are deliberately **untouched**: adoption/update is manual, not a new merger or preference engine. Homebrew may still install their apps from the shared Brewfile. Legacy component install commands (including the AeroSpace helper) are excluded from this no-symlink workflow; do not use them for copy deployment.
 
-There are no prompts: inspect preview before applying. `--yes` remains accepted but never overrides conflicts. Later syncs reuse saved selections, refuse a dirty checkout (including untracked files), pull with `--ff-only`, then re-execute the new orchestrator. The first sync needs no saved state and uses the current checkout. Preview does not fetch/pull: it describes the current checkout, not remote changes.
+There are no prompts: inspect preview before applying. `--yes` remains accepted but never overrides conflicts. Later syncs refuse a dirty checkout (including untracked files), pull with `--ff-only`, then re-execute the new orchestrator. The first sync needs no saved state and uses the current checkout. Preview does not fetch/pull: it describes the current checkout, not remote changes.
 
-Use `--components` to **replace the full selection**, stored privately in `~/.local/state/rig/orchestration/settings.json`:
+Use `--components` to **replace the full selection for this invocation only**. Component selections are not persisted or reused; the next invocation without this flag selects all six components again:
 
 ```sh
 ./sync.sh --components zsh,git,pi --preview
 ./sync.sh --components zsh,git,pi
-./sync.sh --components '' # stop future management; remove nothing
+./sync.sh --components '' # skip all components for this invocation; remove nothing
 ```
 
 Sync accepts:
 
 - `--preview`: report actions/conflicts without writing state or installing packages. Pi JSON sync has no preview CLI, so its action is listed but not run.
-- `--components <comma-separated-list>`: select from `brew,neovim,zsh,kitty,git,pi`.
+- `--components <comma-separated-list>`: select from `brew,neovim,zsh,kitty,git,pi` for this invocation only; an empty list skips all components for this run.
 - `--brew-no-upgrade` / `--brew-upgrade`: persist the shared package upgrade preference, including the selected Pi CLI and configured Pi packages. Missing Pi packages still install; incompatible npm versions are repaired to match their declarations.
-- `--brewfile <absolute-private-file>`: add an existing trusted private Brewfile outside rig.
+- `--brewfile <absolute-private-file>`: persist an existing trusted private Brewfile outside rig.
 - `--pi-migrate-from <checkout>`: forward Pi's explicit legacy migration flag.
 - `--install-hooks`: explicitly set this checkout's local `core.hooksPath=.githooks`. A different existing hooks path is preserved and requires a manual composition choice; this flag never replaces it.
 
-Unknown flags fail. Components report independent failures and partial success; rerun after resolving errors. Selection persistence is not a global transaction. Deselecting a component stops management, **not** active includes, existing links or installed apps. Disable active behavior through native controls or explicit detachment. No package cleanup/uninstall is performed.
+Unknown flags fail. Components report independent failures and partial success; rerun after resolving errors. Skipping a component leaves active includes, existing links and installed apps unchanged; it does not persist an opt-out. Disable active behavior through native controls or explicit detachment. No package cleanup/uninstall is performed.
 
 ## Adoption and customization
 
@@ -42,17 +42,17 @@ Managed non-JSON files always receive repository bytes. Local edits are backed u
 
 Known rig links become ordinary files/directories with private snapshots and concurrent-edit checks, then receive enforced repo defaults in the same sync. Unknown content in linked directories blocks migration. Links from another checkout are foreign. Stop editors and applications that write config during migration; checks are not a filesystem transaction.
 - **Git:** private `~/.gitconfig` includes deployed `git/rig.conf` before personal settings. Known old rig `.gitconfig` links migrate to a private include entrypoint. Unknown ordinary config is not rewritten. Existing XDG `git/config` blocks automatic activation because shared credential resets must not follow existing private credentials: place the include manually in the earliest config before private settings. Review [Git credential ordering and combined ignores](git/README.md). Additional global ignore patterns need a separate explicitly combined private ignore file. Remove the include to disable; remove personal overrides to reset.
-- **Zsh:** private `~/.zshrc.pre` and final `~/.zshrc.local`; see [Zsh](zsh/README.md). Managed `.zshrc` edits/deletions are restored on sync; deselect Zsh to stop management.
+- **Zsh:** private `~/.zshrc.pre` and final `~/.zshrc.local`; see [Zsh](zsh/README.md). Managed `.zshrc` edits/deletions are restored on sync; omit Zsh with `--components` to skip management for that invocation.
 - **Kitty:** private `local.conf` beside deployed copies; see [Kitty](kitty/README.md). Managed edits/deletions are restored on sync; retain additions in private files.
 - **Neovim:** private `pre.lua`, `deferred.lua` and native `after/` resources in the sibling `nvim-local` directory; see [Neovim](neovim/README.md). Plugin/tool downloads remain Neovim-owned. Managed edits/deletions are restored on sync; retain caches and private hooks.
-- **Pi:** [Pi settings migration and resource controls](pi/README.md). Direct agents/extensions/themes/instructions have a separate explicit inventory; personal additions remain untouched. Managed assets and JSON defaults are enforced; unsafe directory/path conflicts still stop Pi safely. Selected Pi installs a missing CLI with `bun add --global --ignore-scripts @earendil-works/pi-coding-agent`; existing CLI is retained in no-upgrade mode, otherwise that command can upgrade it. This is not a reproducible version lock. After settings sync, the installed Pi package-manager API reconciles configured packages (including missing pinned versions) before success is reported; failures fail the Pi component. No-upgrade suppresses optional package refreshes, not missing-package installation or npm version-constraint repair. Restart/reload Pi to load the resources. `--pi-migrate-from` imports only the explicitly named checkout. Deselect Pi to stop managing its local assets, or add Pi-native controls for resources not defined by the repo. Keep personal instruction composition explicit.
+- **Pi:** [Pi settings migration and resource controls](pi/README.md). Direct agents/extensions/themes/instructions have a separate explicit inventory; personal additions remain untouched. Managed assets and JSON defaults are enforced; unsafe directory/path conflicts still stop Pi safely. Selected Pi installs a missing CLI with `bun add --global --ignore-scripts @earendil-works/pi-coding-agent`; existing CLI is retained in no-upgrade mode, otherwise that command can upgrade it. This is not a reproducible version lock. After settings sync, the installed Pi package-manager API reconciles configured packages (including missing pinned versions) before success is reported; failures fail the Pi component. No-upgrade suppresses optional package refreshes, not missing-package installation or npm version-constraint repair. Restart/reload Pi to load the resources. `--pi-migrate-from` imports only the explicitly named checkout. Omit Pi with `--components` to skip managing its local assets for that invocation, or add Pi-native controls for resources not defined by the repo. Keep personal instruction composition explicit.
 - **Skills:** the 24 `principle-*` skills remain active in `pi/.pi/agent/skills/` and deploy with Pi. The other 33 vendored pstack skills are disabled and retained in `pi/disabled-skills/`, outside Pi discovery and deployment. Full Pi sync backs up and removes the exact archived skill files from home, including on older installs without ownership history. Unlisted personal files and package-provided skills remain supported; empty directories may remain. The empty skills lock does not control these files.
 
 Paths under `.config` respect `XDG_CONFIG_HOME` (default `~/.config`); Zsh and Pi keep their existing HOME-based contracts. Private hooks may still override behavior at application runtime; sync enforces deployed files, not application behavior or project-local configuration. Do not delete private state/history to reset settings.
 
 ## Brew controls
 
-[Brew controls](brew/README.md) persist native skip variables, optional private Brewfile and the no-upgrade choice. No separate Bun self-upgrade bypasses them. The selected Pi CLI follows the same upgrade preference, but is not a Brew formula and does not inherit formula-specific skips; deselect Pi to avoid CLI installation/updates.
+[Brew controls](brew/README.md) persist native skip variables, optional private Brewfile and the no-upgrade choice in `~/.local/state/rig/orchestration/settings.json`; these preferences persist independently of the invocation-only component selection. No separate Bun self-upgrade bypasses them. The selected Pi CLI follows the same upgrade preference, but is not a Brew formula and does not inherit formula-specific skips; omit Pi with `--components` to avoid CLI installation/updates for that invocation.
 
 ## Validation
 

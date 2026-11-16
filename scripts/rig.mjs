@@ -304,21 +304,21 @@ try {
     inventory = JSON.parse(fs.readFileSync(inventoryFile, 'utf8'));
     if (!inventory || typeof inventory !== 'object' || Array.isArray(inventory) || Object.entries(inventory).some(([file, entry]) => !path.isAbsolute(file) || path.resolve(file) !== file || !/^[a-f0-9]{64}$/.test(typeof entry === 'string' ? entry : entry?.hash) || (typeof entry !== 'string' && (!entry || !names.includes(entry.component) || (entry.defaults !== undefined && (!entry.defaults || typeof entry.defaults !== 'object' || Array.isArray(entry.defaults))))))) fail(`Invalid ${inventoryFile}`);
   }
-  let state = {components:names, brew:{skip:{}, noUpgrade:false}};
+let state = {brew:{skip:{}, noUpgrade:false}};
   if (stat(stateFile)) {
     state = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
-    if (!state || !Array.isArray(state.components) || state.components.some(name => typeof name !== 'string') || !state.brew || typeof state.brew.noUpgrade !== 'boolean' || !state.brew.skip || typeof state.brew.skip !== 'object' || Array.isArray(state.brew.skip)) fail(`Invalid ${stateFile}`);
-    parseList(state.components.join(','));
+if (!state || !state.brew || typeof state.brew.noUpgrade !== 'boolean' || !state.brew.skip || typeof state.brew.skip !== 'object' || Array.isArray(state.brew.skip)) fail(`Invalid ${stateFile}`);
+delete state.components; // Retire legacy saved selections; flags apply only to this invocation.
   }
-  if (value('--components') !== undefined) state.components = parseList(value('--components'));
+const components = value('--components') === undefined ? names : parseList(value('--components'));
   if (args.includes('--brew-no-upgrade')) state.brew.noUpgrade = true;
   if (args.includes('--brew-upgrade')) state.brew.noUpgrade = false;
   if (value('--brewfile')) state.brew.file = path.resolve(value('--brewfile'));
   for (const [key, val] of Object.entries(process.env)) if (/^HOMEBREW_BUNDLE_[A-Z_]+_SKIP$/.test(key)) state.brew.skip[key] = val;
   for (const [key, val] of Object.entries(state.brew.skip)) if (!/^HOMEBREW_BUNDLE_[A-Z_]+_SKIP$/.test(key) || typeof val !== 'string') fail('Invalid Brew skip controls');
   if (state.brew.file !== undefined && (typeof state.brew.file !== 'string' || !path.isAbsolute(state.brew.file) || !stat(state.brew.file)?.isFile() || state.brew.file.startsWith(root + path.sep))) fail('Private Brewfile must be an existing absolute path outside rig');
-  if (state.components.includes('brew')) executable('brew');
-  if (state.components.includes('pi')) {
+if (components.includes('brew')) executable('brew');
+if (components.includes('pi')) {
     executable('bun');
     if (/^(1|true|yes)$/i.test(process.env.PI_OFFLINE || '')) fail('Unset PI_OFFLINE before installing Pi packages, or deselect pi.');
     if (process.env.PI_CODING_AGENT_DIR && path.resolve(process.env.PI_CODING_AGENT_DIR) !== path.join(home, '.pi/agent')) fail('Rig deploys Pi to ~/.pi/agent. Unset PI_CODING_AGENT_DIR or deselect pi.');
@@ -336,7 +336,7 @@ try {
     }
   }
   console.log(`\n${preview ? 'Sync preview — no changes will be made' : 'Sync configuration'}`);
-  console.log(`Components: ${state.components.join(', ') || 'none'}\n`);
+console.log(`Components: ${components.join(', ') || 'none'}\n`);
   let lock;
   if (!preview) {
     fs.mkdirSync(stateRoot, {recursive:true,mode:0o700});
@@ -352,9 +352,9 @@ try {
       fs.renameSync(temp,stateFile);
     }
     const failures = [];
-    for (const component of state.components) {
+for (const component of components) {
       try {
-        console.log(`[${state.components.indexOf(component) + 1}/${state.components.length}] ${component} — ${component === 'brew' ? 'install packages' : 'sync configuration'}`);
+console.log(`[${components.indexOf(component) + 1}/${components.length}] ${component} — ${component === 'brew' ? 'install packages' : 'sync configuration'}`);
         if (component === 'brew') {
           const env = {...process.env, ...state.brew.skip};
           for (const file of [path.join(root,'brew/Brewfile'), state.brew.file].filter(Boolean)) {
@@ -402,8 +402,8 @@ try {
       console.log('Explicit opt-in: set local core.hooksPath=.githooks');
       if (!preview) run('git', ['config','--local','core.hooksPath','.githooks']);
     }
-    if (failures.length) fail(`${preview ? 'Preview conflicts' : 'Partial success'}; failed components: ${failures.join(', ')}. ${preview ? 'No selections saved.' : 'Selections saved;'} Resolve reported conflicts and rerun.`);
-    status(preview ? 'PREVIEW' : 'SUCCESS', preview ? `Preview complete: ${state.components.length} components checked. No changes made.` : `Sync complete: ${state.components.length} components done.`);
+if (failures.length) fail(`${preview ? 'Preview conflicts' : 'Partial success'}; failed components: ${failures.join(', ')}. ${preview ? 'No preferences saved.' : 'Preferences saved;'} Resolve reported conflicts and rerun.`);
+status(preview ? 'PREVIEW' : 'SUCCESS', preview ? `Preview complete: ${components.length} components checked. No changes made.` : `Sync complete: ${components.length} components done.`);
     if (!preview && stat(backupRoot)) console.log(`Backups: ${backupRoot}`);
   } finally { if (lock !== undefined) { fs.closeSync(lock); fs.unlinkSync(path.join(stateRoot,'lock')); } }
 } catch (error) { status('ERROR', `${preview ? 'Preview' : 'Sync'} failed: ${error.message}`, process.stderr); process.exitCode = 1; }

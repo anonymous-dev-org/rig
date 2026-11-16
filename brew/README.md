@@ -15,6 +15,6 @@ Use Homebrew's native `HOMEBREW_BUNDLE_*_SKIP` variables (space-separated names 
 
 The optional private Brewfile must already exist outside the checkout. Both files are processed independently; either may partially succeed. Brewfiles are executable Homebrew input: only choose a file you trust. To remove the private file setting, remove the `brew.file` property from `~/.local/state/rig/orchestration/settings.json` while no rig process is running. Keep private state permissions restrictive. Preview lists commands and skip controls without running Brew.
 
-Homebrew must already be available on the parent PATH. Rig intentionally does not download/run an installer inside config deployment. `brew/install-brew.sh` is a compatibility entrypoint for `sync.sh --components brew`: it replaces the complete selection with Brew only. Prefer the top-level entrypoint with the full desired selection.
+Homebrew must already be available on the parent PATH. Rig intentionally does not download/run an installer inside config deployment. `brew/install-brew.sh` is a compatibility entrypoint for `sync.sh --components brew`: it selects Brew only for that invocation. Later runs without `--components` select all supported components again.
 
-Deselecting Brew leaves installed packages alone. Removed defaults stop receiving management; no automatic uninstall or cleanup occurs.
+Skipping Brew with an explicit `--components` list leaves installed packages alone and applies only to that run. Removed defaults stop receiving management; no automatic uninstall or cleanup occurs.
