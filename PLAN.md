@@ -1,16 +1,15 @@
 ## Overview
-- Include all rig-owned configuration in default sync: add AeroSpace, Lazysql, and macOS alongside Brew, Neovim, Zsh, Kitty, Git, and Pi.
-- Preserve existing Brew upgrade preferences; normal upgrade mode already updates Brew, Pi CLI, and configured Pi packages. No live sync, push, or merge.
-- Accepted scout findings: explicit AeroSpace manifest, execute-bit repair, fail-closed link/discovery handling, and default-XDG prerequisite. User explicitly requested automatic reload after scout launch, overriding its manual-activation recommendation.
-- Lazysql contains only a public example; connection settings are private. Deploy/update the example and seed a missing active config, never overwrite an existing active config or database credentials.
-- Apply macOS defaults without restarting Finder/Dock during sync; standalone script keeps its existing restart behavior. Platform-specific components skip on non-macOS.
+- Reduce edit failures with one operation mode (`splices`) and actionable, model-visible snapshot notices.
+- Keep single-file and multi-file editing, guarded validation, formatting, and existing file safety. Do not deploy to the live Pi installation.
+- Notices must distinguish changed files from cleared snapshots, name the file, and give a useful read range when known. Do not require rereads for edits whose snapshots remain valid.
 
 ## Todos
-- [x] All supported rig configuration participates in default sync safely.
-  - Requirement: explicit copy inventories; AeroSpace scripts executable; Lazysql private data preserved; macOS preview has no effects; existing subset flag and Brew controls preserved.
-  - Definition of done: isolated deployment and preview checks cover new components, private-config preservation, platform handling, and stubbed macOS defaults; existing AeroSpace checks and syntax/whitespace checks pass; documentation updated and committed.
-  - Implemented: nine default components; AeroSpace signature tracks successful activation and retries deferred/failed reloads, including restored local drift. Dry-run validation and active-path verification precede reload.
-  - Verification: isolated CLI orchestration with temporary HOME/repository and stubbed package/desktop commands passed: default preview, new-component deployment, private Lazysql preservation, executable repair, unchanged/changed/failed/deferred reloads, known-link migration, competing/active-path/XDG failures, non-macOS skips, macOS writes without restarts, standalone restart preservation.
-  - Existing checks passed: workspace-groups, binding-contract, aerospace-launchers, install-aerospace. Logs: `.local/logs/sync-all-{groups,bindings,launchers,installer}.log`. Node/Bash syntax and whitespace checks passed.
-  - Limitations: no live application reload or package upgrade was run. Existing Lazysql configs require manual adoption from the updated example. Restart/logout may be needed for macOS defaults; Pi reload/restart remains user-driven.
-  - Verification correction: an initial stubbed-defaults assertion expected 15 writes; the existing script has 14. Corrected the throwaway check; all 14 writes verified.
+- [x] Splice-only editing and snapshot recovery guidance work end to end.
+  - Requirement: remove `changes` from the edit interface and implementation; update model-facing guidance and documentation. Tool responses explain invalidated/shifted snapshots and lifecycle resets without inventing a file change. Preserve batching and fail-closed checks.
+  - Definition of done: isolated runtime checks cover replacement/insertion/deletion/batches, old-input rejection, stale/missing snapshots, write invalidation, lifecycle resets, and formatting guidance; inspect full diff and commit.
+  - Implemented: `splices` is the sole edit mode; legacy `changes` is explicitly rejected. Write/shift/stale-result notices include a file and bounded range; formatting notices say pending. Follow-up correction moves lifecycle reset event/reason/time into missing-snapshot errors instead of changing every model request.
+  - Verified: parent disposable checks through Pi's actual loader passed 24 calls covering replacements, insertion/deletion/append, batches, legacy rejection, unchanged regions, stale recovery, write invalidation, atomic pre-write validation, compaction recovery, and empty files. Separate check passed actual notice text and all six reset handlers; full diff inspected and whitespace checks passed.
+  - Child verification additionally exercised actual gofmt scheduling and subsequent guarded rejection, and checked Pi argument validation retains legacy fields for explicit rejection.
+  - Verification correction: fixed a bracket typo in the parent's disposable checker before it ran; no product-code failure. Scratch scripts/fixtures removed; no permanent test infrastructure.
+  - Limitations: ranges are bounded suggestions, not semantic relocation of moved code; callers must reconsider coordinates. After a lifecycle reset, recovery guidance appears on the first attempted edit without a fresh read, not proactively. Live installation unchanged; old `changes` callers must migrate and load the updated extension.
+  - Follow-up verified: removed unconditional context injection to avoid disrupting prompt caching and obscuring reset/read ordering. Loader checks confirmed no context hooks, all six reset error messages, unchanged files on rejection, and successful reread recovery. Whitespace check passed. Cache impact is inferred, not measured. Suggest measuring real-session error rates after activation; no claimed reduction yet.
