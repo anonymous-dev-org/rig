@@ -10,6 +10,8 @@ These scripts execute as shell code. Deployment must preserve them and must not 
 
 Managed edits and deletions are restored on sync; private hooks remain untouched. Private final assignments usually replace earlier values, but plugins can install later callbacks and additive shell state does not universally reset. The pre-hook does not disable bootstrap downloads. To stop management, deselect Zsh before detaching the local `.zshrc`; retain your private files. Remove a private override to restore the shared default on the next shell start. No automatic plugin removal is performed.
 
+Component exclusions apply only to the current invocation: to keep Zsh unmanaged, pass a `--components` list without `zsh` on every sync. Without the flag, all supported components are selected again.
+
 ## Pi launcher
 
 Bare interactive `pi` asks whether to create a new worktree or use the main (primary) checkout. A new worktree gets a new branch with the name you enter, starts at the primary checkout's current HEAD, and lives under `<primary>/.pi/worktrees/<name>`. Pi starts inside it with `--name <name>`, so the conversation has the same name. Existing branch names and paths are refused. No pull is performed and uncommitted changes are not copied. The runtime directory is excluded through Git's local `info/exclude`.

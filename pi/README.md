@@ -88,8 +88,8 @@ Pi package object filters (`skills`, `extensions`, `prompts`, or `themes`) may
 customize additional personal package declarations. Repo package declarations,
 repo-defined agent controls and the managed theme are restored on sync; they
 cannot be opted out through edits to managed settings. Keep personal instructions
-and resources in separate unlisted files. Deselect Pi to stop future management;
-this does not remove installed resources or disable already active configuration.
+and resources in separate unlisted files. To skip Pi, pass a `--components` list without `pi` on every sync;
+omitting the flag selects all components again. Skipping Pi does not remove installed resources or disable already active configuration.
 Application/project-local controls may still change runtime behavior; rig does not
 police them.
 
