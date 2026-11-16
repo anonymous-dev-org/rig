@@ -1,8 +1,10 @@
 import { createHash } from "node:crypto";
-import { constants, openSync, closeSync, fstatSync, readSync, writeSync, ftruncateSync, realpathSync } from "node:fs";
+import { spawn } from "node:child_process";
+import { constants, openSync, closeSync, existsSync, fstatSync, readdirSync, readSync, writeSync, ftruncateSync, realpathSync } from "node:fs";
+import { mkdir, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
-import { resolve } from "node:path";
-import { type ExtensionAPI, createReadToolDefinition, detectSupportedImageMimeTypeFromFile, withFileMutationQueue } from "@earendil-works/pi-coding-agent";
+import { dirname, join, relative, resolve } from "node:path";
+import { type ExtensionAPI, createReadToolDefinition, createWriteToolDefinition, detectSupportedImageMimeTypeFromFile, withFileMutationQueue } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import { Text } from "@earendil-works/pi-tui";
 
@@ -31,6 +33,11 @@ function load(fd: number) {
 	}
 	if (length > MAX_BYTES) throw new Error("File exceeds 4 MiB.");
 	const bytes = buffer.subarray(0, length);
+	return decode(bytes);
+}
+
+function decode(bytes: Buffer) {
+	if (bytes.length > MAX_BYTES) throw new Error("File exceeds 4 MiB.");
 	const text = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(bytes);
 	if (text.includes("\0")) throw new Error("NUL-containing files are not supported.");
 	const bom = text.startsWith("\uFEFF") ? "\uFEFF" : "";
@@ -39,6 +46,134 @@ function load(fd: number) {
 	const rows = Array.from(body.matchAll(/([^\r\n]*)(\r\n|\n|\r|$)/g), m => ({ text: m[1], eol: m[2] }));
 	rows.pop(); // The regex always ends with an empty, zero-width match.
 	return { bom, rows };
+}
+
+function writeAll(fd: number, data: Buffer) {
+	let offset = 0;
+	while (offset < data.length) {
+		const written = writeSync(fd, data, offset, data.length - offset, offset);
+		if (!written) throw new Error("Write made no progress.");
+		offset += written;
+	}
+	ftruncateSync(fd, data.length);
+}
+
+// Only an applicable project configuration opts a file into format-on-save.
+const WEB = /\.(?:[cm]?[jt]sx?|jsonc?|css|graphql|gql)$/i;
+const PRETTIER = /\.(?:[cm]?[jt]sx?|json[5c]?|[cm]?mdx?|css|scss|less|graphql|gql|html?|vue|ya?ml)$/i;
+const FORMATTERS = [
+	{ bin: "biome", files: WEB, config: /^biome\.jsonc?$/, args: (file: string) => ["format", `--stdin-file-path=${file}`] },
+	{ bin: "prettier", files: PRETTIER, config: /^(\.prettierrc(\..+)?|prettier\.config\.[cm]?[jt]s)$/, args: (file: string) => ["--stdin-filepath", file] },
+	{ bin: "oxfmt", files: PRETTIER, config: /^(\.oxfmtrc\.jsonc?|oxfmt\.config\.[cm]?[jt]s)$/, args: (file: string) => [`--stdin-filepath=${file}`] },
+	{ bin: "gofmt", files: /\.go$/i, config: /^go\.mod$/, args: (_file: string) => [] as string[] },
+	{ bin: "rustfmt", files: /\.rs$/i, config: /^(Cargo\.toml|\.?rustfmt\.toml)$/, args: (_file: string) => ["--emit", "stdout", "--config", "skip_children=true"] },
+	{ bin: "ruff", files: /\.pyi?$/i, config: /^\.?ruff\.toml$/, args: (file: string) => ["format", "--stdin-filename", file, "-"] },
+];
+
+function readConfig(path: string) {
+	try {
+		const fd = openSync(path, constants.O_RDONLY | constants.O_NONBLOCK);
+		try { return load(fd).rows.map(row => row.text).join("\n"); } finally { closeSync(fd); }
+	} catch { return ""; }
+}
+
+function findFormatter(file: string) {
+	for (let dir = dirname(file); ; dir = dirname(dir)) {
+		let names: string[] = [];
+		try { names = readdirSync(dir); } catch {}
+		let prettier = false;
+		try { prettier = Object.hasOwn(JSON.parse(readConfig(join(dir, "package.json"))), "prettier"); } catch {}
+		// Recognise ordinary Ruff table headers, including [tool.ruff.format]. Strip TOML
+		// multiline strings first so example config inside a string does not opt in.
+		const pyproject = readConfig(join(dir, "pyproject.toml")).replace(/"""[\s\S]*?"""|'''[\s\S]*?'''/g, "");
+		const ruff = /^\s*\[tool\.ruff(?:\.[\w-]+)*\]\s*(?:#.*)?$/m.test(pyproject);
+		const found = FORMATTERS.find(formatter => formatter.files.test(file) && (
+			names.some(name => formatter.config.test(name)) ||
+			(formatter.bin === "prettier" && prettier) || (formatter.bin === "ruff" && ruff)
+		));
+		if (found) {
+			let command = found.bin;
+			for (let up = dirname(file); ; up = dirname(up)) {
+				const local = join(up, "node_modules", ".bin", found.bin);
+				if (existsSync(local)) { command = local; break; }
+				if (dirname(up) === up) break;
+			}
+			return { name: found.bin, command, args: found.args(file), cwd: found.bin === "rustfmt" ? dirname(file) : dir };
+		}
+		if (dirname(dir) === dir) return undefined;
+	}
+}
+
+// Bound both runtime and buffered output, even if a formatter ignores SIGTERM.
+function runFormatter(command: string, args: string[], cwd: string, input: Buffer, timeout: number) {
+	return new Promise<Buffer | undefined>((done) => {
+		const child = spawn(command, args, { cwd, stdio: ["pipe", "pipe", "ignore"] });
+		let settled = false;
+		let size = 0;
+		const chunks: Buffer[] = [];
+		const finish = (output?: Buffer, kill = false) => {
+			if (settled) return;
+			settled = true;
+			clearTimeout(timer);
+			if (kill) child.kill("SIGKILL");
+			child.stdin.destroy();
+			child.stdout.destroy();
+			done(output);
+		};
+		const timer = setTimeout(() => finish(undefined, true), Math.max(1, timeout));
+		child.on("error", () => finish());
+		child.on("close", code => finish(code === 0 ? Buffer.concat(chunks) : undefined));
+		child.stdout.on("data", (chunk: Buffer) => {
+			size += chunk.length;
+			if (size > MAX_BYTES) finish(undefined, true);
+			else if (!settled) chunks.push(chunk);
+		});
+		child.stdin.on("error", () => {});
+		child.stdin.end(input);
+	});
+}
+
+async function rustEdition(file: string, deadline: number) {
+	for (let dir = dirname(file); ; dir = dirname(dir)) {
+		const manifest = join(dir, "Cargo.toml");
+		if (existsSync(manifest)) {
+			// Cargo resolves package/workspace edition inheritance without a custom TOML parser.
+			// --frozen forbids network access and lockfile changes.
+			const output = await runFormatter("cargo", ["metadata", "--no-deps", "--format-version", "1", "--frozen", "--manifest-path", manifest], dir, Buffer.alloc(0), deadline - Date.now());
+			if (!output) throw new Error("Cannot resolve Rust edition.");
+			const packages = JSON.parse(output.toString()).packages as { manifest_path: string; edition: string }[];
+			const pkg = packages.filter(pkg => {
+				const path = relative(dirname(pkg.manifest_path), file);
+				return path !== ".." && !path.startsWith("../") && !path.startsWith("/");
+			}).sort((a, b) => b.manifest_path.length - a.manifest_path.length)[0];
+			if (!pkg || !/^(2015|2018|2021|2024)$/.test(pkg.edition)) throw new Error("Cannot resolve Rust edition.");
+			return pkg.edition;
+		}
+		if (dirname(dir) === dir) return undefined; // Config-only projects use rustfmt's edition.
+	}
+}
+
+// Conservative spacing comparison, not a language parser. Never erase spaces in quoted text,
+// regex literals, templates, JSX, or indentation-sensitive languages from a snapshot comparison.
+function spacingKeys(file: string, rows: Row[]) {
+	if (!/\.(?:[cm]?[jt]s|jsonc?|go|rs)$/i.test(file)) return undefined;
+	const body = rows.map(row => row.text).join("\n");
+	if (/`|\/\*|\\[\r\n]|\b[bc]?r#*"/.test(body)) return undefined;
+	const keys: (string | undefined)[] = [];
+	for (const row of rows) {
+		let key = "", cursor = 0;
+		for (const match of row.text.matchAll(/"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'/g)) {
+			const plain = row.text.slice(cursor, match.index);
+			if (/["']/.test(plain)) return undefined; // Multiline/ambiguous string.
+			key += plain.replace(/[ \t]/g, "") + match[0];
+			cursor = match.index! + match[0].length;
+		}
+		const tail = row.text.slice(cursor);
+		if (/["']/.test(tail)) return undefined;
+		key += tail.replace(/[ \t]/g, "");
+		keys.push(key.includes("/") ? undefined : key);
+	}
+	return keys;
 }
 
 const readFields = {
@@ -69,6 +204,78 @@ export default function lineFileTools(pi: ExtensionAPI) {
 	pi.on("session_before_tree", clear);
 	pi.on("session_before_compact", clear);
 	pi.on("session_shutdown", clear);
+
+	// Queue while the edit/write still holds its lock, before returning to the caller.
+	const scheduleFormat = (target: string) => {
+		try {
+			const formatter = findFormatter(target);
+			if (!formatter) return undefined;
+			const startedEpoch = epoch;
+			void withFileMutationQueue(target, async () => {
+				if (epoch !== startedEpoch) return;
+				const fd = openSync(target, constants.O_RDONLY | constants.O_NONBLOCK);
+				let before: Buffer;
+				try {
+					const { bom, rows } = load(fd);
+					before = Buffer.from(bom + rows.map(row => row.text + row.eol).join(""));
+				} finally { closeSync(fd); }
+				const expected = snapshots.get(target);
+				const deadline = Date.now() + 10_000;
+				const args = [...formatter.args];
+				if (formatter.name === "rustfmt") {
+					const edition = await rustEdition(target, deadline);
+					if (edition) args.push("--edition", edition);
+				}
+				if (Date.now() >= deadline) return;
+				const after = await runFormatter(formatter.command, args, formatter.cwd, before, deadline - Date.now());
+				if (!after || after.equals(before) || epoch !== startedEpoch) return;
+				const previous = decode(before), formatted = decode(after);
+				const next = expected ? { lines: [...expected.lines], eof: expected.eof } : undefined;
+				if (next && previous.rows.length === formatted.rows.length) {
+					const a = spacingKeys(target, previous.rows), b = spacingKeys(target, formatted.rows);
+					previous.rows.forEach((row, i) => {
+						if (expected!.lines[i] !== hash(row)) return; // Never bless an external/stale change.
+						if (row.text === formatted.rows[i].text || (a?.[i] !== undefined && a[i] === b?.[i])) next.lines[i] = hash(formatted.rows[i]);
+					});
+				}
+				const out = openSync(target, constants.O_RDWR | constants.O_NONBLOCK);
+				try {
+					const { bom, rows } = load(out);
+					if (!Buffer.from(bom + rows.map(row => row.text + row.eol).join("")).equals(before)) return;
+					snapshots.delete(target); // A partial write must not keep any baseline usable.
+					writeAll(out, after);
+					if (next) snapshots.set(target, next);
+				} finally { closeSync(out); }
+			}).catch(() => {}); // A format-on-save failure never fails the original edit/write.
+			return `${target} (${formatter.name})`;
+		} catch { return undefined; }
+	};
+
+	const stockWrite = createWriteToolDefinition(process.cwd());
+	pi.registerTool({
+		...stockWrite,
+		description: stockWrite.description + " No leading tabs or spaces are needed solely for cosmetic indentation; preserve whitespace that affects syntax or literal content. Project-configured formatting runs asynchronously after writing; later reads and edits of the file wait for it. Formatting failures are ignored.",
+		promptGuidelines: [...(stockWrite.promptGuidelines ?? []), "For write, omit leading tabs/spaces used only for cosmetic indentation. Preserve required spaces between tokens and all meaningful whitespace: Python/YAML indentation, Makefile recipe tabs, Markdown structure, and string/template contents."],
+		async execute(id, params, signal, update, ctx) {
+			const startedEpoch = epoch;
+			let formatting: string | undefined;
+			const write = createWriteToolDefinition(ctx.cwd, { operations: {
+				mkdir: async dir => { await mkdir(dir, { recursive: true }); },
+				writeFile: async (path, content) => {
+					if (epoch !== startedEpoch) throw new Error("Session state changed while queued. Retry the write.");
+					let target = path;
+					try { target = realpathSync(path); } catch {}
+					snapshots.delete(target);
+					await writeFile(path, content, "utf8");
+					if (epoch !== startedEpoch) throw new Error("Session state changed during write.");
+					try { formatting = scheduleFormat(realpathSync(path)); } catch {}
+				},
+			} });
+			const output = await write.execute(id, params, signal, update, ctx);
+			return formatting ? { ...output, content: [...output.content, { type: "text" as const, text: `Formatting in the background: ${formatting}.` }] } : output;
+		},
+	});
+
 
 	pi.registerTool({
 		name: "read",
@@ -150,12 +357,14 @@ export default function lineFileTools(pi: ExtensionAPI) {
 			"Call edit with line numbers from an earlier read. Do not reread a file just to check freshness or after a successful edit: edit rejects any target that no longer matches and writes nothing. Read again only for more context, after a rejection, or after a session reset or compaction.",
 			"After edit inserts or deletes lines, the lines above that point keep their numbers and stay editable. If edit rejects a line below it, read that range again and correct the line numbers instead of retrying.",
 			"To change several files together, use one edit call with edits: [{path, changes}, {path, splices}].",
+			"For edit, omit leading tabs/spaces used only for cosmetic indentation. Preserve required spaces between tokens and all meaningful whitespace: Python/YAML indentation, Makefile recipe tabs, Markdown structure, and string/template contents.",
 		],
 		description: [
 			"Edit lines in one or more text files that read has already shown. Line numbers come from read and refer to each file as it was before this call. Create new files with write.",
 			"One file: {path, changes} or {path, splices}. Several files: {edits: [{path, changes}, {path, splices}]}, listing each file once and passing no top-level path, changes or splices.",
 			"Give each file exactly one of changes or splices and leave the other out entirely, not empty. changes replaces whole existing lines by number. A splice replaces deleteCount lines at start with lines, so it can insert (deleteCount 0), delete (lines []), replace a range, or append (start = last line + 1, deleteCount 0). To replace some lines and insert or delete others in the same file, use splices for all of it. Splices in one file must not overlap or share a start. Every string is a single line with no line breaks.",
 			"All files are checked before any is written. If a file has not been read, or a target line no longer matches what read showed, the call fails and nothing changes: read that range again and correct the line numbers. Never guess line numbers or text you have not read, and never use write or bash to get around a rejected edit, because they skip this check. Do not reread just to check freshness or after success. If a disk write fails partway through a multi-file call, the error names the files already written; reread the failed file instead of repeating the whole call.",
+			"No leading tabs or spaces are needed solely for cosmetic indentation; preserve whitespace that affects syntax or literal content. Project-configured formatting runs asynchronously after edits; later reads and edits of that file wait for it. Spacing-only changes at unchanged coordinates keep matching snapshots where spacing is not meaningful. Text changes or moved lines still reject: read the relevant range again.",
 		].join("\n\n"),
 		parameters: Type.Object({
 			...editFields,
@@ -286,20 +495,19 @@ export default function lineFileTools(pi: ExtensionAPI) {
 						// Invalidate before any write, including failures/partial writes.
 						snapshots.delete(target);
 						try {
-							let offset = 0;
-							while (offset < updated.length) {
-								const written = writeSync(fd, updated, offset, updated.length - offset, offset);
-								if (!written) throw new Error("Write made no progress.");
-								offset += written;
-							}
-							ftruncateSync(fd, updated.length);
+							writeAll(fd, updated);
 							snapshots.set(target, next);
 							completed.push(target);
 						} catch (error) {
 							throw new Error(`Write failed for ${target}; it may be partially modified. Completed files: ${JSON.stringify(completed)}. Remaining files were not written. Inspect completed files and reread the failed file before retrying; do not replay the whole batch. ${error instanceof Error ? error.message : String(error)}`);
 						}
 					}
-					return result("Edit succeeded.");
+					const formatting: string[] = [];
+					for (const { target } of prepared) {
+						const notice = scheduleFormat(target);
+						if (notice) formatting.push(notice);
+					}
+					return result(formatting.length ? `Edit succeeded. Formatting in the background: ${formatting.join(", ")}.` : "Edit succeeded.");
 				} finally { for (const fd of handles) closeSync(fd); }
 			};
 			return locked(0);

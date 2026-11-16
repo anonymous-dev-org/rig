@@ -108,15 +108,18 @@ security sandbox. Do not expose untrusted pages to privileged secrets casually.
 
 ## Numbered read and guarded edit
 
-Full Pi sync deploys `extensions/line-file-tools/index.ts` as the default `read`
-and `edit` implementation. Text reads return numbered lines with inclusive
+Full Pi sync deploys `extensions/line-file-tools/index.ts` as the default `read`,
+`edit` and `write` implementation. Text reads return numbered lines with inclusive
 `start/end` ranges. Edits use a line-number mapping or `splices` for inserting,
 deleting and replacing ranges; the harness checks private per-line hashes,
 so the model supplies neither hashes nor repeated old text. Attempt known edits
 directly, including after insertions/deletions; reread relevant lines only when
 context is needed or a target is rejected as stale/missing. Successful edits
-return only `Edit succeeded.`. Stock `write` and `bash` remain available and
-are not protected by these checks.
+return `Edit succeeded.`, with a notice if project-configured formatting was queued.
+Both `edit` and `write` format in the background when the project opts in; later
+operations on that file wait. Harmless spacing changes keep matching snapshots
+where recognised; real text changes or moved lines still reject. `write` retains
+stock creation/overwrite behaviour and, like `bash`, is not protected by line checks.
 
 Supported images go through Pi's stock image processing and return attachments;
 codemode receives the stock image object or a numbered text string. This is not
