@@ -255,7 +255,7 @@ export default function lineFileTools(pi: ExtensionAPI) {
 	pi.registerTool({
 		...stockWrite,
 		description: stockWrite.description + " No leading tabs or spaces are needed solely for cosmetic indentation; preserve whitespace that affects syntax or literal content. Project-configured formatting runs asynchronously after writing; later reads and edits of the file wait for it. Formatting failures are ignored.",
-		promptGuidelines: [...(stockWrite.promptGuidelines ?? []), "For write, omit leading tabs/spaces used only for cosmetic indentation. Pass content directly; do not use codemode just to generate indentation. Preserve required spaces between tokens and all meaningful whitespace: Python/YAML indentation, Makefile recipe tabs, Markdown structure, and string/template contents. The tool runs any configured formatter automatically; the model need not invoke it."],
+		promptGuidelines: [...(stockWrite.promptGuidelines ?? []), "For write, omit leading tabs/spaces used only for cosmetic indentation. Preserve required spaces between tokens and all meaningful whitespace: Python/YAML indentation, Makefile recipe tabs, Markdown structure, and string/template contents."],
 		async execute(id, params, signal, update, ctx) {
 			const startedEpoch = epoch;
 			let formatting: string | undefined;
@@ -357,7 +357,7 @@ export default function lineFileTools(pi: ExtensionAPI) {
 			"Call edit with line numbers from an earlier read. Do not reread a file just to check freshness or after a successful edit: edit rejects any target that no longer matches and writes nothing. Read again only for more context, after a rejection, or after a session reset or compaction.",
 			"After edit inserts or deletes lines, the lines above that point keep their numbers and stay editable. If edit rejects a line below it, read that range again and correct the line numbers instead of retrying.",
 			"To change several files together, use one edit call with edits: [{path, changes}, {path, splices}].",
-			"For edit, omit leading tabs/spaces used only for cosmetic indentation. Pass text directly in changes or lines; do not use codemode just to generate indentation. Preserve required spaces between tokens and all meaningful whitespace: Python/YAML indentation, Makefile recipe tabs, Markdown structure, and string/template contents. The tool runs any configured formatter automatically; the model need not invoke it.",
+			"For edit, omit leading tabs/spaces used only for cosmetic indentation. Preserve required spaces between tokens and all meaningful whitespace: Python/YAML indentation, Makefile recipe tabs, Markdown structure, and string/template contents.",
 		],
 		description: [
 			"Edit lines in one or more text files that read has already shown. Line numbers come from read and refer to each file as it was before this call. Create new files with write.",
