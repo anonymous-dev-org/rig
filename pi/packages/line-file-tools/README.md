@@ -24,6 +24,8 @@ edit({ path: "file.ts", changes: { "50": "new source text", "72": "other source 
 
 Once the target lines and intended change are known, **call edit directly**. Do not reread merely to check freshness or because an edit succeeded, including after insertions/deletions. The harness checks each target before writing; earlier unchanged lines remain usable after later insertions/deletions. Attempt known coordinates first and let edit reject targets whose content no longer matches there. Read when more context is needed, after a session reset, or when a target is rejected as stale/missing; then reconsider the relevant range and coordinates rather than blindly retrying.
 
+For `edit` and `write`, omit leading tabs/spaces used only for cosmetic indentation and pass the text directly; no codemode script or model-issued formatter command is needed. Preserve spaces required between tokens and all meaningful whitespace, including Python/YAML indentation, Makefile recipe tabs, Markdown structure and string/template contents. Configured formatting is automatic and best-effort; without a working formatter, cosmetic indentation stays exactly as supplied.
+
 Read ranges are inclusive and 1-based; default is 1–200. An end beyond EOF is clamped. An empty file has zero lines. `changes` replaces existing lines without shifting positions: each value is exactly one line with no CR/LF. `""` blanks a terminated line. Blanking an unterminated final line with `changes` is refused because it would remove that physical line; use a splice instead.
 
 ## Read multiple files

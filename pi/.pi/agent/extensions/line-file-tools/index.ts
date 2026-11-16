@@ -254,7 +254,8 @@ export default function lineFileTools(pi: ExtensionAPI) {
 	const stockWrite = createWriteToolDefinition(process.cwd());
 	pi.registerTool({
 		...stockWrite,
-		description: stockWrite.description + " Project-configured formatting runs asynchronously after writing; later reads and edits of the file wait for it. Formatting failures are ignored.",
+		description: stockWrite.description + " No leading tabs or spaces are needed solely for cosmetic indentation; preserve whitespace that affects syntax or literal content. Project-configured formatting runs asynchronously after writing; later reads and edits of the file wait for it. Formatting failures are ignored.",
+		promptGuidelines: [...(stockWrite.promptGuidelines ?? []), "For write, omit leading tabs/spaces used only for cosmetic indentation. Pass content directly; do not use codemode just to generate indentation. Preserve required spaces between tokens and all meaningful whitespace: Python/YAML indentation, Makefile recipe tabs, Markdown structure, and string/template contents. The tool runs any configured formatter automatically; the model need not invoke it."],
 		async execute(id, params, signal, update, ctx) {
 			const startedEpoch = epoch;
 			let formatting: string | undefined;
@@ -356,14 +357,14 @@ export default function lineFileTools(pi: ExtensionAPI) {
 			"Call edit with line numbers from an earlier read. Do not reread a file just to check freshness or after a successful edit: edit rejects any target that no longer matches and writes nothing. Read again only for more context, after a rejection, or after a session reset or compaction.",
 			"After edit inserts or deletes lines, the lines above that point keep their numbers and stay editable. If edit rejects a line below it, read that range again and correct the line numbers instead of retrying.",
 			"To change several files together, use one edit call with edits: [{path, changes}, {path, splices}].",
-			"Write each line's text directly in changes or lines; do not script an edit through codemode just to build indentation. Project-configured format-on-save attempts to fix indentation in the background, but failures are ignored. Always supply correct whitespace where it carries meaning (Python, YAML, Markdown, strings and templates).",
+			"For edit, omit leading tabs/spaces used only for cosmetic indentation. Pass text directly in changes or lines; do not use codemode just to generate indentation. Preserve required spaces between tokens and all meaningful whitespace: Python/YAML indentation, Makefile recipe tabs, Markdown structure, and string/template contents. The tool runs any configured formatter automatically; the model need not invoke it.",
 		],
 		description: [
 			"Edit lines in one or more text files that read has already shown. Line numbers come from read and refer to each file as it was before this call. Create new files with write.",
 			"One file: {path, changes} or {path, splices}. Several files: {edits: [{path, changes}, {path, splices}]}, listing each file once and passing no top-level path, changes or splices.",
 			"Give each file exactly one of changes or splices and leave the other out entirely, not empty. changes replaces whole existing lines by number. A splice replaces deleteCount lines at start with lines, so it can insert (deleteCount 0), delete (lines []), replace a range, or append (start = last line + 1, deleteCount 0). To replace some lines and insert or delete others in the same file, use splices for all of it. Splices in one file must not overlap or share a start. Every string is a single line with no line breaks.",
 			"All files are checked before any is written. If a file has not been read, or a target line no longer matches what read showed, the call fails and nothing changes: read that range again and correct the line numbers. Never guess line numbers or text you have not read, and never use write or bash to get around a rejected edit, because they skip this check. Do not reread just to check freshness or after success. If a disk write fails partway through a multi-file call, the error names the files already written; reread the failed file instead of repeating the whole call.",
-			"Project-configured formatting runs asynchronously after edits; later reads and edits of that file wait for it. Spacing-only changes at unchanged coordinates keep matching snapshots where spacing is not meaningful. Text changes or moved lines still reject: read the relevant range again.",
+			"No leading tabs or spaces are needed solely for cosmetic indentation; preserve whitespace that affects syntax or literal content. Project-configured formatting runs asynchronously after edits; later reads and edits of that file wait for it. Spacing-only changes at unchanged coordinates keep matching snapshots where spacing is not meaningful. Text changes or moved lines still reject: read the relevant range again.",
 		].join("\n\n"),
 		parameters: Type.Object({
 			...editFields,
