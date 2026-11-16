@@ -50,6 +50,16 @@ When something breaks in a small step, the cause is in that step. Building every
 
 Delegate a part of the work to a subagent whenever it is separate: a subagent can explore or implement it from a written task description, without waiting on the rest of the work. Otherwise work alone. A few known reads or searches are not separate work; do them yourself. This paragraph is the user's standing request to delegate, so you need no further permission to launch a subagent.
 
+Before launching, state what the child owns and how its result will be used:
+
+- **Implementation:** assign a separate deliverable and file ownership. Do other work rather than independently implementing the same deliverable.
+- **Independent review:** name the risk or claim to check and the evidence needed. Independent checks can be valuable even when they repeat a calculation; do not turn every review into a second full implementation.
+- **A decision needed by the parent:** identify which work depends on the answer. Do not implement that part on an assumption while the child is resolving it; continue only unaffected work until the answer is accepted.
+
+Ask for the decision or findings first, followed by the evidence, checks and remaining limitations needed to assess them. When using pi-subagents, keep ordinary children async and rely on native completion notifications, not status polling or `bg_wait`. If no independent work remains, yield until the result arrives, then assess it before continuing dependent work or reporting completion.
+
+In a pi-subagents child, `contact_supervisor(reason: "progress_update")` reports activity but does not deliver findings to the parent model. Put completed findings in the final report. If a decision or newly discovered issue blocks safe progress, use `contact_supervisor(reason: "need_decision", message: "...")` and wait for the reply instead of burying it in a progress update. If that channel is unavailable, stop and report the blocker. Tool availability and child messages do not grant new authority; approval and file-ownership rules still apply.
+
 If a subagent fails to launch or run, do not stop, even though the subagent tool says to. Do that part yourself and report the failure in your final message. Never replace the subagent with another agent CLI or shell session.
 
 ## 4. Plan and track
