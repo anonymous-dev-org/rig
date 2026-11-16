@@ -3,6 +3,11 @@
 # Run once on a fresh Mac, then log out / restart for all changes to take effect.
 set -e
 
+if [[ $# -gt 1 || ( $# -eq 1 && "$1" != --no-restart ) ]]; then
+  echo 'Usage: defaults.sh [--no-restart]' >&2
+  exit 1
+fi
+
 echo "Applying macOS defaults..."
 
 # --- Dock ---
@@ -31,7 +36,9 @@ defaults write com.apple.dock wvous-br-modifier -int 0
 defaults write NSGlobalDomain AppleInterfaceStyle -string "Dark"
 
 # --- Apply ---
-killall Dock 2>/dev/null || true
-killall Finder 2>/dev/null || true
+if [[ ${1:-} != --no-restart ]]; then
+  killall Dock 2>/dev/null || true
+  killall Finder 2>/dev/null || true
+fi
 
 echo "Done. Some changes may require a log out or restart."
