@@ -243,7 +243,10 @@ source and Git changes, including committed work identified from the conversatio
 The restricted Git tool supports inspection only; reviewers cannot edit files,
 run arbitrary shell commands, or execute tests.
 
-Each report covers architecture analysis, bug findings, and code quality. Findings
+Each report covers architecture analysis, bug findings, and code quality, with an
+explicit numeric rating out of 10 for each area: 10 is perfect and 0 is never ship
+this. Higher bug ratings mean greater correctness and fewer or less serious bugs.
+Each rating must be justified. Findings
 must explain the evidence, consequences, and smallest corrective action; potential
 issues are distinguished from confirmed bugs. Each successful report is delivered
 verbatim as a separate developer-feedback message, even if the other reviewer fails.
