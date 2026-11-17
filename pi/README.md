@@ -171,18 +171,47 @@ and start a fresh session. If resuming an old session whose recorded tools lack
 still apply. These settings remove the activation step, not the skill read or
 review work; timing and quality improvements require a separate measured comparison.
 
-## Council advisors
+## Council tool
 
-Council mode uses exactly two managed profiles: `council-astra` with
-`openai/gpt-6-astra` and `council-fable` with
-`pi-sub-anthropic/claude-fable-5-2`. Both start with fresh context and read-only
-tools, without inherited skills. The roster is pinned in the managed `AGENTS.md`;
-unavailable advisors/models require asking rather than substituting fallbacks.
-Provider authentication must already be available in Pi.
+The main model can call `council` directly, for example:
 
-Full Pi sync deploys these profiles and instructions; the JSON-only
-`sync-settings.mjs` command does not. Reload or restart Pi after deployment,
-then ask it to use council mode for a decision.
+```json
+{"effort":"medium","task":"Compare the cancellation designs in pi/.pi/agent/extensions/deep-review.ts and council.ts. Recommend a lifecycle policy and explain tradeoffs.","rounds":3}
+```
+
+Effort is required and uses the **same exported model/thinking map and read-only
+Agent runner as `/review`**, not the separate legacy `council-astra`/`council-fable`
+subagent profiles:
+
+| Effort | Advisor 1 | Advisor 2 | Guidance |
+| --- | --- | --- | --- |
+| `low` | `anthropic/claude-opus-5-5`, minimal | `openai/gpt-6.1-sol`, low | Quick bounded decisions |
+| `medium` | `anthropic/claude-opus-5-5`, high | `openai/gpt-6.1-sol`, high | Substantial reasoning |
+| `hard` | `pi-sub-anthropic/claude-fable-5-2`, high | `openai/gpt-6-astra`, high | Difficult/high-stakes tradeoffs |
+
+Supply a self-contained task: advisors do not inherit the main conversation or
+skills. Each round starts fresh with the task and, after the independent initial
+round, both previous responses. Calls within each round run in parallel. `rounds`
+includes the initial round, defaults to 3 and is limited to 1–5. One round returns
+independent answers without consensus. More rounds and higher effort can cost more.
+
+Agreement requires structured endorsements of the **exact same nonempty proposal**
+after a cross-response round. Otherwise the result is explicitly `unresolved`,
+with the round count and both final responses. Invalid structured output or model
+failure stops deliberation without discarding the successful peer or earlier
+answers. No fallback models are substituted. Agreement is the advisors' endorsement,
+not a guarantee of truth; the main model must still assess the evidence.
+
+Advisors have only read/grep/find/ls and restricted Git inspection, with no shell,
+writes, extensions or recursive council/subagent calls. Cancellation (including
+Escape), session navigation, shutdown/reload and manual compaction abort active
+work. Nested model usage, including tool-use turns, is returned once for Pi's
+session accounting even when an advisor fails. Output over 2000 lines/50KB links
+to a private temporary file containing both full responses.
+
+Full Pi sync deploys `extensions/council.ts`; JSON-only `sync-settings.mjs` does
+not. Reload or restart after deployment and ask Pi to use the council tool. Both
+preset models must be configured and authenticated.
 
 ## Compaction overflow recovery
 
