@@ -123,10 +123,14 @@ export default function (pi: ExtensionAPI) {
 	});
 
 	pi.registerCommand("review", {
-		description: "Review session work with Astra and Fable in parallel",
+description: "Start a parallel Astra and Fable review, or stop the active review",
 		handler: async (args, ctx) => {
 			if (args.trim()) { ctx.ui.notify("Usage: /review (no arguments)", "error"); return; }
-			if (active) { ctx.ui.notify("A deep review is already running.", "warning"); return; }
+if (active) {
+reset(undefined, ctx);
+ctx.ui.notify("Deep review stopped.", "info");
+return;
+}
 			const controller = new AbortController();
 			active = controller;
 			const generation = epoch;
