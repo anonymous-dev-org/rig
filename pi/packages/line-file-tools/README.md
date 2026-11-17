@@ -19,14 +19,17 @@ read({ path: "file.ts", start: 50, end: 150 })
 // [200 lines total; showing 50–150]
 // 50: actual source text
 // ...
-edit({ path: "file.ts", changes: { "50": "new source text", "72": "other source text" } })
+edit({ path: "file.ts", splices: [
+  { start: 50, deleteCount: 1, lines: ["new source text"] },
+  { start: 72, deleteCount: 1, lines: ["other source text"] }
+] })
 ```
 
-Once the target lines and intended change are known, **call edit directly**. Do not reread merely to check freshness or because an edit succeeded, including after insertions/deletions. The harness checks each target before writing; earlier unchanged lines remain usable after later insertions/deletions. Attempt known coordinates first and let edit reject targets whose content no longer matches there. Read when more context is needed, after a session reset, or when a target is rejected as stale/missing; then reconsider the relevant range and coordinates rather than blindly retrying.
+Once the target lines and intended change are known, **call edit directly**. Follow explicit snapshot/coordinate recovery notices, including after `write` or a successful edit that shifts lines. Otherwise avoid redundant rereads merely to check freshness or because an edit succeeded. The harness checks each target before writing; earlier unchanged regions remain usable after later insertions/deletions without rereading. Read when more context is needed, when a session reset clears the snapshot, or when a target is rejected as stale/missing; then reconsider the indicated range and coordinates rather than blindly retrying.
 
 For `edit` and `write`, omit leading tabs/spaces used only for cosmetic indentation. Preserve spaces required between tokens and all meaningful whitespace, including Python/YAML indentation, Makefile recipe tabs, Markdown structure and string/template contents. Configured formatting is automatic and best-effort; without a working formatter, cosmetic indentation stays exactly as supplied.
 
-Read ranges are inclusive and 1-based; default is 1–200. An end beyond EOF is clamped. An empty file has zero lines. `changes` replaces existing lines without shifting positions: each value is exactly one line with no CR/LF. `""` blanks a terminated line. Blanking an unterminated final line with `changes` is refused because it would remove that physical line; use a splice instead.
+Read ranges are inclusive and 1-based; default is 1–200. An end beyond EOF is clamped. An empty file has zero lines. Use `splices` for all replacements, insertions and deletions. The removed `changes` argument is rejected explicitly, including in batches.
 
 ## Read multiple files
 
@@ -50,14 +53,14 @@ Use `edits` to mix line replacements and range edits across files:
 
 ```js
 edit({ edits: [
-  { path: "src/config.ts", changes: { "12": "export const timeout = 5000;" } },
+  { path: "src/config.ts", splices: [{ start: 12, deleteCount: 1, lines: ["export const timeout = 5000;"] }] },
   { path: "src/main.ts", splices: [
     { start: 20, deleteCount: 2, lines: ["initialize(config);"] }
   ] }
 ] })
 ```
 
-Read each file first to establish its snapshot, then use known coordinates directly. Each entry must supply exactly one of `changes` or `splices`; omit the unused field entirely. Do not combine `edits` with top-level `path`, `changes`, or `splices`. The original single-file format remains supported. A batch must be nonempty, and each file can appear only once, including relative/absolute, symlink, or hard-link aliases. Combine edits for one file into its single entry; all coordinates refer to that file before the call.
+Read each file first to establish its snapshot, then use known coordinates directly. Each entry supplies a nonempty `splices` array. Do not combine `edits` with top-level `path` or `splices`. Single-file `{path, splices}` remains supported. A batch must be nonempty, and each file can appear only once, including relative/absolute, symlink, or hard-link aliases. Combine edits for one file into its single entry; all coordinates refer to that file before the call.
 
 All files are opened and validated before any writes begin, so a validation failure leaves every file unchanged and preserves usable snapshots. Batches acquire file queues in canonical path order to avoid deadlocks. **Writes across files are not atomic:** an I/O failure can leave earlier files completed and the failing file partially modified. The error names the failed file and completed files; later files are not written. Inspect the completed files and reread the failed file before retrying rather than replaying the whole batch.
 
@@ -65,7 +68,7 @@ The model receives this format through the tool's parameter schema, description,
 
 ## Insert, delete, or replace a range
 
-A **splice** removes a count of existing lines at a position and puts new lines there. Supply exactly one of `changes` or `splices` per file:
+A **splice** removes a count of existing lines at a position and puts new lines there. Use `splices` for every edit:
 
 ```js
 // After reading the file, insert two lines BEFORE original line 12.
@@ -73,7 +76,7 @@ edit({ path: "file.ts", splices: [
   { start: 12, deleteCount: 0, lines: ["const enabled = true;", ""] }
 ] })
 // Original lines before 12 are still usable without another read.
-edit({ path: "file.ts", changes: { "5": "// updated heading" } })
+edit({ path: "file.ts", splices: [{ start: 5, deleteCount: 1, lines: ["// updated heading"] }] })
 
 // Attempt another known edit directly. Original line 20 may now be stale;
 // if edit rejects it, read the relevant range and reconsider its coordinates.
@@ -85,9 +88,9 @@ edit({ path: "file.ts", splices: [
 
 `start` is 1-based; `deleteCount` is nonnegative. A zero count inserts before `start`; empty `lines` deletes. To append to a file with N lines use `start: N+1, deleteCount: 0`. To populate an existing empty file, read it then use `start: 1, deleteCount: 0`. Use `write` to create a missing file.
 
-Every splice in a batch addresses the **pre-edit file**, regardless of array order. Overlapping removed ranges, insertions inside a removed range, and duplicate start positions are rejected. Adjacent ranges and an insertion immediately after a removed range are allowed. Combine operations at the same position into one splice. Empty batches and insertions with no new lines are refused. All changes/splices and the resulting size are validated before writing any bytes.
+Every splice in a batch addresses the **pre-edit file**, regardless of array order. Overlapping removed ranges, insertions inside a removed range, and duplicate start positions are rejected. Adjacent ranges and an insertion immediately after a removed range are allowed. Combine operations at the same position into one splice. Empty batches and insertions with no new lines are refused. All splices and the resulting size are validated before writing any bytes.
 
-New rows use the file's first line terminator, or LF when none exists. Untouched mixed terminators remain intact except at the new EOF or when separating an old unterminated final row from appended rows. Nonempty final text preserves the original final-newline presence; an originally empty file gains LF-terminated rows. **An empty final row always needs a terminator to exist:** replacing an unterminated `x` with `lines: [""]` produces `\n`, not an empty file. Deleting every row produces an empty body (retaining any BOM). Successful edits return `Edit succeeded.`, followed by the files being formatted when a formatter applies; the terminal displays that acknowledgement, not a diff or a reread warning.
+New rows use the file's first line terminator, or LF when none exists. Untouched mixed terminators remain intact except at the new EOF or when separating an old unterminated final row from appended rows. Nonempty final text preserves the original final-newline presence; an originally empty file gains LF-terminated rows. **An empty final row always needs a terminator to exist:** replacing an unterminated `x` with `lines: [""]` produces `\n`, not an empty file. Deleting every row produces an empty body (retaining any BOM). Successful edits acknowledge success and identify the earliest line-count shift per file, with a bounded read range if edits in that region are needed. Earlier unchanged regions need no reread. Formatting notices mean pending work, not completed formatting; subsequent guards provide recovery ranges if it changes a target.
 
 ## Format after edit or write
 
@@ -110,17 +113,17 @@ Rust jobs run in the file's directory to respect nested rustfmt config. If a Car
 
 **Snapshots:** if formatting preserves row count, the tool refreshes a row's hash for an unchanged text/line-ending normalisation or a recognised spacing-only change. The row must have matched its pre-format baseline; external changes are never made editable by this refresh. Spacing comparison applies conservatively to JS/TS (not JSX/TSX), JSON/JSONC, Go and Rust. Quoted text is preserved verbatim; ambiguous multiline strings, templates, block comments and raw strings disable spacing comparison. Rows containing `/` also retain strict checks. Python, YAML, Markdown and other unsupported contexts keep strict text matching. Text changes and shifted rows still reject through the usual per-line guard. Formatter jobs cannot restore snapshots after a session reset.
 
-`write` keeps stock creation/overwrite and parent-directory behaviour, including its result/details shape. It invalidates any previous snapshot before writing and does not establish a new one; read before a later guarded edit. Formatting is best-effort for regular UTF-8 files within the 4 MiB limit, even though stock writing itself has no such limit.
+`write` keeps stock creation/overwrite and parent-directory behaviour, including its result/details shape. It invalidates any previous snapshot before writing and does not establish a new one. Every successful write, including creation, reports that the snapshot was cleared with read guidance for a later guarded edit. Formatting is best-effort for regular UTF-8 files within the 4 MiB limit, even though stock writing itself has no such limit.
 
 **Trust:** format-on-save executes project-local formatter binaries and may execute JavaScript formatter configs/plugins with your user permissions, without a model-issued bash call. Use this extension only in projects whose tools and configs you trust; a config file is opt-in, not a security boundary.
 
-The harness stores private SHA-256 hashes of each row's **text and terminator**, indexed by numeric line position, plus the observed EOF position. Edits need no old text or hashes. A change to an unrelated row does not block an unchanged target. `changes` checks each target; splices check every removed/replaced row. Pure insertions check their immediate neighboring rows where present; appends also check EOF, and empty-file insertion requires an empty-file observation. Any retained boundary row whose terminator changes is checked too. A stale/missing target or anchor rejects the entire call before writing, without discarding other usable snapshots.
+The harness stores private SHA-256 hashes of each row's **text and terminator**, indexed by numeric line position, plus the observed EOF position. Edits need no old text or hashes. A change to an unrelated row does not block an unchanged target. Splices check every removed/replaced row. Pure insertions check their immediate neighboring rows where present; appends also check EOF, and empty-file insertion requires an empty-file observation. Any retained boundary row whose terminator changes is checked too. A stale/missing target or anchor rejects the entire call before writing, without discarding other usable snapshots. Errors name the path and a bounded valid read range (1–1 for an empty file), distinguish absent snapshots from mismatching content, and ask callers to reconsider coordinates.
 
 Successful edits refresh only the rows the tool authored, not unrelated externally changed rows. Other baseline hashes stay at their existing numeric coordinates rather than following moved lines. After an insertion/deletion, later targets may therefore reject while earlier unchanged targets still work; there is no blanket reread requirement. This checks **content at a coordinate, not semantic identity**: identical repeated rows can still match after a shift. Do not guess source context or assume that a matching hash proves the intended occurrence. A successful explicit read of any range refreshes hashes for the entire loaded file, retaining the existing no-seen-line-restriction behavior.
 
-Snapshots are cleared on startup, session switching/forking, tree navigation, compaction and shutdown. Reload/resume require rereading; hashes are not restored from conversation history or exposed to the model. Queued operations from before a reset are rejected as well. Canonical paths unify symlink aliases. Paths support ordinary relative/absolute paths and `~/`; stock Pi's `@` prefix and Unicode filename fallback are not implemented.
+Snapshots are cleared on startup, session switching/forking, tree navigation, compaction and shutdown, even if a requested transition is cancelled. Reload/resume require rereading; hashes are not restored from conversation history or exposed to the model. Missing-snapshot edit errors report the latest cache reset event, reason when supplied, and UTC timestamp alongside the path and read range. This is recovery guidance in the tool response, not a claim that the file changed or that the reset necessarily caused this file's missing snapshot. No lifecycle reminder is injected into model requests. Queued operations from before a reset are rejected as well. Canonical paths unify symlink aliases. Paths support ordinary relative/absolute paths and `~/`; stock Pi's `@` prefix and Unicode filename fallback are not implemented.
 
-Text reads/edits support local regular UTF-8 files only, at most 4 MiB, without NUL. BOM and LF/CRLF/CR terminators are supported; `changes` preserves them exactly, while splices follow the boundary rules above. Ordinary permission bits are preserved; OS write policy may clear special mode bits. Read output over 50 KiB is rejected with a narrower-range request, not silently truncated. Invalid Unicode replacements are refused. A single line exceeding that output budget cannot be displayed; a file consisting only of such a line cannot establish a snapshot. There is no automatic stock-text fallback for oversized or unsupported text: it would not establish the numbered edit contract. Use stock bash/write deliberately for out-of-contract files.
+Text reads/edits support local regular UTF-8 files only, at most 4 MiB, without NUL. BOM and LF/CRLF/CR terminators are supported; splices follow the boundary rules above. Ordinary permission bits are preserved; OS write policy may clear special mode bits. Read output over 50 KiB is rejected with a narrower-range request, not silently truncated. Invalid Unicode replacements are refused. A single line exceeding that output budget cannot be displayed; a file consisting only of such a line cannot establish a snapshot. There is no automatic stock-text fallback for oversized or unsupported text: it would not establish the numbered edit contract. Use stock bash/write deliberately for out-of-contract files.
 
 ## Images and programmatic reads
 
