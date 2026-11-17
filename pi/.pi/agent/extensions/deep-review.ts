@@ -11,7 +11,7 @@ import {
 } from "@earendil-works/pi-coding-agent";
 
 const REVIEW_TYPE = "rig-deep-review";
-const REVIEW_EFFORTS = {
+export const REVIEW_EFFORTS = {
 low: [
 { provider: "pi-sub-anthropic", id: "claude-opus-5-5", thinkingLevel: "minimal" },
 { provider: "openai", id: "gpt-6.1-sol", thinkingLevel: "low" },
@@ -78,7 +78,7 @@ function gitTool(pi: ExtensionAPI, cwd: string) {
 	} satisfies AgentTool<typeof parameters>;
 }
 
-async function review(
+export async function review(
 pi: ExtensionAPI, ctx: ExtensionContext, cwd: string, reviewer: Reviewer,
 systemPrompt: string, prompt: string,
 signal: AbortSignal, recordUsage: (message: AssistantMessage) => void,
