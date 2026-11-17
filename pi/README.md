@@ -152,8 +152,7 @@ even in sessions that never delegate, so lower total token cost is not guarantee
 delegation, but review-only children require an explicit user request for delegated
 review. The parent must not add an audit, double-check or second-opinion child on its
 own, including by relabeling that review as research or a decision. The parent still
-performs the verification needed for its work. This does not disable the separate
-automatic `paired-review.ts` mechanism described below.
+performs the verification needed for its work.
 
 A parent must accept a prerequisite answer before implementing the part that
 depends on it. Children return findings and evidence in their final report;
@@ -234,7 +233,7 @@ safely; they are not automatically retried as smaller chunks.
 
 Run `/review` to launch Astra (`openai/gpt-6-astra`) and Fable
 (`pi-sub-anthropic/claude-fable-5-2`) in parallel, both with high thinking.
-The command runs in the background and leaves the automatic Sol review unchanged.
+The command runs in the background.
 Its prompt is `~/.pi/agent/DEEP_REVIEW.md`; its extension is `deep-review.ts`.
 
 Both reviewers receive the worktree path, session transcript path, and captured
@@ -254,79 +253,6 @@ and manual compaction cancel pending work and prevent stale delivery. Failures a
 visible with no model fallback. Reviewer usage is recorded in the parent session;
 review activity and final reports are logged privately under `~/.pi/agent/logs/`.
 Run `/reload` after installing the extension, then `/review` in a saved session.
-
-## Automatic pair-programming review
-
-Rig's `paired-review.ts` extension launches one fresh read-only reviewer:
-`openai/gpt-6.1-sol`, at high thinking. It receives
-`~/.pi/agent/WATCHDOG.md` and scores only scope and goal focus, simplicity, and
-code quality. Each area gets a score out of 10 with evidence, reasons, and concrete
-improvements where needed. The reviewer may read the session transcript and source
-with read/search tools, but cannot run shell commands, edit files, or spawn agents.
-The installed subagent watchdog remains disabled to avoid duplicate reviews.
-
-Reviews launch every **40 main-agent model calls**, at the next completed turn
-boundary. Each finalized assistant response counts once, including reported error
-or aborted responses; tool, user and custom messages do not count. Tool-free
-responses count too. The reviewer runs in the background while the main agent
-continues working. Only one review runs at a time; calls accumulated during a review
-count toward the next launch at a later completed turn. If multiple thresholds
-pass while busy, one review launches with the remainder carried forward.
-There is no extra end-of-run or idle review. Session lifecycle resets, reloads
-and manual compaction restart the counter. Delegated child sessions skip this
-extension; reviewer agents load no extensions and do not advance the counter.
-
-The reviewer's final text is always queued unchanged as one persisted feedback
-message, including when all scores are 10. There is no JSON envelope, reviewer-name
-prefix, or added description. Pi delivers it after the current turn's tools finish,
-before the next model call, or starts a new turn if the main agent is already idle.
-Feedback is projected as a system message (developer feedback on compatible
-providers), not a user request.
-
-The reviewer receives the Pi session JSONL path and captured branch entry ID,
-rather than preselected conversation excerpts. It gathers context itself by reading
-the transcript's parent chain and relevant source. The transcript and source can
-continue changing while it reviews; its prompt explains this boundary. Reviews are
-advisory and incur model usage, but do not block the main agent. There is no review
-timeout. Missing transcripts, unavailable models, empty results, or failed reviews
-produce visible errors without model fallback.
-An aborted parent turn, session shutdown, manual compaction, or navigation to
-another session/branch cancels the pending review. Navigation attempts cancel even
-if navigation is later declined. Reviews do not survive process exit.
-
-Review starts and terminal outcomes (including review text, errors, and cancellation)
-are saved to `~/.pi/agent/logs/paired-review.jsonl`.
-Each record includes a run ID, session ID, source entry, and timestamp; terminal
-records also include duration. The log contains final review text, not full reviewer
-transcripts, and is created with private file permissions. It is append-only with
-no automatic rotation. To watch reviews:
-
-```sh
-tail -f ~/.pi/agent/logs/paired-review.jsonl | jq .
-```
-
-Every reviewer model response also records its reported token usage and price in
-the parent session's native usage entries, including intermediate tool rounds and
-clean approvals. Reported usage on failed or cancelled responses counts too; no
-usage can be recovered if the provider does not report it. These entries contribute
-to `/session` totals and the footer's cumulative `in … - out … ($…)` display.
-Input includes uncached input, cache reads and cache writes; output is generated
-tokens. These counters sum usage recorded in the parent session, including tool
-usage, compaction and branch summaries. They are not yet complete all-subagent
-totals: async notification-only runs can be missing, and repeated waits can
-duplicate child usage. Tools without reported usage add no separate charge;
-their results count as model input when processed.
-The separate `ctx` counter still describes only the main agent's context window,
-not tokens consumed by reviewers. Prices use Pi's provider/model usage data.
-
-If a provider ignores cancellation and reports usage only after session replacement,
-that usage is retained in the log as `review_usage_unattributed`, never charged to
-the replacement session. Historical reviews without recorded usage are not backfilled.
-
-Use full Pi sync to deploy settings, guidance, the extension, and reviewer-file
-retirements (with private backups), then reload/restart Pi. The JSON-only settings
-sync cannot deploy this mechanism. Project overrides must not re-enable the old
-`subagents.watchdog`; `/subagents-watchdog status` can confirm it is disabled.
 
 ## Explicit legacy migration
 

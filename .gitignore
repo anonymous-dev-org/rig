@@ -17,7 +17,6 @@ lazysql/Library/Application Support/lazysql/config.toml
 !/pi/.pi/agent/settings.example.json
 !/pi/.pi/agent/mcp.example.json
 !/pi/.pi/agent/AGENTS.md
-!/pi/.pi/agent/WATCHDOG.md
 !/pi/.pi/agent/DEEP_REVIEW.md
 !/pi/.pi/agent/agents/
 !/pi/.pi/agent/extensions/
