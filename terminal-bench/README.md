@@ -2,6 +2,8 @@
 
 Terminal-Bench runs terminal tasks in isolated Linux environments. Its current runner is [Harbor](https://docs.harborframework.com/getting-started/installation.md). Docker Desktop must be running; tasks and results stay outside rig. No rig sync changes are needed.
 
+Latest comparison: [72-trial raw results](TIERED-RESULTS.md), with [selection and accounting details](TIERED-RUN.md) and [quality analysis](QUALITY-RESULTS.md). The tiered run used OrbStack and retained failed trials; the quality analysis separates verifier outcomes from sampled code review.
+
 ## Installed and verified
 
 On this Apple Silicon Mac: Harbor 0.26.0 (installed through uv), Docker 29.8.2, Docker Compose 5.5.0, and Codex CLI 0.169.0. Codex is signed in with ChatGPT (`codex login status`).
@@ -99,3 +101,9 @@ This writes `summary.json` and `summary.md`, checks for all 15 results and match
 The new splices-only editor configuration passed all five tasks, with zero edit rejections versus three previously. Estimated cost was $0.2510 versus $0.2911; verifier quality remained 20/20. Four initial installation timeouts were preserved and recovered before those tasks reached inference.
 
 See [NEW-CONFIG-RESULTS.md](NEW-CONFIG-RESULTS.md) for the complete before/after results, infrastructure caveat, and five-way parallel command with a longer setup allowance. Bare Pi and Codex were not rerun.
+
+## Latest single-task three-harness check
+
+After the active configuration changed again, all three harnesses passed `multi-source-data-merger` (3/3 verifier checks each). Configured Pi took 44.04s and 42,824 total tokens, plain Pi 53.92s and 13,565 tokens, and Codex 67.62s and 65,252 tokens. No subagents were invoked.
+
+See [SINGLE-TASK-RESULTS.md](SINGLE-TASK-RESULTS.md) for turn counts, token splits, code-quality observations, snapshot provenance, and the container-network workaround required after setup-only failures. The adapter now uses IPv4-only apt, bounded retries/timeouts, and no optional recommended packages equally for all arms. One task is not a general ranking.

@@ -1,0 +1,246 @@
+{
+  "task": "multi-source-data-merger",
+  "snapshot_sha256": "4d8289d6a5e799e00b47e3c918825ab464bdfb430b7d86137134a3660b6c81bd",
+  "snapshot_created_at": "2026-11-17T08:20:08.623634+01:00",
+  "source_files_changed_since_capture": [
+    "models-store.json"
+  ],
+  "packages": {
+    "pi-subagents": "0.89.0",
+    "pi-web-access": "0.48.0",
+    "pi-fast": "0.3.0",
+    "pi-sub-anthropic": "0.1.11"
+  },
+  "execution": {
+    "started_at": "2026-11-17T14:28:50.580408+00:00",
+    "task": "multi-source-data-merger",
+    "parallel_arms": 3,
+    "task_concurrency_per_arm": 1,
+    "automatic_retries": 0,
+    "setup_workaround": "Container-local apt IPv4, one network retry, 15s HTTP timeout, no optional recommended packages; all arms identical.",
+    "exit_codes": {
+      "configured": 0,
+      "bare": 0,
+      "codex": 0
+    },
+    "finished_at": "2026-11-17T14:48:36.049291+00:00",
+    "wall_seconds": 1185.468883
+  },
+  "trials": [
+    {
+      "arm": "bare",
+      "task": "multi-source-data-merger",
+      "trial": "multi-source-data-merger__JfcSxWE",
+      "result_path": "$HOME/.local/share/terminal-bench/comparison-20261117-082008-ipv4/jobs/bare/multi-source-data-merger__JfcSxWE/result.json",
+      "reward": 1.0,
+      "exception": null,
+      "agent_seconds": 53.918078,
+      "total_seconds": 1163.724427,
+      "tests": {
+        "tests": 3,
+        "passed": 3,
+        "failed": 0,
+        "skipped": 0,
+        "pending": 0,
+        "other": 0
+      },
+      "task_id": {
+        "git_url": "https://github.com/laude-institute/terminal-bench-2.git",
+        "git_commit_id": "69671fbaac6d67a7ef0dfec016cc38a64ef7a77c",
+        "path": "multi-source-data-merger"
+      },
+      "agent_info": {
+        "name": "pi",
+        "version": "1.5.2",
+        "model_info": {
+          "name": "gpt-6.1-sol",
+          "provider": "openai"
+        }
+      },
+      "reasoning_effort": "low",
+      "setup_seconds": 816.183889,
+      "input_tokens": 12142,
+      "cache_tokens": 9472,
+      "output_tokens": 1423,
+      "estimated_usd": 0.0205172,
+      "passed": true,
+      "tool_calls": {
+        "bash": 3,
+        "read": 2,
+        "write": 1
+      },
+      "model_turns": 5,
+      "first_input_tokens": 1565,
+      "subagent_tokens": 0,
+      "tool_errors": 0,
+      "fresh_input_tokens": 2670,
+      "total_tokens": 13565
+    },
+    {
+      "arm": "codex",
+      "task": "multi-source-data-merger",
+      "trial": "multi-source-data-merger__Gd4BNa4",
+      "result_path": "$HOME/.local/share/terminal-bench/comparison-20261117-082008-ipv4/jobs/codex/multi-source-data-merger__Gd4BNa4/result.json",
+      "reward": 1.0,
+      "exception": null,
+      "agent_seconds": 67.620099,
+      "total_seconds": 1180.623974,
+      "tests": {
+        "tests": 3,
+        "passed": 3,
+        "failed": 0,
+        "skipped": 0,
+        "pending": 0,
+        "other": 0
+      },
+      "task_id": {
+        "git_url": "https://github.com/laude-institute/terminal-bench-2.git",
+        "git_commit_id": "69671fbaac6d67a7ef0dfec016cc38a64ef7a77c",
+        "path": "multi-source-data-merger"
+      },
+      "agent_info": {
+        "name": "codex",
+        "version": "0.169.0",
+        "model_info": {
+          "name": "gpt-6.1-sol",
+          "provider": "openai"
+        }
+      },
+      "reasoning_effort": "low",
+      "setup_seconds": 906.450645,
+      "input_tokens": 63588,
+      "cache_tokens": 54528,
+      "output_tokens": 1664,
+      "estimated_usd": 0.0402128,
+      "passed": true,
+      "tool_calls": {
+        "exec": 3
+      },
+      "model_turns": 4,
+      "first_input_tokens": 14909,
+      "subagent_tokens": 0,
+      "fresh_input_tokens": 9060,
+      "total_tokens": 65252
+    },
+    {
+      "arm": "configured",
+      "task": "multi-source-data-merger",
+      "trial": "multi-source-data-merger__hZvzqY7",
+      "result_path": "$HOME/.local/share/terminal-bench/comparison-20261117-082008-ipv4/jobs/configured/multi-source-data-merger__hZvzqY7/result.json",
+      "reward": 1.0,
+      "exception": null,
+      "agent_seconds": 44.040936,
+      "total_seconds": 1107.570129,
+      "tests": {
+        "tests": 3,
+        "passed": 3,
+        "failed": 0,
+        "skipped": 0,
+        "pending": 0,
+        "other": 0
+      },
+      "task_id": {
+        "git_url": "https://github.com/laude-institute/terminal-bench-2.git",
+        "git_commit_id": "69671fbaac6d67a7ef0dfec016cc38a64ef7a77c",
+        "path": "multi-source-data-merger"
+      },
+      "agent_info": {
+        "name": "pi",
+        "version": "1.5.2",
+        "model_info": {
+          "name": "gpt-6.1-sol",
+          "provider": "openai"
+        }
+      },
+      "reasoning_effort": "low",
+      "setup_seconds": 680.984961,
+      "input_tokens": 41290,
+      "cache_tokens": 32128,
+      "output_tokens": 1534,
+      "estimated_usd": 0.0368768,
+      "passed": true,
+      "tool_calls": {
+        "bash": 3,
+        "read": 1
+      },
+      "model_turns": 5,
+      "first_input_tokens": 7510,
+      "subagent_tokens": 0,
+      "tool_errors": 0,
+      "fresh_input_tokens": 9162,
+      "total_tokens": 42824
+    }
+  ],
+  "previous_configured_same_task": {
+    "arm": "configured",
+    "task": "multi-source-data-merger",
+    "trial": "multi-source-data-merger__5bky7na",
+    "result_path": "$HOME/.local/share/terminal-bench/comparison-20261117-000121/jobs/configured/multi-source-data-merger__5bky7na/result.json",
+    "reward": 1.0,
+    "exception": null,
+    "agent_seconds": 62.887339,
+    "total_seconds": 441.083376,
+    "tests": {
+      "tests": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "pending": 0,
+      "other": 0
+    },
+    "task_id": {
+      "git_url": "https://github.com/laude-institute/terminal-bench-2.git",
+      "git_commit_id": "69671fbaac6d67a7ef0dfec016cc38a64ef7a77c",
+      "path": "multi-source-data-merger"
+    },
+    "agent_info": {
+      "name": "pi",
+      "version": "1.5.2",
+      "model_info": {
+        "name": "gpt-6.1-sol",
+        "provider": "openai"
+      }
+    },
+    "reasoning_effort": "low",
+    "setup_seconds": 352.20720700000004,
+    "input_tokens": 91982,
+    "cache_tokens": 81152,
+    "output_tokens": 2227,
+    "estimated_usd": 0.0520452,
+    "passed": true,
+    "assistant_calls": 9,
+    "tool_metrics": {
+      "calls": {
+        "bash": 3,
+        "read": 2,
+        "write": 2,
+        "edit": 1
+      },
+      "errors": {},
+      "edit_rejections": []
+    },
+    "baseline_tool_metrics": {
+      "calls": {
+        "bash": 3,
+        "read": 2,
+        "write": 2,
+        "edit": 1
+      },
+      "errors": {},
+      "edit_rejections": []
+    }
+  },
+  "quality_notes": {
+    "correctness": "All three passed all 3 supplied verifier checks.",
+    "configured": "Inline one-shot solution; reads back output and checks schema, IDs, dates, priority and conflict report. No reusable script left in /app; the task required artifacts, not a script.",
+    "bare": "Reusable 84-line script with normalization and duplicate detection; pandas plus pyarrow; separate smoke assertions check user IDs, row count and conflict count.",
+    "codex": "Reusable 107-line script; standard-library normalization plus pyarrow; strict integer validation, duplicate detection and persisted-output checks embedded in the script."
+  },
+  "limitations": [
+    "Single task and single solver attempt per arm; do not infer a general ranking.",
+    "Setup remains slow; agent timing excludes installation and verifier overhead.",
+    "Identical container-local apt workaround for all arms; previous DNS-failed attempts preserved.",
+    "Token-price estimates, not actual subscription charges. All measured usage is main-agent usage; no subagents invoked.",
+    "Source snapshot is frozen at capture; subsequent host changes, if any, are listed separately."
+  ]
+}

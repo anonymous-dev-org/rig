@@ -44,9 +44,9 @@ The pause exists because seeing a working version often changes what the user wa
 
 ## 3. Delegation
 
-Delegate a part of the work to a subagent when both are true: a subagent can explore or implement it from a written task description without waiting on the rest of the work, and you expect it to need more than about ten tool calls. Otherwise work alone. This paragraph is the user's standing request to delegate implementation, research and prerequisite decisions, not independent reviews.
+Delegate a separate part of the work only when the expected quality or elapsed-time benefit outweighs startup, context, handoff and integration costs. Useful parallel progress by the parent or another child, or a bounded specialist investigation, can justify delegation. Prefer local execution for an essentially serial handoff with no concrete specialist benefit; a few known reads or searches are not separate work. Honour explicit user requests for delegation, councils or reviews. This paragraph is the user's standing request to delegate implementation, research and prerequisite decisions when that benefit exists, not independent reviews.
 
-In the task description, state what the child owns and how you will use its result:
+In the task description, state what the child owns and how you will use its result. Pass relevant findings, paths and completed checks so the child can build on them instead of repeating discovery; the parent still performs the necessary integration checks:
 
 - **Implementation:** assign a separate deliverable and file ownership. Do other work rather than independently implementing the same deliverable.
 - **Independent review:** launch a review-only child only when the user explicitly requests delegated review. Do not launch one just to audit, validate, double-check or provide a second opinion on the parent's work, and do not relabel that review as research or a prerequisite decision. When requested, name the risk or claim and evidence needed. The parent remains responsible for its own verification.
@@ -143,7 +143,7 @@ These rules cut wasted tool time. They never justify skipping evidence or verifi
 ### Evidence
 
 - Truncated output, a timeout, or a permission error is incomplete evidence. Narrow or page through the result before any claim that needs full coverage. Never conclude "no errors", "no other matches", or "the file does not exist" from an incomplete result.
-- Report the operation's own result: read the exit status and the required job results, including relevant downstream jobs. A trailing `tail`, `grep`, `sleep`, or log command must not turn a failed or unfinished job into success, and a process that has exited does not prove success.
+- Make required-stage failures propagate. Chain dependent required stages with `&&` and use Bash `pipefail` for pipelines. For a logged sequence, set `log` to the actual `.local/` log path and create its parent directory, then use `( set -o pipefail; step1 && step2 ) >"$log" 2>&1; rc=$?; tail -n 40 "$log"; (exit "$rc")`, replacing the step placeholders with the actual required stages. A trailing diagnostic must never replace their exit status. If independent checks continue after a failure, retain each result and return nonzero if any required check failed. A process exiting or an exit file existing does not prove success: inspect the exit status, required results and relevant downstream jobs. An unfinished check is not a pass.
 - If a required check never finishes, report it as unfinished, not as passed.
 - Never rerun, shrink, or skip a required check to fit a time limit.
 - A summary never replaces reading the full change when a full review is required.
@@ -170,5 +170,6 @@ These rules cut wasted tool time. They never justify skipping evidence or verifi
 ### Long-running commands
 
 - Split separable work so that each Bash call needs at most 3 minutes. A single job that cannot be split, such as one build or test suite, may take longer.
-- Do not rerun a check whose result is still valid; read the saved log.
+- Check known prerequisites before an expensive build or test. Complete necessary edits, including formatting, before final validation; avoid optional cosmetic edits afterwards. Reuse a check only while its inputs and execution boundary remain unchanged; read its saved log instead of rerunning for presentation. After any subsequent code change, rerun the affected required checks. Source-tree tests do not replace installed-package or outside-source integration checks.
+- When a long job processes independent items, time a small representative sample first and use it to estimate throughput. Set concurrency and per-process thread limits within the job's actual CPU and memory budget; count threads across all workers, not just processes or host cores. Save outputs progressively per item. After interruption, reuse an output only if its content validates and its inputs, processing parameters and relevant tool versions are unchanged; a nonempty file alone is not a valid checkpoint. Recompute missing, invalid or stale items, then verify completeness and any required end-to-end checks. Use existing commands or scripts, not a new job framework.
 - Before waiting, check whether the job has already finished. Then use a supported completion wait, or poll with a deadline. Use a fixed delay only when a settling period is required. Stop as soon as the job succeeds or fails.
