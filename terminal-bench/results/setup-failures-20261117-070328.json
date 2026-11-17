@@ -1,0 +1,983 @@
+{
+  "status": "blocked_before_inference",
+  "attempts": [
+    {
+      "run": "comparison-20261117-070328",
+      "execution": {
+        "started_at": "2026-11-17T06:03:49.867865+00:00",
+        "parallel_arms": 3,
+        "task_concurrency_per_arm": 2,
+        "max_task_containers": 6,
+        "finished_at": "2026-11-17T06:25:02.208605+00:00",
+        "wall_seconds": 1272.34074,
+        "exit_codes": {
+          "configured": 0,
+          "bare": 0,
+          "codex": 0
+        }
+      },
+      "snapshot_sha256": "ed9b68b517d3b7454c6dabb18a989135819a25d59c6a57e04a446930cfa114f4",
+      "exception_counts": {
+        "NonZeroAgentExitCodeError": 7,
+        "NetworkConnectionError": 6,
+        "AgentSetupTimeoutError": 2
+      },
+      "trials": [
+        {
+          "arm": "bare",
+          "task": "cancel-async-tasks",
+          "trial": "cancel-async-tasks__WAiifrJ",
+          "result_path": "$HOME/.local/share/terminal-bench/comparison-20261117-070328/jobs/bare/cancel-async-tasks__WAiifrJ/result.json",
+          "reward": null,
+          "exception": "NonZeroAgentExitCodeError",
+          "agent_seconds": null,
+          "total_seconds": 21.071668,
+          "tests": null,
+          "task_id": {
+            "git_url": "https://github.com/laude-institute/terminal-bench-2.git",
+            "git_commit_id": "69671fbaac6d67a7ef0dfec016cc38a64ef7a77c",
+            "path": "cancel-async-tasks"
+          },
+          "agent_info": {
+            "name": "pi",
+            "version": "1.5.2",
+            "model_info": {
+              "name": "gpt-6.1-sol",
+              "provider": "openai"
+            }
+          },
+          "reasoning_effort": "low",
+          "setup_seconds": 9.656051999999999,
+          "input_tokens": null,
+          "cache_tokens": null,
+          "output_tokens": null,
+          "estimated_usd": null,
+          "passed": false
+        },
+        {
+          "arm": "bare",
+          "task": "log-summary-date-ranges",
+          "trial": "log-summary-date-ranges__W8dfvNS",
+          "result_path": "$HOME/.local/share/terminal-bench/comparison-20261117-070328/jobs/bare/log-summary-date-ranges__W8dfvNS/result.json",
+          "reward": null,
+          "exception": "NetworkConnectionError",
+          "agent_seconds": null,
+          "total_seconds": 142.291704,
+          "tests": null,
+          "task_id": {
+            "git_url": "https://github.com/laude-institute/terminal-bench-2.git",
+            "git_commit_id": "69671fbaac6d67a7ef0dfec016cc38a64ef7a77c",
+            "path": "log-summary-date-ranges"
+          },
+          "agent_info": {
+            "name": "pi",
+            "version": "1.5.2",
+            "model_info": {
+              "name": "gpt-6.1-sol",
+              "provider": "openai"
+            }
+          },
+          "reasoning_effort": "low",
+          "setup_seconds": 130.692991,
+          "input_tokens": null,
+          "cache_tokens": null,
+          "output_tokens": null,
+          "estimated_usd": null,
+          "passed": false
+        },
+        {
+          "arm": "bare",
+          "task": "multi-source-data-merger",
+          "trial": "multi-source-data-merger__HD7wzmE",
+          "result_path": "$HOME/.local/share/terminal-bench/comparison-20261117-070328/jobs/bare/multi-source-data-merger__HD7wzmE/result.json",
+          "reward": null,
+          "exception": "NetworkConnectionError",
+          "agent_seconds": null,
+          "total_seconds": 145.712406,
+          "tests": null,
+          "task_id": {
+            "git_url": "https://github.com/laude-institute/terminal-bench-2.git",
+            "git_commit_id": "69671fbaac6d67a7ef0dfec016cc38a64ef7a77c",
+            "path": "multi-source-data-merger"
+          },
+          "agent_info": {
+            "name": "pi",
+            "version": "1.5.2",
+            "model_info": {
+              "name": "gpt-6.1-sol",
+              "provider": "openai"
+            }
+          },
+          "reasoning_effort": "low",
+          "setup_seconds": 133.806887,
+          "input_tokens": null,
+          "cache_tokens": null,
+          "output_tokens": null,
+          "estimated_usd": null,
+          "passed": false
+        },
+        {
+          "arm": "bare",
+          "task": "nginx-request-logging",
+          "trial": "nginx-request-logging__FV8Gito",
+          "result_path": "$HOME/.local/share/terminal-bench/comparison-20261117-070328/jobs/bare/nginx-request-logging__FV8Gito/result.json",
+          "reward": null,
+          "exception": "NonZeroAgentExitCodeError",
+          "agent_seconds": null,
+          "total_seconds": 1016.009668,
+          "tests": null,
+          "task_id": {
+            "git_url": "https://github.com/laude-institute/terminal-bench-2.git",
+            "git_commit_id": "69671fbaac6d67a7ef0dfec016cc38a64ef7a77c",
+            "path": "nginx-request-logging"
+          },
+          "agent_info": {
+            "name": "pi",
+            "version": "1.5.2",
+            "model_info": {
+              "name": "gpt-6.1-sol",
+              "provider": "openai"
+            }
+          },
+          "reasoning_effort": "low",
+          "setup_seconds": 1004.455142,
+          "input_tokens": null,
+          "cache_tokens": null,
+          "output_tokens": null,
+          "estimated_usd": null,
+          "passed": false
+        },
+        {
+          "arm": "bare",
+          "task": "sqlite-db-truncate",
+          "trial": "sqlite-db-truncate__pQ5rbom",
+          "result_path": "$HOME/.local/share/terminal-bench/comparison-20261117-070328/jobs/bare/sqlite-db-truncate__pQ5rbom/result.json",
+          "reward": null,
+          "exception": "AgentSetupTimeoutError",
+          "agent_seconds": null,
+          "total_seconds": 1093.484736,
+          "tests": null,
+          "task_id": {
+            "git_url": "https://github.com/laude-institute/terminal-bench-2.git",
+            "git_commit_id": "69671fbaac6d67a7ef0dfec016cc38a64ef7a77c",
+            "path": "sqlite-db-truncate"
+          },
+          "agent_info": {
+            "name": "pi",
+            "version": "1.5.2",
+            "model_info": {
+              "name": "gpt-6.1-sol",
+              "provider": "openai"
+            }
+          },
+          "reasoning_effort": "low",
+          "setup_seconds": 1081.118914,
+          "input_tokens": null,
+          "cache_tokens": null,
+          "output_tokens": null,
+          "estimated_usd": null,
+          "passed": false
+        },
+        {
+          "arm": "codex",
+          "task": "cancel-async-tasks",
+          "trial": "cancel-async-tasks__ybeKay5",
+          "result_path": "$HOME/.local/share/terminal-bench/comparison-20261117-070328/jobs/codex/cancel-async-tasks__ybeKay5/result.json",
+          "reward": null,
+          "exception": "NonZeroAgentExitCodeError",
+          "agent_seconds": null,
+          "total_seconds": 21.196515,
+          "tests": null,
+          "task_id": {
+            "git_url": "https://github.com/laude-institute/terminal-bench-2.git",
+            "git_commit_id": "69671fbaac6d67a7ef0dfec016cc38a64ef7a77c",
+            "path": "cancel-async-tasks"
+          },
+          "agent_info": {
+            "name": "codex",
+            "version": "0.169.0",
+            "model_info": {
+              "name": "gpt-6.1-sol",
+              "provider": "openai"
+            }
+          },
+          "reasoning_effort": "low",
+          "setup_seconds": 9.720862,
+          "input_tokens": null,
+          "cache_tokens": null,
+          "output_tokens": null,
+          "estimated_usd": null,
+          "passed": false
+        },
+        {
+          "arm": "codex",
+          "task": "log-summary-date-ranges",
+          "trial": "log-summary-date-ranges__yerSu3B",
+          "result_path": "$HOME/.local/share/terminal-bench/comparison-20261117-070328/jobs/codex/log-summary-date-ranges__yerSu3B/result.json",
+          "reward": null,
+          "exception": "NetworkConnectionError",
+          "agent_seconds": null,
+          "total_seconds": 145.645758,
+          "tests": null,
+          "task_id": {
+            "git_url": "https://github.com/laude-institute/terminal-bench-2.git",
+            "git_commit_id": "69671fbaac6d67a7ef0dfec016cc38a64ef7a77c",
+            "path": "log-summary-date-ranges"
+          },
+          "agent_info": {
+            "name": "codex",
+            "version": "0.169.0",
+            "model_info": {
+              "name": "gpt-6.1-sol",
+              "provider": "openai"
+            }
+          },
+          "reasoning_effort": "low",
+          "setup_seconds": 134.11129300000002,
+          "input_tokens": null,
+          "cache_tokens": null,
+          "output_tokens": null,
+          "estimated_usd": null,
+          "passed": false
+        },
+        {
+          "arm": "codex",
+          "task": "multi-source-data-merger",
+          "trial": "multi-source-data-merger__VaYeRTP",
+          "result_path": "$HOME/.local/share/terminal-bench/comparison-20261117-070328/jobs/codex/multi-source-data-merger__VaYeRTP/result.json",
+          "reward": null,
+          "exception": "NetworkConnectionError",
+          "agent_seconds": null,
+          "total_seconds": 149.060391,
+          "tests": null,
+          "task_id": {
+            "git_url": "https://github.com/laude-institute/terminal-bench-2.git",
+            "git_commit_id": "69671fbaac6d67a7ef0dfec016cc38a64ef7a77c",
+            "path": "multi-source-data-merger"
+          },
+          "agent_info": {
+            "name": "codex",
+            "version": "0.169.0",
+            "model_info": {
+              "name": "gpt-6.1-sol",
+              "provider": "openai"
+            }
+          },
+          "reasoning_effort": "low",
+          "setup_seconds": 137.210867,
+          "input_tokens": null,
+          "cache_tokens": null,
+          "output_tokens": null,
+          "estimated_usd": null,
+          "passed": false
+        },
+        {
+          "arm": "codex",
+          "task": "nginx-request-logging",
+          "trial": "nginx-request-logging__nLLkaeH",
+          "result_path": "$HOME/.local/share/terminal-bench/comparison-20261117-070328/jobs/codex/nginx-request-logging__nLLkaeH/result.json",
+          "reward": null,
+          "exception": "NonZeroAgentExitCodeError",
+          "agent_seconds": null,
+          "total_seconds": 1002.574536,
+          "tests": null,
+          "task_id": {
+            "git_url": "https://github.com/laude-institute/terminal-bench-2.git",
+            "git_commit_id": "69671fbaac6d67a7ef0dfec016cc38a64ef7a77c",
+            "path": "nginx-request-logging"
+          },
+          "agent_info": {
+            "name": "codex",
+            "version": "0.169.0",
+            "model_info": {
+              "name": "gpt-6.1-sol",
+              "provider": "openai"
+            }
+          },
+          "reasoning_effort": "low",
+          "setup_seconds": 990.811733,
+          "input_tokens": null,
+          "cache_tokens": null,
+          "output_tokens": null,
+          "estimated_usd": null,
+          "passed": false
+        },
+        {
+          "arm": "codex",
+          "task": "sqlite-db-truncate",
+          "trial": "sqlite-db-truncate__R39T7ia",
+          "result_path": "$HOME/.local/share/terminal-bench/comparison-20261117-070328/jobs/codex/sqlite-db-truncate__R39T7ia/result.json",
+          "reward": null,
+          "exception": "AgentSetupTimeoutError",
+          "agent_seconds": null,
+          "total_seconds": 1093.334108,
+          "tests": null,
+          "task_id": {
+            "git_url": "https://github.com/laude-institute/terminal-bench-2.git",
+            "git_commit_id": "69671fbaac6d67a7ef0dfec016cc38a64ef7a77c",
+            "path": "sqlite-db-truncate"
+          },
+          "agent_info": {
+            "name": "codex",
+            "version": "0.169.0",
+            "model_info": {
+              "name": "gpt-6.1-sol",
+              "provider": "openai"
+            }
+          },
+          "reasoning_effort": "low",
+          "setup_seconds": 1081.1267890000001,
+          "input_tokens": null,
+          "cache_tokens": null,
+          "output_tokens": null,
+          "estimated_usd": null,
+          "passed": false
+        },
+        {
+          "arm": "configured",
+          "task": "cancel-async-tasks",
+          "trial": "cancel-async-tasks__yGtMMLt",
+          "result_path": "$HOME/.local/share/terminal-bench/comparison-20261117-070328/jobs/configured/cancel-async-tasks__yGtMMLt/result.json",
+          "reward": null,
+          "exception": "NonZeroAgentExitCodeError",
+          "agent_seconds": null,
+          "total_seconds": 21.049472,
+          "tests": null,
+          "task_id": {
+            "git_url": "https://github.com/laude-institute/terminal-bench-2.git",
+            "git_commit_id": "69671fbaac6d67a7ef0dfec016cc38a64ef7a77c",
+            "path": "cancel-async-tasks"
+          },
+          "agent_info": {
+            "name": "pi",
+            "version": "1.5.2",
+            "model_info": {
+              "name": "gpt-6.1-sol",
+              "provider": "openai"
+            }
+          },
+          "reasoning_effort": "low",
+          "setup_seconds": 9.677299000000001,
+          "input_tokens": null,
+          "cache_tokens": null,
+          "output_tokens": null,
+          "estimated_usd": null,
+          "passed": false
+        },
+        {
+          "arm": "configured",
+          "task": "log-summary-date-ranges",
+          "trial": "log-summary-date-ranges__YyKCQEo",
+          "result_path": "$HOME/.local/share/terminal-bench/comparison-20261117-070328/jobs/configured/log-summary-date-ranges__YyKCQEo/result.json",
+          "reward": null,
+          "exception": "NetworkConnectionError",
+          "agent_seconds": null,
+          "total_seconds": 147.039782,
+          "tests": null,
+          "task_id": {
+            "git_url": "https://github.com/laude-institute/terminal-bench-2.git",
+            "git_commit_id": "69671fbaac6d67a7ef0dfec016cc38a64ef7a77c",
+            "path": "log-summary-date-ranges"
+          },
+          "agent_info": {
+            "name": "pi",
+            "version": "1.5.2",
+            "model_info": {
+              "name": "gpt-6.1-sol",
+              "provider": "openai"
+            }
+          },
+          "reasoning_effort": "low",
+          "setup_seconds": 135.504452,
+          "input_tokens": null,
+          "cache_tokens": null,
+          "output_tokens": null,
+          "estimated_usd": null,
+          "passed": false
+        },
+        {
+          "arm": "configured",
+          "task": "multi-source-data-merger",
+          "trial": "multi-source-data-merger__HNaETB5",
+          "result_path": "$HOME/.local/share/terminal-bench/comparison-20261117-070328/jobs/configured/multi-source-data-merger__HNaETB5/result.json",
+          "reward": null,
+          "exception": "NetworkConnectionError",
+          "agent_seconds": null,
+          "total_seconds": 153.350709,
+          "tests": null,
+          "task_id": {
+            "git_url": "https://github.com/laude-institute/terminal-bench-2.git",
+            "git_commit_id": "69671fbaac6d67a7ef0dfec016cc38a64ef7a77c",
+            "path": "multi-source-data-merger"
+          },
+          "agent_info": {
+            "name": "pi",
+            "version": "1.5.2",
+            "model_info": {
+              "name": "gpt-6.1-sol",
+              "provider": "openai"
+            }
+          },
+          "reasoning_effort": "low",
+          "setup_seconds": 141.48166899999998,
+          "input_tokens": null,
+          "cache_tokens": null,
+          "output_tokens": null,
+          "estimated_usd": null,
+          "passed": false
+        },
+        {
+          "arm": "configured",
+          "task": "nginx-request-logging",
+          "trial": "nginx-request-logging__4rMAgya",
+          "result_path": "$HOME/.local/share/terminal-bench/comparison-20261117-070328/jobs/configured/nginx-request-logging__4rMAgya/result.json",
+          "reward": null,
+          "exception": "NonZeroAgentExitCodeError",
+          "agent_seconds": null,
+          "total_seconds": 1084.183137,
+          "tests": null,
+          "task_id": {
+            "git_url": "https://github.com/laude-institute/terminal-bench-2.git",
+            "git_commit_id": "69671fbaac6d67a7ef0dfec016cc38a64ef7a77c",
+            "path": "nginx-request-logging"
+          },
+          "agent_info": {
+            "name": "pi",
+            "version": "1.5.2",
+            "model_info": {
+              "name": "gpt-6.1-sol",
+              "provider": "openai"
+            }
+          },
+          "reasoning_effort": "low",
+          "setup_seconds": 1072.36081,
+          "input_tokens": null,
+          "cache_tokens": null,
+          "output_tokens": null,
+          "estimated_usd": null,
+          "passed": false
+        },
+        {
+          "arm": "configured",
+          "task": "sqlite-db-truncate",
+          "trial": "sqlite-db-truncate__SgjqpKB",
+          "result_path": "$HOME/.local/share/terminal-bench/comparison-20261117-070328/jobs/configured/sqlite-db-truncate__SgjqpKB/result.json",
+          "reward": null,
+          "exception": "NonZeroAgentExitCodeError",
+          "agent_seconds": null,
+          "total_seconds": 59.39145,
+          "tests": null,
+          "task_id": {
+            "git_url": "https://github.com/laude-institute/terminal-bench-2.git",
+            "git_commit_id": "69671fbaac6d67a7ef0dfec016cc38a64ef7a77c",
+            "path": "sqlite-db-truncate"
+          },
+          "agent_info": {
+            "name": "pi",
+            "version": "1.5.2",
+            "model_info": {
+              "name": "gpt-6.1-sol",
+              "provider": "openai"
+            }
+          },
+          "reasoning_effort": "low",
+          "setup_seconds": 47.990459,
+          "input_tokens": null,
+          "cache_tokens": null,
+          "output_tokens": null,
+          "estimated_usd": null,
+          "passed": false
+        }
+      ]
+    },
+    {
+      "run": "comparison-20261117-070328-recovery",
+      "execution": {
+        "started_at": "2026-11-17T06:27:07.037601+00:00",
+        "parallel_arms": 3,
+        "task_concurrency_per_arm": 2,
+        "max_task_containers": 6,
+        "finished_at": "2026-11-17T07:04:53.262723+00:00",
+        "wall_seconds": 2266.225122,
+        "exit_codes": {
+          "configured": 0,
+          "bare": 0,
+          "codex": 0
+        }
+      },
+      "snapshot_sha256": "ed9b68b517d3b7454c6dabb18a989135819a25d59c6a57e04a446930cfa114f4",
+      "exception_counts": {
+        "NetworkConnectionError": 6,
+        "AgentSetupTimeoutError": 6,
+        "NonZeroAgentExitCodeError": 3
+      },
+      "trials": [
+        {
+          "arm": "bare",
+          "task": "cancel-async-tasks",
+          "trial": "cancel-async-tasks__L8qo7mE",
+          "result_path": "$HOME/.local/share/terminal-bench/comparison-20261117-070328-recovery/jobs/bare/cancel-async-tasks__L8qo7mE/result.json",
+          "reward": null,
+          "exception": "NetworkConnectionError",
+          "agent_seconds": null,
+          "total_seconds": 1142.611016,
+          "tests": null,
+          "task_id": {
+            "git_url": "https://github.com/laude-institute/terminal-bench-2.git",
+            "git_commit_id": "69671fbaac6d67a7ef0dfec016cc38a64ef7a77c",
+            "path": "cancel-async-tasks"
+          },
+          "agent_info": {
+            "name": "pi",
+            "version": "1.5.2",
+            "model_info": {
+              "name": "gpt-6.1-sol",
+              "provider": "openai"
+            }
+          },
+          "reasoning_effort": "low",
+          "setup_seconds": 1130.923069,
+          "input_tokens": null,
+          "cache_tokens": null,
+          "output_tokens": null,
+          "estimated_usd": null,
+          "passed": false
+        },
+        {
+          "arm": "bare",
+          "task": "log-summary-date-ranges",
+          "trial": "log-summary-date-ranges__ekYMYKM",
+          "result_path": "$HOME/.local/share/terminal-bench/comparison-20261117-070328-recovery/jobs/bare/log-summary-date-ranges__ekYMYKM/result.json",
+          "reward": null,
+          "exception": "AgentSetupTimeoutError",
+          "agent_seconds": null,
+          "total_seconds": 1093.298331,
+          "tests": null,
+          "task_id": {
+            "git_url": "https://github.com/laude-institute/terminal-bench-2.git",
+            "git_commit_id": "69671fbaac6d67a7ef0dfec016cc38a64ef7a77c",
+            "path": "log-summary-date-ranges"
+          },
+          "agent_info": {
+            "name": "pi",
+            "version": "1.5.2",
+            "model_info": {
+              "name": "gpt-6.1-sol",
+              "provider": "openai"
+            }
+          },
+          "reasoning_effort": "low",
+          "setup_seconds": 1081.2813239999998,
+          "input_tokens": null,
+          "cache_tokens": null,
+          "output_tokens": null,
+          "estimated_usd": null,
+          "passed": false
+        },
+        {
+          "arm": "bare",
+          "task": "multi-source-data-merger",
+          "trial": "multi-source-data-merger__dq8iZCQ",
+          "result_path": "$HOME/.local/share/terminal-bench/comparison-20261117-070328-recovery/jobs/bare/multi-source-data-merger__dq8iZCQ/result.json",
+          "reward": null,
+          "exception": "AgentSetupTimeoutError",
+          "agent_seconds": null,
+          "total_seconds": 1093.168257,
+          "tests": null,
+          "task_id": {
+            "git_url": "https://github.com/laude-institute/terminal-bench-2.git",
+            "git_commit_id": "69671fbaac6d67a7ef0dfec016cc38a64ef7a77c",
+            "path": "multi-source-data-merger"
+          },
+          "agent_info": {
+            "name": "pi",
+            "version": "1.5.2",
+            "model_info": {
+              "name": "gpt-6.1-sol",
+              "provider": "openai"
+            }
+          },
+          "reasoning_effort": "low",
+          "setup_seconds": 1081.250154,
+          "input_tokens": null,
+          "cache_tokens": null,
+          "output_tokens": null,
+          "estimated_usd": null,
+          "passed": false
+        },
+        {
+          "arm": "bare",
+          "task": "nginx-request-logging",
+          "trial": "nginx-request-logging__xYTBCq9",
+          "result_path": "$HOME/.local/share/terminal-bench/comparison-20261117-070328-recovery/jobs/bare/nginx-request-logging__xYTBCq9/result.json",
+          "reward": null,
+          "exception": "NetworkConnectionError",
+          "agent_seconds": null,
+          "total_seconds": 1142.670202,
+          "tests": null,
+          "task_id": {
+            "git_url": "https://github.com/laude-institute/terminal-bench-2.git",
+            "git_commit_id": "69671fbaac6d67a7ef0dfec016cc38a64ef7a77c",
+            "path": "nginx-request-logging"
+          },
+          "agent_info": {
+            "name": "pi",
+            "version": "1.5.2",
+            "model_info": {
+              "name": "gpt-6.1-sol",
+              "provider": "openai"
+            }
+          },
+          "reasoning_effort": "low",
+          "setup_seconds": 1130.965174,
+          "input_tokens": null,
+          "cache_tokens": null,
+          "output_tokens": null,
+          "estimated_usd": null,
+          "passed": false
+        },
+        {
+          "arm": "bare",
+          "task": "sqlite-db-truncate",
+          "trial": "sqlite-db-truncate__7Pek9m3",
+          "result_path": "$HOME/.local/share/terminal-bench/comparison-20261117-070328-recovery/jobs/bare/sqlite-db-truncate__7Pek9m3/result.json",
+          "reward": null,
+          "exception": "NonZeroAgentExitCodeError",
+          "agent_seconds": null,
+          "total_seconds": 21.524743,
+          "tests": null,
+          "task_id": {
+            "git_url": "https://github.com/laude-institute/terminal-bench-2.git",
+            "git_commit_id": "69671fbaac6d67a7ef0dfec016cc38a64ef7a77c",
+            "path": "sqlite-db-truncate"
+          },
+          "agent_info": {
+            "name": "pi",
+            "version": "1.5.2",
+            "model_info": {
+              "name": "gpt-6.1-sol",
+              "provider": "openai"
+            }
+          },
+          "reasoning_effort": "low",
+          "setup_seconds": 10.045667,
+          "input_tokens": null,
+          "cache_tokens": null,
+          "output_tokens": null,
+          "estimated_usd": null,
+          "passed": false
+        },
+        {
+          "arm": "codex",
+          "task": "cancel-async-tasks",
+          "trial": "cancel-async-tasks__uhJH7ap",
+          "result_path": "$HOME/.local/share/terminal-bench/comparison-20261117-070328-recovery/jobs/codex/cancel-async-tasks__uhJH7ap/result.json",
+          "reward": null,
+          "exception": "NetworkConnectionError",
+          "agent_seconds": null,
+          "total_seconds": 1142.517705,
+          "tests": null,
+          "task_id": {
+            "git_url": "https://github.com/laude-institute/terminal-bench-2.git",
+            "git_commit_id": "69671fbaac6d67a7ef0dfec016cc38a64ef7a77c",
+            "path": "cancel-async-tasks"
+          },
+          "agent_info": {
+            "name": "codex",
+            "version": "0.169.0",
+            "model_info": {
+              "name": "gpt-6.1-sol",
+              "provider": "openai"
+            }
+          },
+          "reasoning_effort": "low",
+          "setup_seconds": 1130.760989,
+          "input_tokens": null,
+          "cache_tokens": null,
+          "output_tokens": null,
+          "estimated_usd": null,
+          "passed": false
+        },
+        {
+          "arm": "codex",
+          "task": "log-summary-date-ranges",
+          "trial": "log-summary-date-ranges__CvdMe3r",
+          "result_path": "$HOME/.local/share/terminal-bench/comparison-20261117-070328-recovery/jobs/codex/log-summary-date-ranges__CvdMe3r/result.json",
+          "reward": null,
+          "exception": "AgentSetupTimeoutError",
+          "agent_seconds": null,
+          "total_seconds": 1093.592919,
+          "tests": null,
+          "task_id": {
+            "git_url": "https://github.com/laude-institute/terminal-bench-2.git",
+            "git_commit_id": "69671fbaac6d67a7ef0dfec016cc38a64ef7a77c",
+            "path": "log-summary-date-ranges"
+          },
+          "agent_info": {
+            "name": "codex",
+            "version": "0.169.0",
+            "model_info": {
+              "name": "gpt-6.1-sol",
+              "provider": "openai"
+            }
+          },
+          "reasoning_effort": "low",
+          "setup_seconds": 1081.282915,
+          "input_tokens": null,
+          "cache_tokens": null,
+          "output_tokens": null,
+          "estimated_usd": null,
+          "passed": false
+        },
+        {
+          "arm": "codex",
+          "task": "multi-source-data-merger",
+          "trial": "multi-source-data-merger__ntdSbZy",
+          "result_path": "$HOME/.local/share/terminal-bench/comparison-20261117-070328-recovery/jobs/codex/multi-source-data-merger__ntdSbZy/result.json",
+          "reward": null,
+          "exception": "AgentSetupTimeoutError",
+          "agent_seconds": null,
+          "total_seconds": 1093.642136,
+          "tests": null,
+          "task_id": {
+            "git_url": "https://github.com/laude-institute/terminal-bench-2.git",
+            "git_commit_id": "69671fbaac6d67a7ef0dfec016cc38a64ef7a77c",
+            "path": "multi-source-data-merger"
+          },
+          "agent_info": {
+            "name": "codex",
+            "version": "0.169.0",
+            "model_info": {
+              "name": "gpt-6.1-sol",
+              "provider": "openai"
+            }
+          },
+          "reasoning_effort": "low",
+          "setup_seconds": 1081.37717,
+          "input_tokens": null,
+          "cache_tokens": null,
+          "output_tokens": null,
+          "estimated_usd": null,
+          "passed": false
+        },
+        {
+          "arm": "codex",
+          "task": "nginx-request-logging",
+          "trial": "nginx-request-logging__mJ3FsME",
+          "result_path": "$HOME/.local/share/terminal-bench/comparison-20261117-070328-recovery/jobs/codex/nginx-request-logging__mJ3FsME/result.json",
+          "reward": null,
+          "exception": "NetworkConnectionError",
+          "agent_seconds": null,
+          "total_seconds": 1143.591418,
+          "tests": null,
+          "task_id": {
+            "git_url": "https://github.com/laude-institute/terminal-bench-2.git",
+            "git_commit_id": "69671fbaac6d67a7ef0dfec016cc38a64ef7a77c",
+            "path": "nginx-request-logging"
+          },
+          "agent_info": {
+            "name": "codex",
+            "version": "0.169.0",
+            "model_info": {
+              "name": "gpt-6.1-sol",
+              "provider": "openai"
+            }
+          },
+          "reasoning_effort": "low",
+          "setup_seconds": 1132.0958990000001,
+          "input_tokens": null,
+          "cache_tokens": null,
+          "output_tokens": null,
+          "estimated_usd": null,
+          "passed": false
+        },
+        {
+          "arm": "codex",
+          "task": "sqlite-db-truncate",
+          "trial": "sqlite-db-truncate__Lm7aXem",
+          "result_path": "$HOME/.local/share/terminal-bench/comparison-20261117-070328-recovery/jobs/codex/sqlite-db-truncate__Lm7aXem/result.json",
+          "reward": null,
+          "exception": "NonZeroAgentExitCodeError",
+          "agent_seconds": null,
+          "total_seconds": 21.401306,
+          "tests": null,
+          "task_id": {
+            "git_url": "https://github.com/laude-institute/terminal-bench-2.git",
+            "git_commit_id": "69671fbaac6d67a7ef0dfec016cc38a64ef7a77c",
+            "path": "sqlite-db-truncate"
+          },
+          "agent_info": {
+            "name": "codex",
+            "version": "0.169.0",
+            "model_info": {
+              "name": "gpt-6.1-sol",
+              "provider": "openai"
+            }
+          },
+          "reasoning_effort": "low",
+          "setup_seconds": 9.995709999999999,
+          "input_tokens": null,
+          "cache_tokens": null,
+          "output_tokens": null,
+          "estimated_usd": null,
+          "passed": false
+        },
+        {
+          "arm": "configured",
+          "task": "cancel-async-tasks",
+          "trial": "cancel-async-tasks__uDjPbs2",
+          "result_path": "$HOME/.local/share/terminal-bench/comparison-20261117-070328-recovery/jobs/configured/cancel-async-tasks__uDjPbs2/result.json",
+          "reward": null,
+          "exception": "NetworkConnectionError",
+          "agent_seconds": null,
+          "total_seconds": 1143.796535,
+          "tests": null,
+          "task_id": {
+            "git_url": "https://github.com/laude-institute/terminal-bench-2.git",
+            "git_commit_id": "69671fbaac6d67a7ef0dfec016cc38a64ef7a77c",
+            "path": "cancel-async-tasks"
+          },
+          "agent_info": {
+            "name": "pi",
+            "version": "1.5.2",
+            "model_info": {
+              "name": "gpt-6.1-sol",
+              "provider": "openai"
+            }
+          },
+          "reasoning_effort": "low",
+          "setup_seconds": 1132.3639409999998,
+          "input_tokens": null,
+          "cache_tokens": null,
+          "output_tokens": null,
+          "estimated_usd": null,
+          "passed": false
+        },
+        {
+          "arm": "configured",
+          "task": "log-summary-date-ranges",
+          "trial": "log-summary-date-ranges__o98YrBw",
+          "result_path": "$HOME/.local/share/terminal-bench/comparison-20261117-070328-recovery/jobs/configured/log-summary-date-ranges__o98YrBw/result.json",
+          "reward": null,
+          "exception": "AgentSetupTimeoutError",
+          "agent_seconds": null,
+          "total_seconds": 1093.357945,
+          "tests": null,
+          "task_id": {
+            "git_url": "https://github.com/laude-institute/terminal-bench-2.git",
+            "git_commit_id": "69671fbaac6d67a7ef0dfec016cc38a64ef7a77c",
+            "path": "log-summary-date-ranges"
+          },
+          "agent_info": {
+            "name": "pi",
+            "version": "1.5.2",
+            "model_info": {
+              "name": "gpt-6.1-sol",
+              "provider": "openai"
+            }
+          },
+          "reasoning_effort": "low",
+          "setup_seconds": 1081.3585249999999,
+          "input_tokens": null,
+          "cache_tokens": null,
+          "output_tokens": null,
+          "estimated_usd": null,
+          "passed": false
+        },
+        {
+          "arm": "configured",
+          "task": "multi-source-data-merger",
+          "trial": "multi-source-data-merger__kFcgaS6",
+          "result_path": "$HOME/.local/share/terminal-bench/comparison-20261117-070328-recovery/jobs/configured/multi-source-data-merger__kFcgaS6/result.json",
+          "reward": null,
+          "exception": "AgentSetupTimeoutError",
+          "agent_seconds": null,
+          "total_seconds": 1093.234722,
+          "tests": null,
+          "task_id": {
+            "git_url": "https://github.com/laude-institute/terminal-bench-2.git",
+            "git_commit_id": "69671fbaac6d67a7ef0dfec016cc38a64ef7a77c",
+            "path": "multi-source-data-merger"
+          },
+          "agent_info": {
+            "name": "pi",
+            "version": "1.5.2",
+            "model_info": {
+              "name": "gpt-6.1-sol",
+              "provider": "openai"
+            }
+          },
+          "reasoning_effort": "low",
+          "setup_seconds": 1081.377348,
+          "input_tokens": null,
+          "cache_tokens": null,
+          "output_tokens": null,
+          "estimated_usd": null,
+          "passed": false
+        },
+        {
+          "arm": "configured",
+          "task": "nginx-request-logging",
+          "trial": "nginx-request-logging__2vAZHr5",
+          "result_path": "$HOME/.local/share/terminal-bench/comparison-20261117-070328-recovery/jobs/configured/nginx-request-logging__2vAZHr5/result.json",
+          "reward": null,
+          "exception": "NetworkConnectionError",
+          "agent_seconds": null,
+          "total_seconds": 1143.145763,
+          "tests": null,
+          "task_id": {
+            "git_url": "https://github.com/laude-institute/terminal-bench-2.git",
+            "git_commit_id": "69671fbaac6d67a7ef0dfec016cc38a64ef7a77c",
+            "path": "nginx-request-logging"
+          },
+          "agent_info": {
+            "name": "pi",
+            "version": "1.5.2",
+            "model_info": {
+              "name": "gpt-6.1-sol",
+              "provider": "openai"
+            }
+          },
+          "reasoning_effort": "low",
+          "setup_seconds": 1131.6084720000001,
+          "input_tokens": null,
+          "cache_tokens": null,
+          "output_tokens": null,
+          "estimated_usd": null,
+          "passed": false
+        },
+        {
+          "arm": "configured",
+          "task": "sqlite-db-truncate",
+          "trial": "sqlite-db-truncate__6iabsow",
+          "result_path": "$HOME/.local/share/terminal-bench/comparison-20261117-070328-recovery/jobs/configured/sqlite-db-truncate__6iabsow/result.json",
+          "reward": null,
+          "exception": "NonZeroAgentExitCodeError",
+          "agent_seconds": null,
+          "total_seconds": 21.320523,
+          "tests": null,
+          "task_id": {
+            "git_url": "https://github.com/laude-institute/terminal-bench-2.git",
+            "git_commit_id": "69671fbaac6d67a7ef0dfec016cc38a64ef7a77c",
+            "path": "sqlite-db-truncate"
+          },
+          "agent_info": {
+            "name": "pi",
+            "version": "1.5.2",
+            "model_info": {
+              "name": "gpt-6.1-sol",
+              "provider": "openai"
+            }
+          },
+          "reasoning_effort": "low",
+          "setup_seconds": 9.974020999999999,
+          "input_tokens": null,
+          "cache_tokens": null,
+          "output_tokens": null,
+          "estimated_usd": null,
+          "passed": false
+        }
+      ]
+    }
+  ]
+}
