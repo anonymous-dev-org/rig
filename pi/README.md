@@ -185,8 +185,8 @@ subagent profiles:
 
 | Effort | Advisor 1 | Advisor 2 | Guidance |
 | --- | --- | --- | --- |
-| `low` | `anthropic/claude-opus-5-5`, minimal | `openai/gpt-6.1-sol`, low | Quick bounded decisions |
-| `medium` | `anthropic/claude-opus-5-5`, high | `openai/gpt-6.1-sol`, high | Substantial reasoning |
+| `low` | `pi-sub-anthropic/claude-opus-5-5`, minimal | `openai/gpt-6.1-sol`, low | Quick bounded decisions |
+| `medium` | `pi-sub-anthropic/claude-opus-5-5`, high | `openai/gpt-6.1-sol`, high | Substantial reasoning |
 | `hard` | `pi-sub-anthropic/claude-fable-5-2`, high | `openai/gpt-6-astra`, high | Difficult/high-stakes tradeoffs |
 
 Supply a self-contained task: advisors do not inherit the main conversation or
