@@ -21,6 +21,13 @@ class ConfiguredPiOptions(PiOptions):
 async def install_helpers(agent, environment):
     # Match Codex's helper packages across arms, including the configured Pi's
     # Bun dependency. These tools are available even to the bare-Pi arm.
+    # Apply the same container-local network workaround to all three arms.
+    # IPv4-only apt with bounded retries succeeded where default apt stalled.
+    await agent.exec_as_root(environment, command=(
+        "printf '%s\\n' 'Acquire::ForceIPv4 \"true\";' 'Acquire::Retries \"1\";' "
+        "'Acquire::http::Timeout \"15\";' 'APT::Install-Recommends \"false\";' "
+        "'APT::Update::Error-Mode \"any\";' > /etc/apt/apt.conf.d/99-benchmark-network"
+    ))
     await agent.ensure_system_dependencies(environment, ("curl", "bash", "nodejs", "npm", "ripgrep", "git", "unzip"))
     await agent.exec_as_agent(environment, command="curl -fsSL https://bun.com/install | bash -s 'bun-v1.4.4'")
     home = (await agent.exec_as_agent(environment, command='printf %s "$HOME"')).stdout.strip()
