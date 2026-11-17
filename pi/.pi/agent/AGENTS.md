@@ -164,6 +164,8 @@ These rules cut wasted tool time. They never justify skipping evidence or verifi
 - Before a call, decide what you need: filenames, matching lines, selected fields, or complete evidence. Ask for that form instead of printing everything and relying on truncation.
 - For a narrow question about JSON or JSONL, select records and fields with `jq` or a short parser instead of printing whole objects.
 - For long output, such as a build or test run, save it all to a log under `.local/` in the project and print the exit status, a short result, and the log path. Create `.local/` if it is missing, and never commit it. On failure, read the log around the error; the cause is often not in the last lines.
+- Numbered `edit` and `write` results already show resulting content after best-effort formatting and establish usable edit snapshots at those coordinates. Use the returned numbers directly; do not reread merely to verify success. Read for omitted content, more context, rejected targets, or a session reset. Never replay a successful mutation to recover bounded preview output.
+
 
 ### Long-running commands
 

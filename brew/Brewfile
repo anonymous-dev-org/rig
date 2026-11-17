@@ -1,6 +1,5 @@
 tap "nikitabobko/tap"
 tap "oven-sh/bun"
-brew "biome"
 brew "gh"
 brew "glab"
 brew "git-delta"

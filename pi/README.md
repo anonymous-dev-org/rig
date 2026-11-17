@@ -110,16 +110,16 @@ security sandbox. Do not expose untrusted pages to privileged secrets casually.
 
 Full Pi sync deploys `extensions/line-file-tools/index.ts` as the default `read`,
 `edit` and `write` implementation. Text reads return numbered lines with inclusive
-`start/end` ranges. Edits use a line-number mapping or `splices` for inserting,
-deleting and replacing ranges; the harness checks private per-line hashes,
-so the model supplies neither hashes nor repeated old text. Attempt known edits
-directly, including after insertions/deletions; reread relevant lines only when
-context is needed or a target is rejected as stale/missing. Successful edits
-return `Edit succeeded.`, with a notice if project-configured formatting was queued.
-Both `edit` and `write` format in the background when the project opts in; later
-operations on that file wait. Harmless spacing changes keep matching snapshots
-where recognised; real text changes or moved lines still reject. `write` retains
-stock creation/overwrite behaviour and, like `bash`, is not protected by line checks.
+`start/end` ranges. Edits use `splices` for inserting, deleting and replacing
+ranges; the harness checks private per-line hashes, so the model supplies neither
+hashes nor repeated old text. Successful edits return numbered affected resulting
+ranges, including deletion boundaries; writes return numbered written content.
+Both await best-effort project formatting, so returned coordinates are final and
+have usable edit snapshots. Use them directly without a verification read; read
+for omitted content, more context, rejection or session reset. Mutation previews
+are bounded to 50 KiB/2000 lines per call, without failing a completed mutation.
+`write` retains stock creation/overwrite behaviour and, like `bash`, is not
+protected by line checks.
 
 Supported images go through Pi's stock image processing and return attachments;
 codemode receives the stock image object or a numbered text string. This is not
