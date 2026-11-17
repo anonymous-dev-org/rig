@@ -78,7 +78,7 @@ export default function (pi: ExtensionAPI) {
           const reviewing = footerData.getExtensionStatuses().get("rig-paired-review");
 const deepReviewing = footerData.getExtensionStatuses().get("rig-deep-review");
           const turns = footerData.getExtensionStatuses().get("rig-paired-review-turns");
-const right = (deepReviewing ? theme.fg("accent", `${deepReviewing}  `) : "") +
+const right = (deepReviewing ? theme.fg("accent", "reviewing  ") : "") +
 (turns ? theme.fg("dim", `${turns}  `) : "") +
             (reviewing ? theme.fg("accent", `${reviewing}  `) : "") +
             theme.fg(contextColor, context) +
