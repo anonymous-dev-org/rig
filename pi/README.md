@@ -231,10 +231,15 @@ safely; they are not automatically retried as smaller chunks.
 
 ## On-demand deep review
 
-Run `/review <low|medium|hard> [message]` to launch Astra (`openai/gpt-6-astra`)
-and Fable (`pi-sub-anthropic/claude-fable-5-2`) in parallel in the background.
-Effort is required: `low`, `medium`, and `hard` select low, medium, and high
-thinking respectively for both models. The models stay the same at every effort.
+Run `/review <low|medium|hard> [message]` to launch two reviewers in parallel
+in the background. Effort is required and selects these models and thinking levels:
+
+| Effort | Reviewer 1 | Reviewer 2 |
+| --- | --- | --- |
+| `low` | `anthropic/claude-opus-5-5`, minimal | `openai/gpt-6.1-sol`, low |
+| `medium` | `anthropic/claude-opus-5-5`, high | `openai/gpt-6.1-sol`, high |
+| `hard` | `pi-sub-anthropic/claude-fable-5-2`, high | `openai/gpt-6-astra`, high |
+
 For example, `/review hard Focus on cancellation and session switching` adds that
 message to both reviewers' prompts. Without a message, no extra instructions are added.
 Its shared system prompt is `~/.pi/agent/DEEP_REVIEW.md`; its extension is `deep-review.ts`.
