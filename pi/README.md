@@ -230,6 +230,31 @@ later handler to override the result. Recognized overflow errors are handled bot
 as provider error responses and thrown exceptions. Unrecognized exceptions stop
 safely; they are not automatically retried as smaller chunks.
 
+## On-demand deep review
+
+Run `/review` to launch Astra (`openai/gpt-6-astra`) and Fable
+(`pi-sub-anthropic/claude-fable-5-2`) in parallel, both with high thinking.
+The command runs in the background and leaves the automatic Sol review unchanged.
+Its prompt is `~/.pi/agent/DEEP_REVIEW.md`; its extension is `deep-review.ts`.
+
+Both reviewers receive the worktree path, session transcript path, and captured
+branch entry ID. They independently read the conversation and inspect relevant
+source and Git changes, including committed work identified from the conversation.
+The restricted Git tool supports inspection only; reviewers cannot edit files,
+run arbitrary shell commands, or execute tests.
+
+Each report covers architecture analysis, bug findings, and code quality. Findings
+must explain the evidence, consequences, and smallest corrective action; potential
+issues are distinguished from confirmed bugs. Each successful report is delivered
+verbatim as a separate developer-feedback message, even if the other reviewer fails.
+No extra prefix or summary is added to the report body.
+
+Only one `/review` run can be active at once. Session navigation, shutdown/reload,
+and manual compaction cancel pending work and prevent stale delivery. Failures are
+visible with no model fallback. Reviewer usage is recorded in the parent session;
+review activity and final reports are logged privately under `~/.pi/agent/logs/`.
+Run `/reload` after installing the extension, then `/review` in a saved session.
+
 ## Automatic pair-programming review
 
 Rig's `paired-review.ts` extension launches one fresh read-only reviewer:

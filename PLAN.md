@@ -1,12 +1,15 @@
 ## Overview
-- Replace paired automatic review with one Sol 6.1 high-thinking reviewer every 40 assistant responses.
-- Score only scope/goal focus, simplicity, and code quality; gather evidence from the session transcript and source. Deliver reviewer text verbatim as developer feedback.
-- Keep background execution, cancellation, and usage tracking. No permanent test infrastructure.
+- Add /review for two independent deep reviews: Astra and Fable, high thinking, running in parallel.
+- Review architecture, bugs/potential issues, and code quality using the session transcript and worktree. Deliver each final report verbatim as developer feedback.
+- Preserve the automatic Sol review. No permanent test infrastructure.
 
 ## Todos
-- [x] Single-reviewer scoring works end to end.
-  - Requirement: openai/gpt-6.1-sol with high thinking; transcript path and captured branch entry; read-only context gathering; three explained /10 scores; unchanged final text delivered every review.
-  - Definition of done: disposable runtime checks cover cadence, reviewer configuration, transcript pointers, exact output delivery, cancellation and failures; diff checked and committed.
-  - Verified: Bun build passed; disposable harness executed extension handlers with a simulated Agent and passed cadence/non-assistant exclusion, one reviewer/high thinking, read-only tools, transcript/entry pointers, whitespace-preserving output, usage recording, system projection, missing transcript/model, empty result, overlap prevention, and navigation cancellation/stale suppression. Whitespace check passed.
-  - Applied only the extension and WATCHDOG.md to live ~/.pi/agent; byte comparisons match repository. Backup: /tmp/pi-review-backup.A4jDCj. /reload required to activate extension changes.
-  - Limits: no paid model call or full TypeScript typecheck; actual scoring quality and autonomous transcript navigation remain to observe on the next scheduled review. Scores are prompt-enforced, not parsed or rewritten, so output remains verbatim.
+- [x] /review works end to end and is available locally.
+  - Requirement: transcript path and captured branch entry, worktree context, autonomous read-only source/Git inspection, parallel reviewers, exact output delivery, cancellation and usage accounting.
+  - Definition of done: build and disposable runtime checks cover command execution, safe Git access, both reviewers, independent failure/delivery, cancellation, and message projection; local copies match; commit changes.
+  - Implemented: new deep-review.ts and DEEP_REVIEW.md; deployment manifest, Git allowlist, and docs updated. Existing automatic Sol extension unchanged.
+  - Assumption: high thinking for both models for a deep review; no numeric scores because this request asks for substantive analysis and findings.
+  - Verified: child Bun build and strict TypeScript check passed. Parent actual Pi loader registered /review without errors. Disposable simulated-Agent checks passed parallel/high configuration, transcript/worktree pointers, exact independent delivery, usage/system projection, duplicate rejection, unavailable/failed/empty peer isolation, missing transcript/prompt, argument rejection, lifecycle cancellation/stale suppression, usage attribution and child exclusion.
+  - Verified: Git tool executed against a disposable repository for staged/unstaged/historical diffs, untracked status, log/show, targeted paths and pagination; rejected injected revision options and invalid parameter combinations, reported failures/truncation, left worktree unchanged. Manifest syntax and whitespace checks passed.
+  - Installed new extension and prompt in ~/.pi/agent with private permissions; byte comparisons match repository. Run /reload then /review to use it.
+  - Limits: no paid reviewer calls; actual model findings remain to observe. Live worktree may change during review. Git output above 16 MiB requires path narrowing; individual lines above 40 KB cannot be displayed by the Git tool. Prompt requires honest evidence limitations.
