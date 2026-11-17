@@ -62,6 +62,19 @@ This replaces rules rather than adding another instruction section. Preserve saf
 
 A disposable ordinary-Bash check of this pattern passed three cases: early required-stage failure returned 1, a failed pipeline returned 1, and successful work returned 0, despite trailing log display. That proves these shell examples, not Pi-tool integration, worker compliance or performance improvement.
 
+## Stage 1 repository patch and local checks
+
+The two replacement bullets above are now applied to `pi/.pi/agent/AGENTS.md`. No other instruction, worker prompt or runtime setting changed.
+
+- Actual Pi Bash-tool checks passed: early required-stage failure returned **7**, pipeline failure returned **9**, successful required stages returned **0**, and independent checks continued but collectively returned **1**. Trailing log display did not replace any result; dependent stages after failure did not run.
+- An offline check using the installed Pi prompt builder and pi-subagents agent discovery/prompt rewriting confirmed the parent receives both rules. The repository worker resolves to `systemPromptMode: replace`, `inheritProjectContext: false` and `inheritGlobalContext: false`, so **the worker does not receive either rule**. This checks prompt construction, not model compliance; no provider request was made.
+- Worker coverage remains unresolved. Preserve its isolated context and, with approval, add focused execution guidance to `worker.md` rather than enable inheritance of all global instructions. The approved first patch explicitly excluded worker-prompt changes.
+- `node --test pi/sync-settings.test.mjs` returned **1**: **41 passed, 2 failed**. The unchanged suite expects a Playwright `--headless` argument absent from the existing defaults and references the absent legacy `init.sh`. Neither failure involves the edited instructions; do not treat this suite as passing or repair those separate issues here.
+- Local diagnostic logs are under the ignored `.local/stage1-*` paths. The first offline prompt-check attempt could not resolve the host's `pi-ai` peer dependency; explicitly supplying the installed host module directory through `NODE_PATH` allowed the check to complete without package or configuration changes.
+
+No live synchronization, solver comparison or performance claim accompanies this patch. Resolve worker coverage before treating stage 1 as complete for delegated work.
+
+
 ## Later priorities: separate candidates, not a bundled patch
 
 | Rank | Candidate | How and guardrail |
@@ -71,9 +84,9 @@ A disposable ordinary-Bash check of this pattern passed three cases: early requi
 | 4 | Repair measurement and benchmark prerequisites separately | Persist tool-side web-helper usage. Investigate FEAL's missing `stdint.h`, Git-webserver HTTP 404s and Caffe completion without changing historical scores or calling incomplete work successful. Do not assume the APT workaround caused the header failure. |
 | 5 | Consider narrow context consolidation after measurement | Consolidate repeated prose and make worker documentation lookup, React guidance and report detail conditional where appropriate. Preserve useful engineering requirements. The proof and fix-git evidence do not support a promised speedup from shorter instructions. |
 
-## Proposed validation, not authorized execution
+## Proposed solver comparison—not authorized
 
-First check the failure pattern through the actual Pi tool, including early failure, a failing pipeline and trailing diagnostics. Confirm workers inherit the revised instruction.
+The local instruction checks are recorded above. Worker coverage remains unresolved; live synchronization and the solver comparison still require separate approval.
 
 Then compare the frozen configuration against the candidate on six tasks: `build-cython-ext`, `cobol-modernization`, `dna-assembly`, `prove-plus-comm`, `fix-git` and `extract-moves-from-video`. Pin model, low effort, package/runtime versions and resource limits; use fresh isolated artifacts and counterbalance arm order. One attempt per arm per comparison. Predeclare two additional paired repetitions each for fix-git, Cython and video, not retries until success. This is **24 solver trials total**: 12 initial plus 12 repeated.
 
