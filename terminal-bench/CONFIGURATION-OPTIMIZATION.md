@@ -93,12 +93,27 @@ Explicit user requests for delegation, councils and reviews are preserved; an in
 
 The offline prompt check passed and confirmed only the two opening delegation paragraphs changed, the new wording reaches the parent prompt, and stage-1 parent/worker guidance is intact. Log: `.local/stage2-delegation.CupSZb`. These walkthroughs and prompt checks do not establish future model choices or a timing improvement; the solver comparison remains separate.
 
-## Later priorities: separate candidates, not a bundled patch
+## Stage 3: resumable, resource-aware independent-item batches
+
+One matching batch-execution bullet is now present in both parent and worker instructions. It calls for a representative throughput sample, concurrency and thread limits within the job's real CPU/memory budget, progressive per-item outputs, and content/input/parameter/tool-identity validation before reuse. Missing, corrupt or stale work is recomputed, and completeness plus required end-to-end checks remain mandatory. No job framework was added.
+
+Local checks passed:
+
+- A disposable six-item batch received an actual `SIGINT` after four completed outputs. Resume preserved the valid unchanged output byte-for-byte and with the same modification time. It recomputed a semantically corrupt result, truncated JSON, an output with changed input, an incomplete item and a missing item; all **6/6** final outputs validated.
+- A second resume rejected changed processing parameters and a changed tool-version record while retaining the other four valid outputs.
+- The toy batch timed two sample items and estimated total work. It used one worker and one thread under an explicit **1 CPU / 64 MiB** test budget, with measured peak memory below that limit. This checks the mechanics, not representative OCR throughput or a speed gain.
+- The installed runtime's prompt hooks confirmed all three execution/verification rules appear exactly once in the worker prompt, broader global/project context remains excluded, and stage-2 delegation wording is preserved. Only the matching batch bullet was added to each instruction file.
+
+Logs: `.local/stage3-batch.eG0IDu` and `.local/stage3-prompt.UpTYLV`. The disposable batch and prompt files were removed; no test infrastructure or fixtures were added to the repository.
+
+All three instruction stages are implemented and locally checked. The earlier four Bash checks remain applicable, and the unchanged settings suite retains its recorded **41 passed / 2 failed** result rather than being rerun or called passing. MR/merge, live synchronization, session reload and a solver comparison are subsequent rollout steps; none was performed here.
+
+## Priority summary and deferred work
 
 | Rank | Candidate | How and guardrail |
 | --- | --- | --- |
-| 2 | Gate delegation on expected benefit | Require credible useful parallel work or specialist investigation after counting handoff/context/integration cost. Prefer local execution for an essentially serial handoff without that benefit. Preserve user-requested councils/reviews, ownership and parent integration checks. One Cython observation is not enough to disable delegation globally. |
-| 3 | Improve long-batch recovery | Probe a small representative batch, respect actual CPU/memory and per-process thread limits, and resume completed per-item outputs only after validating content and unchanged inputs. A nonempty file alone is not proof. No new job framework. |
+| 2 | Benefit-based delegation—implemented | Require credible useful parallel work or specialist investigation after counting handoff/context/integration cost. Prefer local execution for an essentially serial handoff without that benefit. Preserve user-requested councils/reviews, ownership and parent integration checks. One Cython observation is not enough to disable delegation globally. |
+| 3 | Long-batch recovery—implemented | Probe a small representative batch, respect actual CPU/memory and per-process thread limits, and resume completed per-item outputs only after validating content and unchanged inputs. A nonempty file alone is not proof. No new job framework. |
 | 4 | Repair measurement and benchmark prerequisites separately | Persist tool-side web-helper usage. Investigate FEAL's missing `stdint.h`, Git-webserver HTTP 404s and Caffe completion without changing historical scores or calling incomplete work successful. Do not assume the APT workaround caused the header failure. |
 | 5 | Consider narrow context consolidation after measurement | Consolidate repeated prose and make worker documentation lookup, React guidance and report detail conditional where appropriate. Preserve useful engineering requirements. The proof and fix-git evidence do not support a promised speedup from shorter instructions. |
 
