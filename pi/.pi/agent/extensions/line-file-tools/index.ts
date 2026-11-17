@@ -105,8 +105,9 @@ function findFormatter(file: string) {
 }
 
 // Bound both runtime and buffered output, even if a formatter ignores SIGTERM.
-function runFormatter(command: string, args: string[], cwd: string, input: Buffer, timeout: number) {
+function runFormatter(command: string, args: string[], cwd: string, input: Buffer, timeout: number, signal?: AbortSignal) {
 	return new Promise<Buffer | undefined>((done) => {
+		if (signal?.aborted) { done(undefined); return; }
 		const child = spawn(command, args, { cwd, stdio: ["pipe", "pipe", "ignore"] });
 		let settled = false;
 		let size = 0;
@@ -115,12 +116,15 @@ function runFormatter(command: string, args: string[], cwd: string, input: Buffe
 			if (settled) return;
 			settled = true;
 			clearTimeout(timer);
+			signal?.removeEventListener("abort", abort);
 			if (kill) child.kill("SIGKILL");
 			child.stdin.destroy();
 			child.stdout.destroy();
 			done(output);
 		};
 		const timer = setTimeout(() => finish(undefined, true), Math.max(1, timeout));
+		const abort = () => finish(undefined, true);
+		signal?.addEventListener("abort", abort, { once: true });
 		child.on("error", () => finish());
 		child.on("close", code => finish(code === 0 ? Buffer.concat(chunks) : undefined));
 		child.stdout.on("data", (chunk: Buffer) => {
@@ -133,13 +137,13 @@ function runFormatter(command: string, args: string[], cwd: string, input: Buffe
 	});
 }
 
-async function rustEdition(file: string, deadline: number) {
+async function rustEdition(file: string, deadline: number, signal?: AbortSignal) {
 	for (let dir = dirname(file); ; dir = dirname(dir)) {
 		const manifest = join(dir, "Cargo.toml");
 		if (existsSync(manifest)) {
 			// Cargo resolves package/workspace edition inheritance without a custom TOML parser.
 			// --frozen forbids network access and lockfile changes.
-			const output = await runFormatter("cargo", ["metadata", "--no-deps", "--format-version", "1", "--frozen", "--manifest-path", manifest], dir, Buffer.alloc(0), deadline - Date.now());
+			const output = await runFormatter("cargo", ["metadata", "--no-deps", "--format-version", "1", "--frozen", "--manifest-path", manifest], dir, Buffer.alloc(0), deadline - Date.now(), signal);
 			if (!output) throw new Error("Cannot resolve Rust edition.");
 			const packages = JSON.parse(output.toString()).packages as { manifest_path: string; edition: string }[];
 			const pkg = packages.filter(pkg => {
@@ -183,7 +187,7 @@ const readFields = {
 };
 
 const editFields = {
-	path: Type.String({ description: "File to edit, relative to cwd or absolute. Read it first." }),
+	path: Type.String({ description: "File to edit, relative to cwd or absolute. First obtain numbered content from read, edit or write." }),
 	splices: Type.Optional(Type.Array(Type.Object({
 		start: Type.Integer({ minimum: 1, description: "1-based line where the splice begins. Last line + 1 appends." }),
 		deleteCount: Type.Integer({ minimum: 0, description: "Number of lines to remove starting at start. 0 inserts before start." }),
@@ -206,8 +210,10 @@ export default function lineFileTools(pi: ExtensionAPI) {
 	const snapshots = new Map<string, { lines: string[]; eof: number }>();
 	// Deliberately fail closed rather than restoring snapshots from another branch.
 	let epoch = 0;
+	let lifecycle = new AbortController();
 	let reset = { event: "extension initialization", reason: "session start pending", at: new Date().toISOString() };
 	const clear = async (event: { type: string; reason?: string }) => {
+		lifecycle.abort(); lifecycle = new AbortController();
 		epoch++; snapshots.clear();
 		reset = { event: event.type, reason: event.reason ?? "not supplied", at: new Date().toISOString() };
 	};
@@ -218,60 +224,94 @@ export default function lineFileTools(pi: ExtensionAPI) {
 	pi.on("session_before_compact", clear);
 	pi.on("session_shutdown", clear);
 
-	// Queue while the edit/write still holds its lock, before returning to the caller.
-	const scheduleFormat = (target: string) => {
+	// Run while the mutation owns its queue; previews must observe completed formatting.
+	const format = async (target: string, signal?: AbortSignal) => {
 		try {
+			signal = AbortSignal.any([lifecycle.signal, ...(signal ? [signal] : [])]);
 			const formatter = findFormatter(target);
-			if (!formatter) return undefined;
+			if (!formatter || signal?.aborted) return;
 			const startedEpoch = epoch;
-			void withFileMutationQueue(target, async () => {
-				if (epoch !== startedEpoch) return;
-				const fd = openSync(target, constants.O_RDONLY | constants.O_NONBLOCK);
-				let before: Buffer;
-				try {
-					const { bom, rows } = load(fd);
-					before = Buffer.from(bom + rows.map(row => row.text + row.eol).join(""));
-				} finally { closeSync(fd); }
-				const expected = snapshots.get(target);
-				const deadline = Date.now() + 10_000;
-				const args = [...formatter.args];
-				if (formatter.name === "rustfmt") {
-					const edition = await rustEdition(target, deadline);
-					if (edition) args.push("--edition", edition);
-				}
-				if (Date.now() >= deadline) return;
-				const after = await runFormatter(formatter.command, args, formatter.cwd, before, deadline - Date.now());
-				if (!after || after.equals(before) || epoch !== startedEpoch) return;
-				const previous = decode(before), formatted = decode(after);
-				const next = expected ? { lines: [...expected.lines], eof: expected.eof } : undefined;
-				if (next && previous.rows.length === formatted.rows.length) {
-					const a = spacingKeys(target, previous.rows), b = spacingKeys(target, formatted.rows);
-					previous.rows.forEach((row, i) => {
-						if (expected!.lines[i] !== hash(row)) return; // Never bless an external/stale change.
-						if (row.text === formatted.rows[i].text || (a?.[i] !== undefined && a[i] === b?.[i])) next.lines[i] = hash(formatted.rows[i]);
-					});
-				}
-				const out = openSync(target, constants.O_RDWR | constants.O_NONBLOCK);
-				try {
-					const { bom, rows } = load(out);
-					if (!Buffer.from(bom + rows.map(row => row.text + row.eol).join("")).equals(before)) return;
-					snapshots.delete(target); // A partial write must not keep any baseline usable.
-					writeAll(out, after);
-					if (next) snapshots.set(target, next);
-				} finally { closeSync(out); }
-			}).catch(() => {}); // A format-on-save failure never fails the original edit/write.
-			return `${target} (${formatter.name})`;
-		} catch { return undefined; }
+			const fd = openSync(target, constants.O_RDONLY | constants.O_NONBLOCK);
+			let before: Buffer;
+			try {
+				const { bom, rows } = load(fd);
+				before = Buffer.from(bom + rows.map(row => row.text + row.eol).join(""));
+			} finally { closeSync(fd); }
+			const expected = snapshots.get(target);
+			const deadline = Date.now() + 10_000;
+			const args = [...formatter.args];
+			if (formatter.name === "rustfmt") {
+				const edition = await rustEdition(target, deadline, signal);
+				if (edition) args.push("--edition", edition);
+			}
+			if (Date.now() >= deadline) return;
+			const after = await runFormatter(formatter.command, args, formatter.cwd, before, deadline - Date.now(), signal);
+			if (!after || after.equals(before) || epoch !== startedEpoch || signal?.aborted) return;
+			const previous = decode(before), formatted = decode(after);
+			const next = expected ? { lines: [...expected.lines], eof: expected.eof } : undefined;
+			if (next && previous.rows.length === formatted.rows.length) {
+				const a = spacingKeys(target, previous.rows), b = spacingKeys(target, formatted.rows);
+				previous.rows.forEach((row, i) => {
+					if (expected!.lines[i] !== hash(row)) return; // Never bless an external/stale change.
+					if (row.text === formatted.rows[i].text || (a?.[i] !== undefined && a[i] === b?.[i])) next.lines[i] = hash(formatted.rows[i]);
+				});
+			}
+			const out = openSync(target, constants.O_RDWR | constants.O_NONBLOCK);
+			try {
+				const { bom, rows } = load(out);
+				if (!Buffer.from(bom + rows.map(row => row.text + row.eol).join("")).equals(before)) return;
+				snapshots.delete(target); // A partial write must not keep any baseline usable.
+				writeAll(out, after);
+				if (next) snapshots.set(target, next);
+			} finally { closeSync(out); }
+		} catch {} // Formatting failure never fails a completed mutation.
+	};
+
+	// Only displayed rows gain fresh baselines; unseen external changes remain stale.
+	const preview = (target: string, ranges: { start: number; end: number }[] | undefined, budget: { bytes: number; lines: number }, startedEpoch: number, signal?: AbortSignal, authored?: Buffer) => {
+		const parts: string[] = [];
+		const add = (text: string) => {
+			const bytes = Buffer.byteLength(text) + 1, lines = text.split("\n").length;
+			if (bytes > budget.bytes || lines > budget.lines) return false;
+			budget.bytes -= bytes; budget.lines -= lines; parts.push(text); return true;
+		};
+		try {
+			if (epoch !== startedEpoch || signal?.aborted) throw new Error("Cancellation/session reset; read before editing.");
+			const fd = openSync(target, constants.O_RDONLY | constants.O_NONBLOCK);
+			let loaded: ReturnType<typeof load>;
+			try { loaded = load(fd); } finally { closeSync(fd); }
+			const { bom, rows } = loaded;
+			if (authored && !Buffer.from(bom + rows.map(row => row.text + row.eol).join("")).equals(authored)) ranges = undefined;
+			if (!add(`File: ${JSON.stringify(target)}\n[${rows.length} lines total; ${rows.length ? "resulting content" : "empty file"}]`)) return `File: ${JSON.stringify(target)}\n[Written, but not shown: output limit reached. Read before editing.]`;
+			const expected = snapshots.get(target);
+			const next = { lines: [...(expected?.lines ?? [])], eof: expected?.eof ?? -1 };
+			let omitted = false, previous = 0;
+			for (let i = 0; i < rows.length; i++) {
+				if (ranges && !ranges.some(range => i + 1 >= range.start && i + 1 <= range.end)) continue;
+				const text = `${i + 1}: ${rows[i].text}`;
+				if (budget.bytes < Buffer.byteLength(text) + 256 || budget.lines < 4 || !add((previous && previous !== i ? "[...]\n" : "") + text)) { omitted = true; break; }
+				next.lines[i] = hash(rows[i]); previous = i + 1;
+				if (i === rows.length - 1) next.eof = rows.length;
+			}
+			if (!rows.length) next.eof = 0;
+			snapshots.set(target, next);
+			if (omitted) parts.push("[Output limit reached; later lines not shown. Read them before editing them.]");
+		} catch (error) {
+			parts.push(`File: ${JSON.stringify(target)}\n[Written, but numbered preview unavailable: ${error instanceof Error ? error.message : String(error)} Read before editing; numbered tools require regular UTF-8 text up to 4 MiB without NUL.]`);
+		}
+		return parts.join("\n");
 	};
 
 	const stockWrite = createWriteToolDefinition(process.cwd());
 	pi.registerTool({
 		...stockWrite,
-		description: stockWrite.description + " No leading tabs or spaces are needed solely for cosmetic indentation; preserve whitespace that affects syntax or literal content. Project-configured formatting runs asynchronously after writing; later reads and edits of the file wait for it. Formatting failures are ignored.",
-		promptGuidelines: [...(stockWrite.promptGuidelines ?? []), "For write, omit leading tabs/spaces used only for cosmetic indentation. Preserve required spaces between tokens and all meaningful whitespace: Python/YAML indentation, Makefile recipe tabs, Markdown structure, and string/template contents."],
+		description: stockWrite.description + " Returns numbered written content after best-effort project formatting, with usable edit snapshots. Preview is bounded to 50 KiB/2000 lines per call; omitted content needs read before editing. No leading tabs or spaces are needed solely for cosmetic indentation; preserve meaningful whitespace. Unsupported or oversized stock writes still succeed without a numbered preview.",
+		promptGuidelines: [...(stockWrite.promptGuidelines ?? []), "Use numbered write output directly for subsequent edit coordinates; read only omitted content, more context, or after rejection/reset. For write, omit cosmetic indentation only; preserve meaningful whitespace."],
+		renderResult(output, _options, theme, context) {
+			return new Text(theme.fg(context.isError ? "error" : "toolOutput", output.content.filter(item => item.type === "text").map(item => item.text).join("\n")), 0, 0);
+		},
 		async execute(id, params, signal, update, ctx) {
 			const startedEpoch = epoch;
-			let formatting: string | undefined;
 			let notice = "";
 			const write = createWriteToolDefinition(ctx.cwd, { operations: {
 				mkdir: async dir => { await mkdir(dir, { recursive: true }); },
@@ -281,15 +321,14 @@ export default function lineFileTools(pi: ExtensionAPI) {
 					try { target = realpathSync(path); } catch {}
 					snapshots.delete(target);
 					await writeFile(path, content, "utf8");
-					let recovery = `Read ${JSON.stringify(target)} before editing; numbered editing supports regular UTF-8 text up to 4 MiB without NUL.`;
-					try { recovery = readAgain(target, 1, decode(Buffer.from(content)).rows.length); } catch {}
-					notice = `${target}: file written; edit snapshot cleared (including for a new file). ${recovery}`;
-					if (epoch !== startedEpoch) throw new Error("Session state changed during write.");
-					try { formatting = scheduleFormat(realpathSync(path)); } catch {}
+					try { target = realpathSync(path); } catch {}
+					if (epoch !== startedEpoch || signal?.aborted) { notice = "File written; preview unavailable after cancellation/session reset. Read before editing."; return; }
+					await format(target, signal);
+					notice = preview(target, undefined, { bytes: 48 * 1024, lines: 1900 }, startedEpoch, signal);
 				},
 			} });
 			const output = await write.execute(id, params, signal, update, ctx);
-			return { ...output, content: [...output.content, { type: "text" as const, text: notice + (formatting ? ` Formatting pending: ${formatting}. It may change text or coordinates; later reads/edits wait, and stale targets will reject with a read range.` : "") }] };
+			return { ...output, content: [{ type: "text" as const, text: ["Write succeeded.", notice].filter(Boolean).join("\n") }] };
 		},
 	});
 
@@ -297,7 +336,7 @@ export default function lineFileTools(pi: ExtensionAPI) {
 	pi.registerTool({
 		name: "read",
 		label: "read (numbered lines)",
-		promptSnippet: "Read numbered text lines (inclusive start/end) or images from one or several files; required before edit can change a file.",
+		promptSnippet: "Read numbered text lines (inclusive start/end) or images from one or several files; edit/write also return usable numbered content.",
 		promptGuidelines: [...(stockRead.promptGuidelines ?? []), "To read several files or ranges together, use reads: [{path, start?, end?}]. Omit top-level path/start/end."],
 		outputSchema: Type.Union([stockRead.outputSchema!, Type.Array(Type.Object({ path: Type.String(), result: stockRead.outputSchema! }))]),
 		description: "Read local UTF-8 text as numbered lines, or images as attachments. One file: {path, start?, end?}. Several files/ranges: {reads: [{path, start?, end?}, ...]}, with no top-level path/start/end. Text ranges are inclusive, 1-based, defaulting to 200 lines. Limits: 4 MiB per text file and 50 KiB of text per call; narrow ranges or split batches if too large. Images ignore ranges and cannot be edited. Batch results follow request order and identify paths; failure stops the batch, but earlier successful reads retain edit snapshots.",
@@ -371,17 +410,17 @@ export default function lineFileTools(pi: ExtensionAPI) {
 		label: "edit (guarded lines)",
 		promptSnippet: "Edit lines by number in one or several files using splices (insert, delete, replace ranges).",
 		promptGuidelines: [
-			"Call edit with line numbers from an earlier read. Follow explicit snapshot/coordinate recovery notices, including after write or a successful edit that shifts lines. Otherwise avoid redundant rereads just for freshness or success: edit rejects targets that no longer match. Read again for more context, after rejection, or when a session reset/compaction cleared the snapshot.",
-			"After edit inserts or deletes lines, earlier unchanged regions keep their numbers and stay editable without rereading. Follow any recovery notice for the shifted region; after rejection, read the indicated range and correct the line numbers instead of retrying.",
+			"Use line numbers from read or successful edit/write numbered output. Returned coordinates have usable snapshots; do not reread merely to verify success. Read omitted regions, for more context, after rejection, or after session reset/compaction.",
+			"After edit shifts lines, use the returned resulting coordinates, not old shifted coordinates. Earlier unchanged regions remain usable.",
 			"To change several files together, use one edit call with edits: [{path, splices}, ...].",
 			"For edit, omit leading tabs/spaces used only for cosmetic indentation. Preserve required spaces between tokens and all meaningful whitespace: Python/YAML indentation, Makefile recipe tabs, Markdown structure, and string/template contents.",
 		],
 		description: [
-			"Edit lines in one or more text files that read has already shown. Line numbers come from read and refer to each file as it was before this call. Create new files with write.",
+			"Edit lines in one or more text files previously shown by read or numbered edit/write output. Coordinates refer to each file before this call. Create new files with write.",
 			"One file: {path, splices}. Several files: {edits: [{path, splices}, ...]}, listing each file once and passing no top-level path or splices.",
 			"A splice replaces deleteCount lines at start with lines: insert (deleteCount 0), delete (lines []), replace a range, or append (start = last line + 1, deleteCount 0). Splices in one file must not overlap or share a start. Every string is a single line with no line breaks.",
-			"All files are checked before any is written. If a file has not been read, or a target line no longer matches what read showed, the call fails and nothing changes: read that range again and correct the line numbers. Never guess line numbers or text you have not read, and never use write or bash to get around a rejected edit, because they skip this check. Follow explicit snapshot/coordinate recovery notices, including after write or successful line shifts; otherwise avoid redundant rereads just for freshness or success. Earlier unchanged regions remain usable. If a disk write fails partway through a multi-file call, the error names the files already written; reread the failed file instead of repeating the whole call.",
-			"No leading tabs or spaces are needed solely for cosmetic indentation; preserve whitespace that affects syntax or literal content. Project-configured formatting runs asynchronously after edits; later reads and edits of that file wait for it. Spacing-only changes at unchanged coordinates keep matching snapshots where spacing is not meaningful. Text changes or moved lines still reject: read the relevant range again.",
+			"All files are checked before any is written. Missing or stale snapshots reject the call without changes: read the indicated range and correct coordinates; never bypass rejection with write or bash. Partial disk-write failures name completed files; do not replay the batch.",
+			"Success returns numbered affected resulting ranges (including deletion boundaries) after best-effort project formatting, establishing usable snapshots there. Formatting that changes content returns the whole resulting file, subject to a shared 50 KiB/2000-line preview limit. Omitted regions need read before editing; preview limits never fail a completed mutation. Preserve meaningful whitespace; cosmetic indentation may be omitted.",
 		].join("\n\n"),
 		parameters: Type.Object({
 			...editFields,
@@ -488,9 +527,13 @@ if (!expected) throw new Error(`No read snapshot (never read or cleared by write
 							// Keep baselines at their numeric coordinates, even after a shift.
 							const next = { lines: [...expected.lines], eof: expected.eof === rows.length ? updatedRows.length : expected.eof };
 							updatedRows.forEach((row, index) => { if (authored.has(row)) next.lines[index] = hash(row); });
-							const shifted = splices!.filter(splice => splice.lines.length !== splice.deleteCount).map(splice => splice.start);
-							const notice = shifted.length ? `${target}: file changed; line counts shifted from line ${Math.min(...shifted)}. Old coordinates there and below may be unsafe; earlier unchanged regions remain usable. ${readAgain(target, Math.min(...shifted), updatedRows.length)}` : "";
-							return { target, fd, updated, next, notice };
+							let offset = 0;
+							const ranges = ordered.map(splice => {
+								const start = splice.start + offset;
+								offset += splice.lines.length - splice.deleteCount;
+								return { start: Math.max(1, start - 1), end: start + splice.lines.length };
+							});
+							return { target, fd, updated, next, ranges };
 						} catch (error) {
 							throw new Error(`${target}: ${error instanceof Error ? error.message : String(error)} No edits applied.`);
 						}
@@ -508,12 +551,13 @@ if (!expected) throw new Error(`No read snapshot (never read or cleared by write
 							throw new Error(`Write failed for ${target}; it may be partially modified. Completed files: ${JSON.stringify(completed)}. Remaining files were not written. Inspect completed files and reread the failed file before retrying; do not replay the whole batch. ${error instanceof Error ? error.message : String(error)}`);
 						}
 					}
-					const formatting: string[] = [];
-					for (const { target } of prepared) {
-						const notice = scheduleFormat(target);
-						if (notice) formatting.push(notice);
+					const budget = { bytes: 48 * 1024, lines: 1900 };
+					const previews: string[] = [];
+					for (const { target, updated, ranges } of prepared) {
+						if (epoch === startedEpoch) await format(target, signal);
+						previews.push(preview(target, ranges, budget, startedEpoch, signal, updated));
 					}
-					return result(["Edit succeeded.", ...prepared.map(entry => entry.notice).filter(Boolean), ...(formatting.length ? [`Formatting pending: ${formatting.join(", ")}. It may change text or coordinates; later reads/edits wait, and stale targets will reject with a read range.`] : [])].join("\n"));
+					return result(["Edit succeeded.", ...previews].join("\n"));
 				} finally { for (const fd of handles) closeSync(fd); }
 			};
 			return locked(0);

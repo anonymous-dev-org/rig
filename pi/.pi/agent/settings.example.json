@@ -19,8 +19,6 @@
       "npm:pi-fast@0.3.0"
     ],
     "agentOverrides": {
-      "council-astra": { "disabled": true },
-      "council-fable": { "disabled": true },
       "cursor-agent": {
         "disabled": true
       },

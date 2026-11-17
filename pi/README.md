@@ -110,16 +110,16 @@ security sandbox. Do not expose untrusted pages to privileged secrets casually.
 
 Full Pi sync deploys `extensions/line-file-tools/index.ts` as the default `read`,
 `edit` and `write` implementation. Text reads return numbered lines with inclusive
-`start/end` ranges. Edits use a line-number mapping or `splices` for inserting,
-deleting and replacing ranges; the harness checks private per-line hashes,
-so the model supplies neither hashes nor repeated old text. Attempt known edits
-directly, including after insertions/deletions; reread relevant lines only when
-context is needed or a target is rejected as stale/missing. Successful edits
-return `Edit succeeded.`, with a notice if project-configured formatting was queued.
-Both `edit` and `write` format in the background when the project opts in; later
-operations on that file wait. Harmless spacing changes keep matching snapshots
-where recognised; real text changes or moved lines still reject. `write` retains
-stock creation/overwrite behaviour and, like `bash`, is not protected by line checks.
+`start/end` ranges. Edits use `splices` for inserting, deleting and replacing
+ranges; the harness checks private per-line hashes, so the model supplies neither
+hashes nor repeated old text. Successful edits return numbered affected resulting
+ranges, including deletion boundaries; writes return numbered written content.
+Both await best-effort project formatting, so returned coordinates are final and
+have usable edit snapshots. Use them directly without a verification read; read
+for omitted content, more context, rejection or session reset. Mutation previews
+are bounded to 50 KiB/2000 lines per call, without failing a completed mutation.
+`write` retains stock creation/overwrite behaviour and, like `bash`, is not
+protected by line checks.
 
 Supported images go through Pi's stock image processing and return attachments;
 codemode receives the stock image object or a numbered text string. This is not
@@ -152,8 +152,7 @@ even in sessions that never delegate, so lower total token cost is not guarantee
 delegation, but review-only children require an explicit user request for delegated
 review. The parent must not add an audit, double-check or second-opinion child on its
 own, including by relabeling that review as research or a decision. The parent still
-performs the verification needed for its work. This does not disable the separate
-automatic `paired-review.ts` mechanism described below.
+performs the verification needed for its work.
 
 A parent must accept a prerequisite answer before implementing the part that
 depends on it. Children return findings and evidence in their final report;
@@ -172,18 +171,47 @@ and start a fresh session. If resuming an old session whose recorded tools lack
 still apply. These settings remove the activation step, not the skill read or
 review work; timing and quality improvements require a separate measured comparison.
 
-## Council advisors
+## Council tool
 
-Council mode uses exactly two managed profiles: `council-astra` with
-`openai/gpt-6-astra` and `council-fable` with
-`pi-sub-anthropic/claude-fable-5-2`. Both start with fresh context and read-only
-tools, without inherited skills. The roster is pinned in the managed `AGENTS.md`;
-unavailable advisors/models require asking rather than substituting fallbacks.
-Provider authentication must already be available in Pi.
+The main model can call `council` directly, for example:
 
-Full Pi sync deploys these profiles and instructions; the JSON-only
-`sync-settings.mjs` command does not. Reload or restart Pi after deployment,
-then ask it to use council mode for a decision.
+```json
+{"effort":"medium","task":"Compare the cancellation designs in pi/.pi/agent/extensions/deep-review.ts and council.ts. Recommend a lifecycle policy and explain tradeoffs.","rounds":3}
+```
+
+Effort is required and uses the **same exported model/thinking map and read-only
+Agent runner as `/review`**. The legacy `council-astra`/`council-fable` advisor
+profiles are retired; full Pi sync removes their installed files.
+
+| Effort | Advisor 1 | Advisor 2 | Guidance |
+| --- | --- | --- | --- |
+| `low` | `pi-sub-anthropic/claude-opus-5-5`, minimal | `openai/gpt-6.1-sol`, low | Quick bounded decisions |
+| `medium` | `pi-sub-anthropic/claude-opus-5-5`, high | `openai/gpt-6.1-sol`, high | Substantial reasoning |
+| `hard` | `pi-sub-anthropic/claude-fable-5-2`, high | `openai/gpt-6-astra`, high | Difficult/high-stakes tradeoffs |
+
+Supply a self-contained task: advisors do not inherit the main conversation or
+skills. Each round starts fresh with the task and, after the independent initial
+round, both previous responses. Calls within each round run in parallel. `rounds`
+includes the initial round, defaults to 3 and is limited to 1–5. One round returns
+independent answers without consensus. More rounds and higher effort can cost more.
+
+Agreement requires structured endorsements of the **exact same nonempty proposal**
+after a cross-response round. Otherwise the result is explicitly `unresolved`,
+with the round count and both final responses. Invalid structured output or model
+failure stops deliberation without discarding the successful peer or earlier
+answers. No fallback models are substituted. Agreement is the advisors' endorsement,
+not a guarantee of truth; the main model must still assess the evidence.
+
+Advisors have only read/grep/find/ls and restricted Git inspection, with no shell,
+writes, extensions or recursive council/subagent calls. Cancellation (including
+Escape), session navigation, shutdown/reload and manual compaction abort active
+work. Nested model usage, including tool-use turns, is returned once for Pi's
+session accounting even when an advisor fails. Output over 2000 lines/50KB links
+to a private temporary file containing both full responses.
+
+Full Pi sync deploys `extensions/council.ts`; JSON-only `sync-settings.mjs` does
+not. Reload or restart after deployment and ask Pi to use the council tool. Both
+preset models must be configured and authenticated.
 
 ## Compaction overflow recovery
 
@@ -230,80 +258,43 @@ later handler to override the result. Recognized overflow errors are handled bot
 as provider error responses and thrown exceptions. Unrecognized exceptions stop
 safely; they are not automatically retried as smaller chunks.
 
-## Automatic pair-programming review
+## On-demand deep review
 
-Rig's `paired-review.ts` extension launches two fresh read-only agents in parallel:
-`openai/gpt-6-astra` and `pi-sub-anthropic/claude-fable-5-2`, both at medium thinking.
-They receive the exact same `~/.pi/agent/WATCHDOG.md` prompt and parent-session
-evidence, covering goal focus, unnecessary complexity, code correctness, and
-security. They may inspect source with read/search tools, but cannot run shell
-commands, edit files, or spawn agents. The seven specialist reviewer definitions
-are retired; the installed single-model watchdog is disabled to avoid duplicates.
+Run `/review <low|medium|hard> [message]` to launch two reviewers in parallel
+in the background. Effort is required and selects these models and thinking levels:
 
-Reviews launch every **40 main-agent model calls**, at the next completed turn
-boundary. Each finalized assistant response counts once, including reported error
-or aborted responses; tool, user and custom messages do not count. Tool-free
-responses count too. Both reviewers run in the background while the main agent
-continues working. Only one pair runs at a time; calls accumulated during a review
-count toward the next launch at a later completed turn. If multiple thresholds
-pass while busy, one review launches with the remainder carried forward.
-There is no extra end-of-run or idle review. Session lifecycle resets, reloads
-and manual compaction restart the counter. Delegated child sessions skip this
-extension; reviewer agents load no extensions and do not advance the counter.
+| Effort | Reviewer 1 | Reviewer 2 |
+| --- | --- | --- |
+| `low` | `pi-sub-anthropic/claude-opus-5-5`, minimal | `openai/gpt-6.1-sol`, low |
+| `medium` | `pi-sub-anthropic/claude-opus-5-5`, high | `openai/gpt-6.1-sol`, high |
+| `hard` | `pi-sub-anthropic/claude-fable-5-2`, high | `openai/gpt-6-astra`, high |
 
-Each reviewer returns JSON: `{require_changes: true, message: "..."}` or
-`{require_changes: false}` without a message. Once both reviews finish, the
-extension queues **one** persisted feedback message containing only the reviewers
-that requested changes. Pi delivers it after the current turn's tools finish,
-before the next model call, or starts a new turn if the main agent is already idle.
-Either reviewer can flag an issue; agreement is not required. If both are clean,
-no feedback or continuation is added. Feedback is projected as a system message
-(developer feedback on compatible providers), not a user request.
+For example, `/review hard Focus on cancellation and session switching` adds that
+message to both reviewers' prompts. Without a message, no extra instructions are added.
+Its shared system prompt is `~/.pi/agent/DEEP_REVIEW.md`; its extension is `deep-review.ts`.
 
-Evidence includes retained user prompts/compaction scope and bounded recent work,
-not the full history or a Git diff. It is captured at launch, but reviewers read
-live source files. Findings identify the launch time and session entry, and the
-main agent must recheck whether they still apply. Reviews are advisory and incur
-model usage, but do not block the main agent. There is no review timeout. Missing
-models, malformed results, or failed reviews produce visible errors without model
-fallback; successful findings from the other reviewer are still delivered.
-An aborted parent turn, session shutdown, manual compaction, or navigation to
-another session/branch cancels the pending pair. Navigation attempts cancel even
-if navigation is later declined. Reviews do not survive process exit.
+Both reviewers receive the worktree path, session transcript path, and captured
+branch entry ID. They independently read the conversation and inspect relevant
+source and Git changes, including committed work identified from the conversation.
+The restricted Git tool supports inspection only; reviewers cannot edit files,
+run arbitrary shell commands, or execute tests.
 
-Per-reviewer starts and terminal outcomes (including clean approvals, findings,
-errors, and cancellation) are saved to `~/.pi/agent/logs/paired-review.jsonl`.
-Each record includes a run ID, session ID, source entry, and timestamp; terminal
-records also include duration. The log contains finding text, not full reviewer
-transcripts, and is created with private file permissions. It is append-only with
-no automatic rotation. To watch both reviewers:
+Each report covers architecture analysis, bug findings, and code quality, with an
+explicit numeric rating out of 10 for each area: 10 is perfect and 0 is never ship
+this. Higher bug ratings mean greater correctness and fewer or less serious bugs.
+Each rating must be justified. Findings
+must explain the evidence, consequences, and smallest corrective action; potential
+issues are distinguished from confirmed bugs. Each successful report is delivered
+verbatim as a separate developer-feedback message, even if the other reviewer fails.
+No extra prefix or summary is added to the report body.
 
-```sh
-tail -f ~/.pi/agent/logs/paired-review.jsonl | jq .
-```
-
-Every reviewer model response also records its reported token usage and price in
-the parent session's native usage entries, including intermediate tool rounds and
-clean approvals. Reported usage on failed or cancelled responses counts too; no
-usage can be recovered if the provider does not report it. These entries contribute
-to `/session` totals and the footer's cumulative `in … - out … ($…)` display.
-Input includes uncached input, cache reads and cache writes; output is generated
-tokens. These counters sum usage recorded in the parent session, including tool
-usage, compaction and branch summaries. They are not yet complete all-subagent
-totals: async notification-only runs can be missing, and repeated waits can
-duplicate child usage. Tools without reported usage add no separate charge;
-their results count as model input when processed.
-The separate `ctx` counter still describes only the main agent's context window,
-not tokens consumed by reviewers. Prices use Pi's provider/model usage data.
-
-If a provider ignores cancellation and reports usage only after session replacement,
-that usage is retained in the log as `review_usage_unattributed`, never charged to
-the replacement session. Historical reviews without recorded usage are not backfilled.
-
-Use full Pi sync to deploy settings, guidance, the extension, and reviewer-file
-retirements (with private backups), then reload/restart Pi. The JSON-only settings
-sync cannot deploy this mechanism. Project overrides must not re-enable the old
-`subagents.watchdog`; `/subagents-watchdog status` can confirm it is disabled.
+Only one `/review` run can be active at once. Run `/review stop` while it is
+running to stop the reviewers and clear their status. Starting another review
+while one is active shows an error rather than cancelling it. Session navigation,
+shutdown/reload, and manual compaction also cancel pending work and prevent stale delivery. Failures are
+visible with no model fallback. Reviewer usage is recorded in the parent session;
+review activity and final reports are logged privately under `~/.pi/agent/logs/`.
+Run `/reload` after installing the extension, then `/review medium` in a saved session.
 
 ## Explicit legacy migration
 
