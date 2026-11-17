@@ -236,8 +236,8 @@ in the background. Effort is required and selects these models and thinking leve
 
 | Effort | Reviewer 1 | Reviewer 2 |
 | --- | --- | --- |
-| `low` | `anthropic/claude-opus-5-5`, minimal | `openai/gpt-6.1-sol`, low |
-| `medium` | `anthropic/claude-opus-5-5`, high | `openai/gpt-6.1-sol`, high |
+| `low` | `pi-sub-anthropic/claude-opus-5-5`, minimal | `openai/gpt-6.1-sol`, low |
+| `medium` | `pi-sub-anthropic/claude-opus-5-5`, high | `openai/gpt-6.1-sol`, high |
 | `hard` | `pi-sub-anthropic/claude-fable-5-2`, high | `openai/gpt-6-astra`, high |
 
 For example, `/review hard Focus on cancellation and session switching` adds that

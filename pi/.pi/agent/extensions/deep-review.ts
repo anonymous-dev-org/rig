@@ -13,11 +13,11 @@ import {
 const REVIEW_TYPE = "rig-deep-review";
 const REVIEW_EFFORTS = {
 low: [
-{ provider: "anthropic", id: "claude-opus-5-5", thinkingLevel: "minimal" },
+{ provider: "pi-sub-anthropic", id: "claude-opus-5-5", thinkingLevel: "minimal" },
 { provider: "openai", id: "gpt-6.1-sol", thinkingLevel: "low" },
 ],
 medium: [
-{ provider: "anthropic", id: "claude-opus-5-5", thinkingLevel: "high" },
+{ provider: "pi-sub-anthropic", id: "claude-opus-5-5", thinkingLevel: "high" },
 { provider: "openai", id: "gpt-6.1-sol", thinkingLevel: "high" },
 ],
 hard: [
