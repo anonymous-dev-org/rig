@@ -13,7 +13,9 @@ type Answer = { response: string; proposal: string; agree: boolean };
 type Advisor = { model: string; response?: string; answer?: Answer; error?: string; round?: number };
 
 function parse(text: string): Answer {
- const answer = JSON.parse(text);
+ const trimmed = text.trim();
+ const fenced = /^```(?:json)?[ \t]*\r?\n([\s\S]*?)\r?\n```$/i.exec(trimmed);
+ const answer = JSON.parse(fenced ? fenced[1] : trimmed);
  if (!answer || typeof answer.response !== "string" || !answer.response.trim() || typeof answer.proposal !== "string" || !answer.proposal.trim() || typeof answer.agree !== "boolean") throw new Error("Expected JSON with nonempty response/proposal strings and boolean agree.");
  return answer;
 }
