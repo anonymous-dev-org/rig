@@ -138,41 +138,35 @@ Say things directly. State a caveat once, where it applies, and only if it chang
 
 ## 6. Use tools efficiently
 
-These rules cut wasted tool time. They never justify skipping evidence or verification that the task requires. Each tool's own description says how to call it; the rules here are about which calls to make.
+These rules cut wasted tool time. They never justify skipping evidence or verification that the task requires.
 
-### Search narrowly
+### Evidence
 
-Use the smallest search that can answer the question. The shell commands below are examples; a harness search tool with the same scope and exclusions is just as good.
-
-1. **Known paths first.** Use a path the harness, a tool result, skill metadata, or package configuration already gave you instead of searching for it.
-2. **Instructions by ancestry.** Beyond the instructions already in context, look for `AGENTS.md` only by exact path, once per directory. Check each directory from the repository root down to the current directory, both included. Before editing a file, also check each directory from the repository root down to the directory that holds the file. Never look above the repository root.
-3. **Paths before contents.** When you know a filename or extension but not the path, list matching paths first with `git ls-files -- '<pathspec>'` (tracked files only) or `rg --files <directory> -g '<glob>'` (skips ignored files). Because of those gaps, an empty result does not prove a file is absent.
-4. **Contents in the likely owner.** Start in the most relevant package or directory and widen one level at a time. Use `rg -l` for filenames only, `rg -n` for matching lines, and `rg -F` for literal text. Leave out dependencies and generated output unless the question is about them.
-5. **Prune instead of filtering.** Exclude directories with `find ... -prune` or the search tool's exclusions. `find -not -path`, `grep -v`, and `head` only hide output; the whole tree is still walked.
-6. **Narrow after a failure.** After a timeout, permission error, or truncated result, narrow the root, prune more, or use a known path. Do not just raise the timeout. Scan outside the repository only when the task needs that coverage.
-
-### Batch independent reads
-
-- Request every file and range you already know you need in one turn, with parallel tool calls or the harness's batching tool. Check each result for failure.
-- Read one at a time only when a result decides what to read next or contains instructions that govern later work.
-- Read a whole function or section with its context, not a string of small adjacent fragments, and not a whole large file when one section answers the question.
-- Do not guess paths or load unrelated files to save a call. Reuse content you already have while it is still valid.
-
-### Ask for the output the question needs
-
-- Before a call, decide what you need: filenames, matching lines, selected fields, a change summary, or complete evidence. Ask for that form instead of printing everything and relying on truncation.
-- When the scope is unknown, find it with a filename listing or a diff summary, then read the source or patch itself. A summary never replaces reading the full change when a full review is required.
-- Treat JSON and JSONL as data. For a narrow question, select records and fields with `jq` or a short parser instead of printing whole objects. Keep the full payload when completeness or failure diagnosis needs it. Leave session history out of implementation searches unless the history is the subject.
-- For long output, such as a build or test run, save it all to a log under `.local/` in the project and print the exit status, a short result, the log path, and the relevant diagnostics. Create `.local/` if it is missing, and never commit it. On failure, read the log around the error; the cause is often not in the last lines.
 - Truncated output, a timeout, or a permission error is incomplete evidence. Narrow or page through the result before any claim that needs full coverage. Never conclude "no errors", "no other matches", or "the file does not exist" from an incomplete result.
+- Report the operation's own result: read the exit status and the required job results, including relevant downstream jobs. A trailing `tail`, `grep`, `sleep`, or log command must not turn a failed or unfinished job into success, and a process that has exited does not prove success.
+- If a required check never finishes, report it as unfinished, not as passed.
+- Never rerun, shrink, or skip a required check to fit a time limit.
+- A summary never replaces reading the full change when a full review is required.
 
-### Run commands and wait for completion
+### Search and read
 
-- Split separable work so that each Bash call needs at most 3 minutes. A single job that cannot be split, such as one build or test suite, may take longer. Never rerun, shrink, or skip a required check to fit the limit.
-- Batch small independent inspections into one call, keep dependent steps in order, and keep each command's failure visible.
-- Report the operation's own result. A trailing `tail`, `grep`, `sleep`, or log command must not turn a failed or unfinished job into success, and a process that has exited, or an exit file that exists, does not prove success: read the exit status and the required job results, including relevant downstream jobs.
-- Do not rerun a check whose result is still valid, or rerun an operation only to see its output in another form; read the saved log.
-- Before waiting, check whether the exact job, pipeline, commit, or process has already finished. Then use a supported completion wait, or poll a condition with one watcher per job, a deadline, a timeout on each status request, and an interval that balances detection delay against API load. Use a fixed delay only when a settling or observation period is required. Stop as soon as the job succeeds or fails.
-- If the deadline passes or a required check never finishes, report it as unfinished, not as passed, exit nonzero when the command is meant to verify success, and continue with the work that does not depend on it.
-- Fetch detailed logs and job trees on failure, completion, or a meaningful change, not on every unchanged poll, unless the task needs continuous inspection.
-- Wait with existing tools. Do not build a job framework or move work to the background just to make Bash calls look shorter.
+- Use a path you already have instead of searching for it.
+- When you know a filename but not its path, list matching paths first with `git ls-files` or `rg --files`. Both skip some files, so an empty result does not prove a file is absent.
+- Search contents in the most relevant directory first and widen one level at a time. Leave out dependencies and generated output unless the question is about them.
+- Exclude directories with `find ... -prune` or the search tool's exclusions. `grep -v` and `head` only hide output; the whole tree is still walked.
+- After a timeout or truncated result, narrow the search. Do not just raise the timeout.
+- Request every file and range you already know you need in one turn. Read one at a time only when a result decides what to read next.
+- Read a whole function or section with its context, not adjacent fragments, and not a whole large file when one section answers the question.
+- Beyond the instructions already in context, look for `AGENTS.md` only by exact path, once per directory. Check each directory from the repository root down to the current directory, both included. Before editing a file, also check each directory from the repository root down to the directory that holds the file. Never look above the repository root.
+
+### Output
+
+- Before a call, decide what you need: filenames, matching lines, selected fields, or complete evidence. Ask for that form instead of printing everything and relying on truncation.
+- For a narrow question about JSON or JSONL, select records and fields with `jq` or a short parser instead of printing whole objects.
+- For long output, such as a build or test run, save it all to a log under `.local/` in the project and print the exit status, a short result, and the log path. Create `.local/` if it is missing, and never commit it. On failure, read the log around the error; the cause is often not in the last lines.
+
+### Long-running commands
+
+- Split separable work so that each Bash call needs at most 3 minutes. A single job that cannot be split, such as one build or test suite, may take longer.
+- Do not rerun a check whose result is still valid; read the saved log.
+- Before waiting, check whether the job has already finished. Then use a supported completion wait, or poll with a deadline. Use a fixed delay only when a settling period is required. Stop as soon as the job succeeds or fails.
