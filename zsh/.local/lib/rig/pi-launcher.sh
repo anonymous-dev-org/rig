@@ -42,34 +42,70 @@ IFS= read -r primary < <(git -c core.quotePath=false worktree list --porcelain)
 primary=${primary#worktree }
 printf '\n%sStart Pi%s\n%s%s%s\n\n' "$bold" "$reset" "$dim" "$primary" "$reset" >&2
 choice=1
+plain_menu() {
+printf '  1) New worktree\n  2) Main checkout\n  q) Cancel\n' >&2
+while true; do
+printf 'Choose [1/2/q] (Enter = new worktree): ' >&2
+IFS= read -r choice || exit 1
+case "$choice" in
+'') choice=1; break ;;
+1|2) break ;;
+q|Q) printf 'Cancelled.\n' >&2; exit 0 ;;
+*) printf 'Please enter 1, 2, or q.\n' >&2 ;;
+esac
+done
+}
 draw_menu() {
 local first=' ' second=' ' first_style='' second_style=''
 if [[ "$choice" = 1 ]]; then first='›'; first_style=$bold;
 else second='›'; second_style=$bold; fi
-printf '\r%s  %s New worktree   — isolated branch from fresh main%s\033[K\n' "$first_style" "$first" "$reset" >&2
-printf '%s  %s Main checkout  — work directly on fresh main%s\033[K\n' "$second_style" "$second" "$reset" >&2
-printf '%s  ↑/↓ select · Enter continue · 1/2 shortcuts · q cancel%s\033[K' "$dim" "$reset" >&2
+printf '\r%s  %s New worktree%s\033[K\n' "$first_style" "$first" "$reset" >&2
+printf '%s  %s Main checkout%s\033[K\n' "$second_style" "$second" "$reset" >&2
+printf '%s  ↑/↓ or 1/2 · Enter confirm · q cancel%s\033[K' "$dim" "$reset" >&2
 }
+read_escape_sequence() {
+# Escape-sequence final bytes are an ASCII range, not a locale sort range.
+local LC_ALL=C introducer part
+IFS= read -rsn2 -t 1 sequence || return 1
+introducer=${sequence:0:1}
+[[ "$introducer" = '[' || "$introducer" = O ]] || return 1
+part=${sequence:1:1}
+while [[ "$part" != [@-~] ]]; do
+IFS= read -rsn1 -t 1 part || return 1
+sequence+=$part
+done
+}
+# Use actual terminal width rather than a potentially stale COLUMNS variable.
+columns=0
+if size=$(stty size 2>/dev/null); then
+columns=${size##* }
+fi
+if [[ "${TERM:-dumb}" = dumb || ! "$columns" =~ ^[0-9]+$ || "$columns" -lt 48 ]]; then
+plain_menu
+else
 draw_menu
 while true; do
 IFS= read -rsn1 key || exit 1
 case "$key" in
 $'\033')
-if IFS= read -rsn2 -t 1 sequence; then
+# Consume the entire CSI/SS3 sequence, including modifier parameters.
+read_escape_sequence || continue
 case "$sequence" in
 '[A'|'[B'|'OA'|'OB')
 if [[ "$choice" = 1 ]]; then choice=2; else choice=1; fi
 ;;
+*) continue ;;
 esac
-fi
 ;;
-1|2) choice=$key; printf '\n' >&2; break ;;
+1|2) choice=$key ;;
 '') printf '\n' >&2; break ;;
 q|Q) printf '\nCancelled.\n' >&2; exit 0 ;;
+*) continue ;;
 esac
 printf '\r\033[2A' >&2
 draw_menu
 done
+fi
 case "$choice" in
 1)
 printf '\n%sName your branch using letters, numbers, hyphens, or underscores.%s\n' "$dim" "$reset" >&2
