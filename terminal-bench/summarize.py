@@ -104,25 +104,26 @@ def summarize(root):
     manifest_path = root / 'manifest.json'
     manifest = load(manifest_path, warnings) if manifest_path.exists() else {}
     expected_tasks = set(manifest.get('tasks', []))
+    expected = len(expected_tasks) if expected_tasks else 5
     for arm in ARMS:
         group = [r for r in rows if r['arm'] == arm]
         tasks = {r['task'] for r in group}
-        if len(group) != 5 or len(tasks) != 5:
-            warnings.append(f'{arm}: expected 5 distinct task results; found {len(group)} results, {len(tasks)} distinct tasks; missing at least {max(0, 5-len(tasks))}.')
+        if len(group) != expected or len(tasks) != expected:
+            warnings.append(f'{arm}: expected {expected} distinct task results; found {len(group)} results, {len(tasks)} distinct tasks; missing at least {max(0, expected-len(tasks))}.')
         if expected_tasks and tasks != expected_tasks:
             warnings.append(f'{arm}: task mismatch; missing {sorted(expected_tasks - tasks)}, unexpected {sorted(tasks - expected_tasks)}.')
         if len(group) != len(tasks):
             warnings.append(f'{arm}: duplicate tasks / retries present; aggregates include all trials.')
-        arms[arm] = dict(expected=5, results=len(group), distinct_tasks=len(tasks), missing=max(0, 5-len(tasks)), passes=sum(r['passed'] for r in group), exceptions=sum(r['exception'] is not None for r in group), metrics={})
+        arms[arm] = dict(expected=expected, results=len(group), distinct_tasks=len(tasks), missing=max(0, expected-len(tasks)), passes=sum(r['passed'] for r in group), exceptions=sum(r['exception'] is not None for r in group), metrics={})
         job_path = root / 'jobs' / arm / 'result.json'
         arms[arm]['job_wall_seconds'] = duration(load(job_path, warnings)) if job_path.exists() else None
         arms[arm]['verifier_tests'] = {key: sum((r['tests'] or {}).get(key, 0) for r in group) for key in ('tests', 'passed', 'failed')}
         for field in FIELDS:
             values = [r[field] for r in group if r[field] is not None]
             arms[arm]['metrics'][field] = dict(available=len(values), sum=sum(values) if values else None, median=statistics.median(values) if values else None)
-    if len(rows) != 15:
-        warnings.append(f'Expected 15 trial results overall; found {len(rows)}.')
-    return dict(expected_results=15, observed_results=len(rows), warnings=warnings, limitations=NOTES,
+    if len(rows) != expected * len(ARMS):
+        warnings.append(f'Expected {expected * len(ARMS)} trial results overall; found {len(rows)}.')
+    return dict(expected_results=expected * len(ARMS), observed_results=len(rows), warnings=warnings, limitations=NOTES,
                 configuration_sha256=manifest.get('archive_sha256'), tasks=manifest.get('tasks'), arms=arms, trials=rows)
 
 
@@ -143,7 +144,7 @@ def markdown(report):
     for row in report['trials']:
         lines.append('| ' + ' | '.join(cell(row[k]) for k in columns) + ' |')
     for arm, data in report['arms'].items():
-        lines += ['', f'## {arm}', '', f"Results: {data['results']}/5; distinct tasks: {data['distinct_tasks']}; missing: {data['missing']}; passes: {data['passes']}; exceptions: {data['exceptions']}.", '', '| Metric | Available | Sum | Median |', '| --- | --- | --- | --- |']
+        lines += ['', f'## {arm}', '', f"Results: {data['results']}/{data['expected']}; distinct tasks: {data['distinct_tasks']}; missing: {data['missing']}; passes: {data['passes']}; exceptions: {data['exceptions']}.", '', '| Metric | Available | Sum | Median |', '| --- | --- | --- | --- |']
         for field, metric in data['metrics'].items():
             lines.append('| ' + ' | '.join(cell(v) for v in [field, metric['available'], metric['sum'], metric['median']]) + ' |')
     return '\n'.join(lines) + '\n'

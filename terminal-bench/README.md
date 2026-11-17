@@ -2,6 +2,8 @@
 
 Terminal-Bench runs terminal tasks in isolated Linux environments. Its current runner is [Harbor](https://docs.harborframework.com/getting-started/installation.md). Docker Desktop must be running; tasks and results stay outside rig. No rig sync changes are needed.
 
+Latest comparison: [72-trial raw results](TIERED-RESULTS.md), with [selection and accounting details](TIERED-RUN.md). The tiered run used OrbStack and retained failed trials; its code-quality review is deferred.
+
 ## Installed and verified
 
 On this Apple Silicon Mac: Harbor 0.26.0 (installed through uv), Docker 29.8.2, Docker Compose 5.5.0, and Codex CLI 0.169.0. Codex is signed in with ChatGPT (`codex login status`).

@@ -106,6 +106,9 @@ class ConfiguredPi(BarePi):
             await self.exec_as_agent(environment, command=(
                 f"mkdir -p {shlex.quote(target)} && ln -s {shlex.quote(target)} {shlex.quote(agent_dir + '/' + name)}"
             ))
+        await self.exec_as_agent(environment, command=(
+            f"mkdir -p {shlex.quote(str(self.environment_logs_dir / 'pi' / 'subagents-temp'))}"
+        ))
         await self._upload_config_text(
             environment, content=json.dumps({"archive_sha256": hashlib.sha256(archive.read_bytes()).hexdigest()}),
             remote_path=str(self.environment_logs_dir / "snapshot-proof.json"), filename="snapshot-proof.json"
