@@ -111,6 +111,7 @@ export default function (pi: ExtensionAPI) {
 		active?.abort();
 		active = undefined;
 		ctx.ui.setStatus(REVIEW_TYPE, undefined);
+pi.events.emit("rig-deep-review:status", { sessionId: ctx.sessionManager.getSessionId(), active: false });
 	};
 	pi.on("session_start", reset);
 	pi.on("session_shutdown", reset);
@@ -155,6 +156,7 @@ return;
 				}
 			};
 			ctx.ui.setStatus(REVIEW_TYPE, "Astra + Fable reviewing in background");
+pi.events.emit("rig-deep-review:status", { sessionId, active: true });
 			// Detached deliberately: command handlers must not hold the UI open.
 			void (async () => {
 				try {
@@ -198,7 +200,11 @@ log({ event: "findings_queued", models: REVIEWERS.map((reviewer) => `${reviewer.
 					log({ event: controller.signal.aborted ? "review_cancelled" : "review_failed", error: String(error) });
 					if (current()) ctx.ui.notify(`Deep review failed: ${String(error)}`, "error");
 				} finally {
-					if (active === controller) { active = undefined; ctx.ui.setStatus(REVIEW_TYPE, undefined); }
+if (active === controller) {
+active = undefined;
+ctx.ui.setStatus(REVIEW_TYPE, undefined);
+pi.events.emit("rig-deep-review:status", { sessionId, active: false });
+}
 				}
 			})();
 		},

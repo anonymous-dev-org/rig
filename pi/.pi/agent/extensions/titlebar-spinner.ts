@@ -16,6 +16,7 @@ export default function (pi: ExtensionAPI) {
   let sequence = 0;
   let parentActive = false;
   let childActive = false;
+let reviewActive = false;
   let pending: (() => void) | undefined;
 
   function baseTitle(ctx: ExtensionContext): string {
@@ -27,7 +28,8 @@ export default function (pi: ExtensionAPI) {
   function render(ctx: ExtensionContext): void {
     if (ctx.mode !== "tui") return;
     const title = baseTitle(ctx);
-    ctx.ui.setTitle(parentActive || childActive ? `⏳ ${title}` : title);
+const icons = `${parentActive || childActive ? "⏳ " : ""}${reviewActive ? "👀 " : ""}`;
+ctx.ui.setTitle(`${icons}${title}`);
   }
 
   function cancelPending(): void {
@@ -66,6 +68,7 @@ export default function (pi: ExtensionAPI) {
     sessionId = ctx.sessionManager.getSessionId();
     parentActive = !ctx.isIdle();
     childActive = false;
+reviewActive = false;
     render(ctx);
     refresh();
   });
@@ -89,6 +92,12 @@ export default function (pi: ExtensionAPI) {
     render(ctx);
     refresh();
   });
+pi.events.on("rig-deep-review:status", (value: unknown) => {
+if (!context || !record(value) || value.sessionId !== sessionId ||
+context.sessionManager.getSessionId() !== sessionId || typeof value.active !== "boolean") return;
+reviewActive = value.active;
+render(context);
+});
   pi.events.on(READY, (value: unknown) => {
     if (!record(value) || !record(value.session) ||
         value.session.sessionId !== sessionId) return;
@@ -111,6 +120,7 @@ export default function (pi: ExtensionAPI) {
     sessionId = undefined;
     parentActive = false;
     childActive = false;
+reviewActive = false;
     if (ctx.mode === "tui") ctx.ui.setTitle(baseTitle(ctx));
   });
 }
