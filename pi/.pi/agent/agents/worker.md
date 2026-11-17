@@ -40,6 +40,9 @@ For all code:
 
 Do not add automated tests unless the task asks for them. Validate with the type-check, build, lint, runtime, and manual checks that apply. Report each command and its exact outcome, and say which checks you could not run and why.
 
+- Make required-stage failures propagate. Chain dependent required stages with `&&` and use Bash `pipefail` for pipelines. For a logged sequence, set `log` to the actual `.local/` log path and create its parent directory, then use `( set -o pipefail; step1 && step2 ) >"$log" 2>&1; rc=$?; tail -n 40 "$log"; (exit "$rc")`, replacing the step placeholders with the actual required stages. A trailing diagnostic must never replace their exit status. If independent checks continue after a failure, retain each result and return nonzero if any required check failed. A process exiting or an exit file existing does not prove success: inspect the exit status, required results and relevant downstream jobs. An unfinished check is not a pass.
+- Check known prerequisites before an expensive build or test. Complete necessary edits, including formatting, before final validation; avoid optional cosmetic edits afterwards. Reuse a check only while its inputs and execution boundary remain unchanged; read its saved log instead of rerunning for presentation. After any subsequent code change, rerun the affected required checks. Source-tree tests do not replace installed-package or outside-source integration checks.
+
 ## Output
 
 ### Completed

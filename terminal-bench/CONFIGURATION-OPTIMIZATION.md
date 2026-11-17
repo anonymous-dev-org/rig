@@ -64,16 +64,21 @@ A disposable ordinary-Bash check of this pattern passed three cases: early requi
 
 ## Stage 1 repository patch and local checks
 
-The two replacement bullets above are now applied to `pi/.pi/agent/AGENTS.md`. No other instruction, worker prompt or runtime setting changed.
+Commit `afe4981` applied the two replacement bullets above to `pi/.pi/agent/AGENTS.md`. That initial patch changed no other instruction, worker prompt or runtime setting.
 
 - Actual Pi Bash-tool checks passed: early required-stage failure returned **7**, pipeline failure returned **9**, successful required stages returned **0**, and independent checks continued but collectively returned **1**. Trailing log display did not replace any result; dependent stages after failure did not run.
-- An offline check using the installed Pi prompt builder and pi-subagents agent discovery/prompt rewriting confirmed the parent receives both rules. The repository worker resolves to `systemPromptMode: replace`, `inheritProjectContext: false` and `inheritGlobalContext: false`, so **the worker does not receive either rule**. This checks prompt construction, not model compliance; no provider request was made.
-- Worker coverage remains unresolved. Preserve its isolated context and, with approval, add focused execution guidance to `worker.md` rather than enable inheritance of all global instructions. The approved first patch explicitly excluded worker-prompt changes.
+- An initial offline check using the installed Pi prompt builder and pi-subagents agent discovery/prompt rewriting confirmed the parent received both rules. The repository worker resolved to `systemPromptMode: replace`, `inheritProjectContext: false` and `inheritGlobalContext: false`, so **the worker did not receive either rule**. This checked prompt construction, not model compliance; no provider request was made.
+- The initial patch left worker coverage unresolved because worker-prompt changes were explicitly excluded. The user subsequently approved adding the same focused execution guidance to `worker.md`, without enabling broader instruction inheritance.
 - `node --test pi/sync-settings.test.mjs` returned **1**: **41 passed, 2 failed**. The unchanged suite expects a Playwright `--headless` argument absent from the existing defaults and references the absent legacy `init.sh`. Neither failure involves the edited instructions; do not treat this suite as passing or repair those separate issues here.
 - Local diagnostic logs are under the ignored `.local/stage1-*` paths. The first offline prompt-check attempt could not resolve the host's `pi-ai` peer dependency; explicitly supplying the installed host module directory through `NODE_PATH` allowed the check to complete without package or configuration changes.
 
-No live synchronization, solver comparison or performance claim accompanies this patch. Resolve worker coverage before treating stage 1 as complete for delegated work.
+### Authorized worker-prompt follow-up
 
+The same two execution/verification bullets are now included directly under **Validation** in `pi/.pi/agent/agents/worker.md`. All existing worker instructions and frontmatter remain unchanged.
+
+An offline check executes the installed pi-subagents runtime's input-filter and final-boundary hooks with Pi's prompt builder. Both rules survive in the constructed worker prompt exactly once, unrelated global/project instructions remain excluded, and the same check detects the original worker's missing rules. The worker still resolves to replacement-prompt mode with both inheritance flags false. This closes the instruction-coverage gap, not a claim of model compliance or performance improvement. The successful check is logged in `.local/stage1-worker-followup.RdhHQu`; an earlier text-only probe omitted the runtime's structured-input filtering and was replaced with this runtime-hook check.
+
+The earlier four Pi Bash checks and the existing settings-suite result remain applicable: the command pattern, Bash tool and settings-test inputs are unchanged. No live synchronization, provider request, solver comparison or stage-2 delegation change accompanies this follow-up.
 
 ## Later priorities: separate candidates, not a bundled patch
 
@@ -86,7 +91,7 @@ No live synchronization, solver comparison or performance claim accompanies this
 
 ## Proposed solver comparison—not authorized
 
-The local instruction checks are recorded above. Worker coverage remains unresolved; live synchronization and the solver comparison still require separate approval.
+Parent and worker instruction coverage have been checked locally as recorded above. Live synchronization and the solver comparison still require separate approval.
 
 Then compare the frozen configuration against the candidate on six tasks: `build-cython-ext`, `cobol-modernization`, `dna-assembly`, `prove-plus-comm`, `fix-git` and `extract-moves-from-video`. Pin model, low effort, package/runtime versions and resource limits; use fresh isolated artifacts and counterbalance arm order. One attempt per arm per comparison. Predeclare two additional paired repetitions each for fix-git, Cython and video, not retries until success. This is **24 solver trials total**: 12 initial plus 12 repeated.
 
