@@ -163,7 +163,7 @@ return;
 					const guidance = await readFile(join(agentDir, "DEEP_REVIEW.md"), "utf8");
 					controller.signal.throwIfAborted();
 					const prompt = `Worktree: ${cwd}\nSession transcript: ${sessionFile}\nCaptured entry ID: ${entryId}\nCaptured at: ${startedAt}`;
-					await Promise.all(REVIEWERS.map(async (reviewer) => {
+const results = await Promise.all(REVIEWERS.map(async (reviewer) => {
 						const model = `${reviewer.provider}/${reviewer.id}`;
 						const start = Date.now();
 						let finished = false;
@@ -182,16 +182,18 @@ return;
 								log({ event: "review_usage", model: `${message.provider}/${message.model}`, usage: message.usage });
 							});
 							finish({ event: "review_finished", message: result });
-							if (!current()) return;
-							pi.sendMessage({ customType: REVIEW_TYPE, display: true, content: result, details: { model, runId, entryId, startedAt } }, { deliverAs: "steer", triggerTurn: true });
-							log({ event: "findings_queued", model });
+return result;
 						} catch (error) {
 							finish({ event: controller.signal.aborted ? "review_cancelled" : "review_failed", error: String(error) });
-							if (current()) ctx.ui.notify(`Deep review failed (${model}): ${String(error)}`, "error");
+return `Review failed: ${String(error)}`;
 						} finally {
 							controller.signal.removeEventListener("abort", cancel);
 						}
 					}));
+if (!current()) return;
+const content = results.map((result, index) => `## Reviewer ${index + 1}\n\n${result}`).join("\n\n");
+pi.sendMessage({ customType: REVIEW_TYPE, display: true, content, details: { models: REVIEWERS.map((reviewer) => `${reviewer.provider}/${reviewer.id}`), runId, entryId, startedAt } }, { deliverAs: "steer", triggerTurn: true });
+log({ event: "findings_queued", models: REVIEWERS.map((reviewer) => `${reviewer.provider}/${reviewer.id}`) });
 				} catch (error) {
 					log({ event: controller.signal.aborted ? "review_cancelled" : "review_failed", error: String(error) });
 					if (current()) ctx.ui.notify(`Deep review failed: ${String(error)}`, "error");
