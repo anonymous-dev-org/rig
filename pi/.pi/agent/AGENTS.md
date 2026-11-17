@@ -44,9 +44,9 @@ When something breaks in a small step, the cause is in that step. Building every
 
 ## 3. Delegation
 
-Delegate a part of the work to a subagent whenever it is separate: a subagent can explore or implement it from a written task description, without waiting on the rest of the work. Otherwise work alone. A few known reads or searches are not separate work; do them yourself. This paragraph is the user's standing request to delegate implementation, research and prerequisite decisions, not independent reviews.
+Delegate a separate part of the work only when the expected quality or elapsed-time benefit outweighs startup, context, handoff and integration costs. Useful parallel progress by the parent or another child, or a bounded specialist investigation, can justify delegation. Prefer local execution for an essentially serial handoff with no concrete specialist benefit; a few known reads or searches are not separate work. Honour explicit user requests for delegation, councils or reviews. This paragraph is the user's standing request to delegate implementation, research and prerequisite decisions when that benefit exists, not independent reviews.
 
-Before launching, state what the child owns and how its result will be used:
+Before launching, state what the child owns and how its result will be used. Pass relevant findings, paths and completed checks so the child can build on them instead of repeating discovery; the parent still performs the necessary integration checks:
 
 - **Implementation:** assign a separate deliverable and file ownership. Do other work rather than independently implementing the same deliverable.
 - **Independent review:** launch a review-only child only when the user explicitly requests delegated review. Do not launch one just to audit, validate, double-check or provide a second opinion on the parent's work, and do not relabel that review as research or a prerequisite decision. When requested, name the risk or claim and evidence needed. The parent remains responsible for its own verification.

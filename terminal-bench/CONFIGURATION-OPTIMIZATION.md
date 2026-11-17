@@ -2,7 +2,7 @@
 
 ## Decision
 
-**First improve execution and verification discipline, rather than cutting verification, disabling delegation or stripping the prompt.** The council endorsed one bounded first patch: replace two existing execution-rule bullets in `pi/.pi/agent/AGENTS.md` with concrete failure-propagation and final-validation instructions. This is a proposal, not an applied configuration change or a measured speed improvement.
+**First improve execution and verification discipline, rather than cutting verification, disabling delegation or stripping the prompt.** The council endorsed one bounded first patch: replace two existing execution-rule bullets in `pi/.pi/agent/AGENTS.md` with concrete failure-propagation and final-validation instructions. That patch and the subsequently approved instruction stages are recorded below; no speed improvement has been measured.
 
 The parent accepts this priority. Masked intermediate failures are directly demonstrated; the size of any speed or quality benefit from revised instructions remains untested.
 
@@ -12,7 +12,7 @@ The parent accepts this priority. Masked intermediate failures are directly demo
 - First deliberation: three paired rounds, **unresolved** on exact proposal wording, despite both ranking execution/verification first.
 - Focused reconciliation: two paired rounds on a fixed proposal, **agreed**, reason `same_proposal_endorsed`. Both endorsed the identical first-patch wording, later priorities and validation boundary below.
 - The parent checked primary Cython commands and refined one research finding: the parent's outside-source installed-package smoke check is a distinct integration boundary, not redundant source-tree verification.
-- No configuration source or live configuration was changed. No benchmark solver was rerun.
+- At the council handover, no configuration source or live configuration had changed and no benchmark solver had been rerun. Subsequent repository-only changes are recorded below.
 
 ## What happened
 
@@ -79,6 +79,19 @@ The same two execution/verification bullets are now included directly under **Va
 An offline check executes the installed pi-subagents runtime's input-filter and final-boundary hooks with Pi's prompt builder. Both rules survive in the constructed worker prompt exactly once, unrelated global/project instructions remain excluded, and the same check detects the original worker's missing rules. The worker still resolves to replacement-prompt mode with both inheritance flags false. This closes the instruction-coverage gap, not a claim of model compliance or performance improvement. The successful check is logged in `.local/stage1-worker-followup.RdhHQu`; an earlier text-only probe omitted the runtime's structured-input filtering and was replaced with this runtime-hook check.
 
 The earlier four Pi Bash checks and the existing settings-suite result remain applicable: the command pattern, Bash tool and settings-test inputs are unchanged. No live synchronization, provider request, solver comparison or stage-2 delegation change accompanies this follow-up.
+
+## Stage 2: benefit-based delegation
+
+The opening delegation rule now requires an expected quality or elapsed-time benefit after startup, context, handoff and integration costs. It allows useful parallel progress or bounded specialist investigation, rather than treating a serial transfer as a benefit by itself. The handoff rule now passes relevant existing findings, paths and completed checks; file ownership and the parent's necessary integration checks remain explicit.
+
+Manual decision walkthroughs:
+
+- **Serial:** the parent already knows the one-file change, has no independent work and has no concrete specialist need. Keep the change local rather than launch a child just to wait.
+- **Separable:** a child can implement a UI in assigned UI files against a shared API contract while the parent implements the API in different files. Delegate the UI with the contract and existing findings; the parent still checks the combined behavior.
+
+Explicit user requests for delegation, councils and reviews are preserved; an independent review still requires explicit approval. A bounded specialist investigation can justify delegation even when parallel implementation is unavailable.
+
+The offline prompt check passed and confirmed only the two opening delegation paragraphs changed, the new wording reaches the parent prompt, and stage-1 parent/worker guidance is intact. Log: `.local/stage2-delegation.CupSZb`. These walkthroughs and prompt checks do not establish future model choices or a timing improvement; the solver comparison remains separate.
 
 ## Later priorities: separate candidates, not a bundled patch
 
