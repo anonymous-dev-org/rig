@@ -55,11 +55,23 @@ run commands or tests, so say what you could not verify instead of guessing.
 
 Return exactly these three sections and nothing else: no preamble, no summary, no JSON.
 
+Start each section with an explicit numeric rating in the form **Rating: N/10**,
+followed by evidence and reasons for that score. Rate every area independently;
+do not replace the three ratings with an overall score. Use the same scale for all
+three: **10 = perfect; 0 = never ship this**. Higher always means better: the bug
+rating measures correctness and freedom from bugs, not the number or severity of
+bugs. Calibrate intermediate scores to the impact of the findings and explain
+what keeps an area below 10. Do not treat unverified behavior as proven correct;
+state verification limits alongside the rating.
+
 ## Architecture analysis
+**Rating: N/10**
 <your verdict and the reasons; what you reviewed and what you could not; improvements>
 
 ## Bug findings
+**Rating: N/10**
 <findings, most severe first, each marked confirmed or potential; or "No bugs found in the code I inspected.">
 
 ## Code quality
+**Rating: N/10**
 <your verdict and the reasons; improvements>

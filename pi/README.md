@@ -243,14 +243,18 @@ source and Git changes, including committed work identified from the conversatio
 The restricted Git tool supports inspection only; reviewers cannot edit files,
 run arbitrary shell commands, or execute tests.
 
-Each report covers architecture analysis, bug findings, and code quality. Findings
+Each report covers architecture analysis, bug findings, and code quality, with an
+explicit numeric rating out of 10 for each area: 10 is perfect and 0 is never ship
+this. Higher bug ratings mean greater correctness and fewer or less serious bugs.
+Each rating must be justified. Findings
 must explain the evidence, consequences, and smallest corrective action; potential
 issues are distinguished from confirmed bugs. Each successful report is delivered
 verbatim as a separate developer-feedback message, even if the other reviewer fails.
 No extra prefix or summary is added to the report body.
 
-Only one `/review` run can be active at once. Session navigation, shutdown/reload,
-and manual compaction cancel pending work and prevent stale delivery. Failures are
+Only one `/review` run can be active at once. Run `/review` again while it is
+running to stop the reviewers and clear their status. Session navigation,
+shutdown/reload, and manual compaction also cancel pending work and prevent stale delivery. Failures are
 visible with no model fallback. Reviewer usage is recorded in the parent session;
 review activity and final reports are logged privately under `~/.pi/agent/logs/`.
 Run `/reload` after installing the extension, then `/review` in a saved session.
