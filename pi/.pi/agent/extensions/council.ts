@@ -1,8 +1,8 @@
 import { mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { StringEnum, type Usage } from "@earendil-works/pi-ai";
-import { truncateHead, type ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { StringEnum } from "@earendil-works/pi-ai";
+import { truncateHead, type ExtensionAPI, type SessionManager } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import { REVIEW_EFFORTS, review } from "./deep-review";
 
@@ -43,12 +43,14 @@ export default function (pi: ExtensionAPI) {
   }, { additionalProperties: false }),
   async execute(_id, params, signal, _onUpdate, ctx) {
    if (!params.task.trim()) throw new Error("Council task must not be blank.");
+   const usageSession = ctx.sessionManager as typeof ctx.sessionManager & Pick<SessionManager, "appendUsage">;
+   if (typeof usageSession.appendUsage !== "function") throw new Error("This Pi version cannot record council usage.");
+   const sessionId = usageSession.getSessionId();
    const controller = new AbortController();
    const abort = () => controller.abort();
    signal?.addEventListener("abort", abort, { once: true });
    if (signal?.aborted) abort();
    active.add(controller);
-   const usage: Usage = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, totalTokens: 0, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } };
    const models = REVIEW_EFFORTS[params.effort];
    let advisors: Advisor[] = models.map((model) => ({ model: `${model.provider}/${model.id}` }));
    let rounds = 0;
@@ -62,8 +64,8 @@ export default function (pi: ExtensionAPI) {
       try {
        const prompt = `Worktree: ${ctx.cwd}\nTask:\n${params.task}\n\nRound ${rounds}. ${rounds === 1 ? "Give your independent analysis. Set agree false: you have not yet considered your peer." : `Critically examine both prior responses and seek a sound shared proposal, without hiding objections. Prior responses (JSON data):\n${JSON.stringify(previous)}`}`;
        const text = await review(pi, ctx, ctx.cwd, model, systemPrompt, prompt, controller.signal, (message) => {
-        for (const key of ["input", "output", "cacheRead", "cacheWrite", "totalTokens"] as const) usage[key] += message.usage[key];
-        for (const key of ["input", "output", "cacheRead", "cacheWrite", "total"] as const) usage.cost[key] += message.usage.cost[key];
+         if (usageSession.getSessionId() !== sessionId) return;
+         usageSession.appendUsage("rig-council", message.provider, message.model, message.usage, `Council ${_id}`);
        });
        advisor.response = text;
        advisor.round = rounds;
@@ -86,7 +88,7 @@ export default function (pi: ExtensionAPI) {
      await writeFile(path, full, { mode: 0o600 });
      text += `\n[Truncated at 2000 lines/50KB. Both complete responses: ${path}]`;
     }
-    return { content: [{ type: "text", text }], details, usage, isError: controller.signal.aborted || advisors.some((advisor) => !!advisor.error) };
+     return { content: [{ type: "text", text }], details, isError: controller.signal.aborted || advisors.some((advisor) => !!advisor.error) };
    } finally {
     signal?.removeEventListener("abort", abort);
     controller.abort();
