@@ -231,10 +231,13 @@ safely; they are not automatically retried as smaller chunks.
 
 ## On-demand deep review
 
-Run `/review` to launch Astra (`openai/gpt-6-astra`) and Fable
-(`pi-sub-anthropic/claude-fable-5-2`) in parallel, both with high thinking.
-The command runs in the background.
-Its prompt is `~/.pi/agent/DEEP_REVIEW.md`; its extension is `deep-review.ts`.
+Run `/review <low|medium|hard> [message]` to launch Astra (`openai/gpt-6-astra`)
+and Fable (`pi-sub-anthropic/claude-fable-5-2`) in parallel in the background.
+Effort is required: `low`, `medium`, and `hard` select low, medium, and high
+thinking respectively for both models. The models stay the same at every effort.
+For example, `/review hard Focus on cancellation and session switching` adds that
+message to both reviewers' prompts. Without a message, no extra instructions are added.
+Its shared system prompt is `~/.pi/agent/DEEP_REVIEW.md`; its extension is `deep-review.ts`.
 
 Both reviewers receive the worktree path, session transcript path, and captured
 branch entry ID. They independently read the conversation and inspect relevant
@@ -251,12 +254,13 @@ issues are distinguished from confirmed bugs. Each successful report is delivere
 verbatim as a separate developer-feedback message, even if the other reviewer fails.
 No extra prefix or summary is added to the report body.
 
-Only one `/review` run can be active at once. Run `/review` again while it is
-running to stop the reviewers and clear their status. Session navigation,
+Only one `/review` run can be active at once. Run `/review stop` while it is
+running to stop the reviewers and clear their status. Starting another review
+while one is active shows an error rather than cancelling it. Session navigation,
 shutdown/reload, and manual compaction also cancel pending work and prevent stale delivery. Failures are
 visible with no model fallback. Reviewer usage is recorded in the parent session;
 review activity and final reports are logged privately under `~/.pi/agent/logs/`.
-Run `/reload` after installing the extension, then `/review` in a saved session.
+Run `/reload` after installing the extension, then `/review medium` in a saved session.
 
 ## Explicit legacy migration
 

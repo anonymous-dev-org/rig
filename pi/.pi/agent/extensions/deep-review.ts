@@ -15,6 +15,7 @@ const REVIEWERS = [
 	{ provider: "openai", id: "gpt-6-astra" },
 	{ provider: "pi-sub-anthropic", id: "claude-fable-5-2" },
 ] as const;
+const REVIEW_EFFORTS = { low: "low", medium: "medium", hard: "high" } as const;
 
 function gitTool(pi: ExtensionAPI, cwd: string) {
 	const parameters = Type.Object({
@@ -69,13 +70,14 @@ function gitTool(pi: ExtensionAPI, cwd: string) {
 
 async function review(
 	pi: ExtensionAPI, ctx: ExtensionContext, cwd: string, reviewer: typeof REVIEWERS[number],
-	systemPrompt: string, prompt: string, signal: AbortSignal, recordUsage: (message: AssistantMessage) => void,
+systemPrompt: string, prompt: string, thinkingLevel: typeof REVIEW_EFFORTS[keyof typeof REVIEW_EFFORTS],
+signal: AbortSignal, recordUsage: (message: AssistantMessage) => void,
 ): Promise<string> {
 	const model = ctx.modelRegistry.find(reviewer.provider, reviewer.id);
 	if (!model || !ctx.modelRegistry.hasConfiguredAuth(model)) throw new Error(`Model ${reviewer.provider}/${reviewer.id} is unavailable or unauthenticated.`);
 	const agent = new Agent({
 		initialState: {
-			systemPrompt, model, thinkingLevel: "high",
+systemPrompt, model, thinkingLevel,
 			tools: [...createReadOnlyTools(cwd).filter((tool) => ["read", "grep", "find", "ls"].includes(tool.name)), gitTool(pi, cwd)],
 		},
 		convertToLlm,
@@ -124,18 +126,29 @@ pi.events.emit("rig-deep-review:status", { sessionId: ctx.sessionManager.getSess
 	});
 
 	pi.registerCommand("review", {
-description: "Start a parallel Astra and Fable review, or stop the active review",
-		handler: async (args, ctx) => {
-			if (args.trim()) { ctx.ui.notify("Usage: /review (no arguments)", "error"); return; }
-if (active) {
+description: "Review with low|medium|hard effort and an optional message; /review stop cancels",
+getArgumentCompletions: (prefix) => {
+const items = [...Object.keys(REVIEW_EFFORTS), "stop"].filter((value) => value.startsWith(prefix));
+return items.length ? items.map((value) => ({ value, label: value })) : null;
+},
+handler: async (args, ctx) => {
+const input = args.trim();
+if (input === "stop") {
+if (!active) { ctx.ui.notify("No review is running.", "info"); return; }
 reset(undefined, ctx);
 ctx.ui.notify("Deep review stopped.", "info");
 return;
 }
-			const controller = new AbortController();
-			active = controller;
-			const generation = epoch;
-			const cwd = ctx.cwd;
+const match = /^(low|medium|hard)(?:\s+([\s\S]*))?$/.exec(input);
+if (!match) { ctx.ui.notify("Usage: /review <low|medium|hard> [message], or /review stop", "error"); return; }
+if (active) { ctx.ui.notify("A review is already running. Use /review stop first.", "error"); return; }
+const effort = match[1] as keyof typeof REVIEW_EFFORTS;
+const thinkingLevel = REVIEW_EFFORTS[effort];
+const message = match[2] ?? "";
+const controller = new AbortController();
+active = controller;
+const generation = epoch;
+const cwd = ctx.cwd;
 			const runId = randomUUID();
 			const startedAt = new Date().toISOString();
 			const sessionId = ctx.sessionManager.getSessionId();
@@ -149,13 +162,13 @@ return;
 			const log = (data: Record<string, unknown>) => {
 				try {
 					mkdirSync(logDir, { recursive: true, mode: 0o700 });
-					appendFileSync(join(logDir, "deep-review.jsonl"), `${JSON.stringify({ timestamp: new Date().toISOString(), runId, sessionId, entryId, cwd, ...data })}\n`, { mode: 0o600 });
+appendFileSync(join(logDir, "deep-review.jsonl"), `${JSON.stringify({ timestamp: new Date().toISOString(), runId, sessionId, entryId, cwd, effort, thinkingLevel, ...data })}\n`, { mode: 0o600 });
 				} catch (error) {
 					if (!logFailed && current()) ctx.ui.notify(`Deep review log unavailable: ${String(error)}`, "error");
 					logFailed = true;
 				}
 			};
-			ctx.ui.setStatus(REVIEW_TYPE, "Astra + Fable reviewing in background");
+ctx.ui.setStatus(REVIEW_TYPE, `Astra + Fable reviewing in background (${effort})`);
 pi.events.emit("rig-deep-review:status", { sessionId, active: true });
 			// Detached deliberately: command handlers must not hold the UI open.
 			void (async () => {
@@ -164,7 +177,7 @@ pi.events.emit("rig-deep-review:status", { sessionId, active: true });
 					if (!sessionFile || !entryId) throw new Error("Review requires a persistent session transcript and captured leaf entry ID.");
 					const guidance = await readFile(join(agentDir, "DEEP_REVIEW.md"), "utf8");
 					controller.signal.throwIfAborted();
-					const prompt = `Worktree: ${cwd}\nSession transcript: ${sessionFile}\nCaptured entry ID: ${entryId}\nCaptured at: ${startedAt}`;
+const prompt = `Worktree: ${cwd}\nSession transcript: ${sessionFile}\nCaptured entry ID: ${entryId}\nCaptured at: ${startedAt}\nReview effort: ${effort}${message ? `\n\nAdditional instructions from the user:\n${message}` : ""}`;
 const results = await Promise.all(REVIEWERS.map(async (reviewer) => {
 						const model = `${reviewer.provider}/${reviewer.id}`;
 						const start = Date.now();
@@ -178,7 +191,7 @@ const results = await Promise.all(REVIEWERS.map(async (reviewer) => {
 						controller.signal.addEventListener("abort", cancel, { once: true });
 						log({ event: "review_started", model });
 						try {
-							const result = await review(pi, ctx, cwd, reviewer, guidance, prompt, controller.signal, (message) => {
+const result = await review(pi, ctx, cwd, reviewer, guidance, prompt, thinkingLevel, controller.signal, (message) => {
 								if (usageSession.getSessionId() !== sessionId) { log({ event: "review_usage_unattributed", model, usage: message.usage }); return; }
 								usageSession.appendUsage(REVIEW_TYPE, message.provider, message.model, message.usage, `Review ${runId}`);
 								log({ event: "review_usage", model: `${message.provider}/${message.model}`, usage: message.usage });
@@ -194,7 +207,7 @@ return `Review failed: ${String(error)}`;
 					}));
 if (!current()) return;
 const content = results.map((result, index) => `## Reviewer ${index + 1}\n\n${result}`).join("\n\n");
-pi.sendMessage({ customType: REVIEW_TYPE, display: true, content, details: { models: REVIEWERS.map((reviewer) => `${reviewer.provider}/${reviewer.id}`), runId, entryId, startedAt } }, { deliverAs: "steer", triggerTurn: true });
+pi.sendMessage({ customType: REVIEW_TYPE, display: true, content, details: { models: REVIEWERS.map((reviewer) => `${reviewer.provider}/${reviewer.id}`), effort, thinkingLevel, runId, entryId, startedAt } }, { deliverAs: "steer", triggerTurn: true });
 log({ event: "findings_queued", models: REVIEWERS.map((reviewer) => `${reviewer.provider}/${reviewer.id}`) });
 				} catch (error) {
 					log({ event: controller.signal.aborted ? "review_cancelled" : "review_failed", error: String(error) });
