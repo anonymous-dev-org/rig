@@ -230,53 +230,76 @@ later handler to override the result. Recognized overflow errors are handled bot
 as provider error responses and thrown exceptions. Unrecognized exceptions stop
 safely; they are not automatically retried as smaller chunks.
 
+## On-demand deep review
+
+Run `/review` to launch Astra (`openai/gpt-6-astra`) and Fable
+(`pi-sub-anthropic/claude-fable-5-2`) in parallel, both with high thinking.
+The command runs in the background and leaves the automatic Sol review unchanged.
+Its prompt is `~/.pi/agent/DEEP_REVIEW.md`; its extension is `deep-review.ts`.
+
+Both reviewers receive the worktree path, session transcript path, and captured
+branch entry ID. They independently read the conversation and inspect relevant
+source and Git changes, including committed work identified from the conversation.
+The restricted Git tool supports inspection only; reviewers cannot edit files,
+run arbitrary shell commands, or execute tests.
+
+Each report covers architecture analysis, bug findings, and code quality. Findings
+must explain the evidence, consequences, and smallest corrective action; potential
+issues are distinguished from confirmed bugs. Each successful report is delivered
+verbatim as a separate developer-feedback message, even if the other reviewer fails.
+No extra prefix or summary is added to the report body.
+
+Only one `/review` run can be active at once. Session navigation, shutdown/reload,
+and manual compaction cancel pending work and prevent stale delivery. Failures are
+visible with no model fallback. Reviewer usage is recorded in the parent session;
+review activity and final reports are logged privately under `~/.pi/agent/logs/`.
+Run `/reload` after installing the extension, then `/review` in a saved session.
+
 ## Automatic pair-programming review
 
-Rig's `paired-review.ts` extension launches two fresh read-only agents in parallel:
-`openai/gpt-6-astra` and `pi-sub-anthropic/claude-fable-5-2`, both at medium thinking.
-They receive the exact same `~/.pi/agent/WATCHDOG.md` prompt and parent-session
-evidence, covering goal focus, unnecessary complexity, code correctness, and
-security. They may inspect source with read/search tools, but cannot run shell
-commands, edit files, or spawn agents. The seven specialist reviewer definitions
-are retired; the installed single-model watchdog is disabled to avoid duplicates.
+Rig's `paired-review.ts` extension launches one fresh read-only reviewer:
+`openai/gpt-6.1-sol`, at high thinking. It receives
+`~/.pi/agent/WATCHDOG.md` and scores only scope and goal focus, simplicity, and
+code quality. Each area gets a score out of 10 with evidence, reasons, and concrete
+improvements where needed. The reviewer may read the session transcript and source
+with read/search tools, but cannot run shell commands, edit files, or spawn agents.
+The installed subagent watchdog remains disabled to avoid duplicate reviews.
 
 Reviews launch every **40 main-agent model calls**, at the next completed turn
 boundary. Each finalized assistant response counts once, including reported error
 or aborted responses; tool, user and custom messages do not count. Tool-free
-responses count too. Both reviewers run in the background while the main agent
-continues working. Only one pair runs at a time; calls accumulated during a review
+responses count too. The reviewer runs in the background while the main agent
+continues working. Only one review runs at a time; calls accumulated during a review
 count toward the next launch at a later completed turn. If multiple thresholds
 pass while busy, one review launches with the remainder carried forward.
 There is no extra end-of-run or idle review. Session lifecycle resets, reloads
 and manual compaction restart the counter. Delegated child sessions skip this
 extension; reviewer agents load no extensions and do not advance the counter.
 
-Each reviewer returns JSON: `{require_changes: true, message: "..."}` or
-`{require_changes: false}` without a message. Once both reviews finish, the
-extension queues **one** persisted feedback message containing only the reviewers
-that requested changes. Pi delivers it after the current turn's tools finish,
+The reviewer's final text is always queued unchanged as one persisted feedback
+message, including when all scores are 10. There is no JSON envelope, reviewer-name
+prefix, or added description. Pi delivers it after the current turn's tools finish,
 before the next model call, or starts a new turn if the main agent is already idle.
-Either reviewer can flag an issue; agreement is not required. If both are clean,
-no feedback or continuation is added. Feedback is projected as a system message
-(developer feedback on compatible providers), not a user request.
+Feedback is projected as a system message (developer feedback on compatible
+providers), not a user request.
 
-Evidence includes retained user prompts/compaction scope and bounded recent work,
-not the full history or a Git diff. It is captured at launch, but reviewers read
-live source files. Findings identify the launch time and session entry, and the
-main agent must recheck whether they still apply. Reviews are advisory and incur
-model usage, but do not block the main agent. There is no review timeout. Missing
-models, malformed results, or failed reviews produce visible errors without model
-fallback; successful findings from the other reviewer are still delivered.
+The reviewer receives the Pi session JSONL path and captured branch entry ID,
+rather than preselected conversation excerpts. It gathers context itself by reading
+the transcript's parent chain and relevant source. The transcript and source can
+continue changing while it reviews; its prompt explains this boundary. Reviews are
+advisory and incur model usage, but do not block the main agent. There is no review
+timeout. Missing transcripts, unavailable models, empty results, or failed reviews
+produce visible errors without model fallback.
 An aborted parent turn, session shutdown, manual compaction, or navigation to
-another session/branch cancels the pending pair. Navigation attempts cancel even
+another session/branch cancels the pending review. Navigation attempts cancel even
 if navigation is later declined. Reviews do not survive process exit.
 
-Per-reviewer starts and terminal outcomes (including clean approvals, findings,
-errors, and cancellation) are saved to `~/.pi/agent/logs/paired-review.jsonl`.
+Review starts and terminal outcomes (including review text, errors, and cancellation)
+are saved to `~/.pi/agent/logs/paired-review.jsonl`.
 Each record includes a run ID, session ID, source entry, and timestamp; terminal
-records also include duration. The log contains finding text, not full reviewer
+records also include duration. The log contains final review text, not full reviewer
 transcripts, and is created with private file permissions. It is append-only with
-no automatic rotation. To watch both reviewers:
+no automatic rotation. To watch reviews:
 
 ```sh
 tail -f ~/.pi/agent/logs/paired-review.jsonl | jq .
