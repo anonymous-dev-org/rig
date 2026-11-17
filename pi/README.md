@@ -180,8 +180,8 @@ The main model can call `council` directly, for example:
 ```
 
 Effort is required and uses the **same exported model/thinking map and read-only
-Agent runner as `/review`**, not the separate legacy `council-astra`/`council-fable`
-subagent profiles:
+Agent runner as `/review`**. The legacy `council-astra`/`council-fable` advisor
+profiles are retired; full Pi sync removes their installed files.
 
 | Effort | Advisor 1 | Advisor 2 | Guidance |
 | --- | --- | --- | --- |
