@@ -94,7 +94,7 @@ New rows use the file's first line terminator, or LF when none exists. Untouched
 
 Successful edits return numbered resulting splice ranges plus their immediate boundary rows (including useful context for pure deletions). Multiple splices use resulting coordinates, accounting for earlier shifts. If formatting or an external change alters the post-edit content before preview, the whole final file is offered instead of guessing a range mapping. Empty files explicitly report zero lines.
 
-Mutation previews share a 50 KiB/2000-line ceiling per call, including batch labels, with space reserved for recovery guidance. Only complete numbered rows are shown; long rows, remaining ranges, or later files may be omitted. The mutation still succeeds: read omitted content before editing it, and never replay the mutation just to obtain output. A single line beyond the read budget cannot be displayed by numbered read.
+Mutation previews share a 50 KiB/2000-line ceiling per call, including batch labels. Only complete numbered rows are shown. The result carries no standing advice: a note appears only where something was actually left out, at the point a file's preview stops or in place of a file that could not be shown. The mutation still succeeds: read omitted content before editing it, and never replay the mutation just to obtain output.
 
 ## Format after edit or write
 

@@ -282,7 +282,7 @@ export default function lineFileTools(pi: ExtensionAPI) {
 			try { loaded = load(fd); } finally { closeSync(fd); }
 			const { bom, rows } = loaded;
 			if (authored && !Buffer.from(bom + rows.map(row => row.text + row.eol).join("")).equals(authored)) ranges = undefined;
-			if (!add(`File: ${JSON.stringify(target)}\n[${rows.length} lines total; ${rows.length ? "resulting content" : "empty file"}]`)) return "";
+			if (!add(`File: ${JSON.stringify(target)}\n[${rows.length} lines total; ${rows.length ? "resulting content" : "empty file"}]`)) return `File: ${JSON.stringify(target)}\n[Written, but not shown: output limit reached. Read before editing.]`;
 			const expected = snapshots.get(target);
 			const next = { lines: [...(expected?.lines ?? [])], eof: expected?.eof ?? -1 };
 			let omitted = false, previous = 0;
@@ -295,9 +295,9 @@ export default function lineFileTools(pi: ExtensionAPI) {
 			}
 			if (!rows.length) next.eof = 0;
 			snapshots.set(target, next);
-			if (omitted) add("[Preview bounded; remaining content omitted. Read the needed range before editing. A single over-limit line cannot be shown by read.]");
+			if (omitted) parts.push("[Output limit reached; later lines not shown. Read them before editing them.]");
 		} catch (error) {
-			add(`File: ${JSON.stringify(target)}\n[Written, but numbered preview unavailable: ${error instanceof Error ? error.message : String(error)} Read before editing; numbered tools require regular UTF-8 text up to 4 MiB without NUL.]`);
+			parts.push(`File: ${JSON.stringify(target)}\n[Written, but numbered preview unavailable: ${error instanceof Error ? error.message : String(error)} Read before editing; numbered tools require regular UTF-8 text up to 4 MiB without NUL.]`);
 		}
 		return parts.join("\n");
 	};
@@ -328,7 +328,7 @@ export default function lineFileTools(pi: ExtensionAPI) {
 				},
 			} });
 			const output = await write.execute(id, params, signal, update, ctx);
-			return { ...output, content: [{ type: "text" as const, text: "Write succeeded.\n" + notice + "\nPreview bounded to 50 KiB/2000 lines; any omitted content requires read before editing. Do not repeat this write to recover output." }] };
+			return { ...output, content: [{ type: "text" as const, text: ["Write succeeded.", notice].filter(Boolean).join("\n") }] };
 		},
 	});
 
@@ -557,7 +557,7 @@ if (!expected) throw new Error(`No read snapshot (never read or cleared by write
 						if (epoch === startedEpoch) await format(target, signal);
 						previews.push(preview(target, ranges, budget, startedEpoch, signal, updated));
 					}
-					return result(["Edit succeeded.", ...previews.filter(Boolean), "Use returned coordinates directly. Preview budget: 50 KiB/2000 lines per call. Any ranges/files not shown were omitted; read needed omitted content before editing. Do not replay this mutation."].join("\n"));
+					return result(["Edit succeeded.", ...previews].join("\n"));
 				} finally { for (const fd of handles) closeSync(fd); }
 			};
 			return locked(0);
