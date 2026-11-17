@@ -83,7 +83,7 @@ lazysql: ['Library/Application Support/lazysql/config.example.toml'],
 zsh: ['.zshrc', '.local/lib/rig/pi-launcher.sh'],
   kitty: ['.config/kitty/kitty.conf', '.config/kitty/ghosty.conf', '.config/kitty/open-actions.conf'],
   neovim: ['.config/nvim/init.lua', '.config/nvim/plugin/10_options.lua', '.config/nvim/plugin/20_keymaps.lua', '.config/nvim/plugin/30_mini.lua', '.config/nvim/plugin/40_plugins.lua', '.config/nvim/plugin/99_private.lua', '.config/nvim/snippets/global.json', '.config/nvim/after/ftplugin/markdown.lua', '.config/nvim/after/ftplugin/text.lua', '.config/nvim/after/lsp/lua_ls.lua', '.config/nvim/after/snippets/lua.json'],
-  pi: ['.pi/agent/AGENTS.md', '.pi/agent/WATCHDOG.md', '.pi/agent/DEEP_REVIEW.md', ...['council-astra','council-fable','planner','scout','worker'].map(name => `.pi/agent/agents/${name}.md`), ...['compaction-fallback.ts','deep-review.ts','done-sound.ts','footer.ts','goal-reminder.ts','paired-review.ts','line-file-tools/index.ts','subagent/config.json','titlebar-spinner.ts'].map(name => `.pi/agent/extensions/${name}`), '.pi/agent/themes/rig.json']
+  pi: ['.pi/agent/AGENTS.md', '.pi/agent/DEEP_REVIEW.md', ...['council-astra','council-fable','planner','scout','worker'].map(name => `.pi/agent/agents/${name}.md`), ...['compaction-fallback.ts','deep-review.ts','done-sound.ts','footer.ts','goal-reminder.ts','line-file-tools/index.ts','subagent/config.json','titlebar-spinner.ts'].map(name => `.pi/agent/extensions/${name}`), '.pi/agent/themes/rig.json']
 };
 let backupRoot;
 let inventoryFile;

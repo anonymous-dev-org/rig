@@ -75,12 +75,8 @@ export default function (pi: ExtensionAPI) {
           }
           const cachedPercent = inputTokens > 0 ? (cachedInputTokens / inputTokens * 100).toFixed(0) : "0";
           const fast = footerData.getExtensionStatuses().get("pi-fast") ?? "Fast n/a";
-          const reviewing = footerData.getExtensionStatuses().get("rig-paired-review");
 const deepReviewing = footerData.getExtensionStatuses().get("rig-deep-review");
-          const turns = footerData.getExtensionStatuses().get("rig-paired-review-turns");
 const right = (deepReviewing ? theme.fg("accent", "reviewing  ") : "") +
-(turns ? theme.fg("dim", `${turns}  `) : "") +
-            (reviewing ? theme.fg("accent", `${reviewing}  `) : "") +
             theme.fg(contextColor, context) +
 theme.fg("dim", `  in ${tokenFormat.format(inputTokens).toLowerCase()} (${cachedPercent}%) - out ${tokenFormat.format(outputTokens).toLowerCase()} ($${cost.toFixed(3)})  ${fast} │ `) +
             theme.fg("accent", thinking) + theme.fg("dim", ` │ ${model} `);
