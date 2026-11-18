@@ -2,6 +2,10 @@
 
 Shared defaults live in this checkout and are enforced on every sync for selected components. Personal additions and state stay outside it. Sync creates no deployment symlinks.
 
+Pi model, reasoning, token-budget and per-agent preferences are user-owned. See
+[personal model setup](pi/README.md#personal-model-setup) after syncing; placeholders
+are documented separately and are never installed as active model settings.
+
 ## Sync
 
 Put Node on the **parent shell PATH** first. Selected `brew` also requires Homebrew; selected `pi` requires Bun. Rig checks these before changing config. It does not run runtime bootstrap installers.

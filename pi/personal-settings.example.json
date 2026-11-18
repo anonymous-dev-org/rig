@@ -1,0 +1,58 @@
+{
+  "defaultProvider": "<PROVIDER>",
+  "defaultModel": "<MODEL_ID>",
+  "defaultThinkingLevel": "<THINKING_LEVEL>",
+  "enabledModels": ["<PROVIDER>/<MODEL_ID>"],
+  "subagents": {
+    "defaultProvider": "<PROVIDER>",
+    "defaultModel": "<PROVIDER>/<MODEL_ID>",
+    "agentOverrides": {
+      "worker": {
+        "model": "<PROVIDER>/<WORKER_MODEL_ID>",
+        "thinking": "<THINKING_LEVEL>"
+      },
+      "scout": {
+        "model": "<PROVIDER>/<SCOUT_MODEL_ID>",
+        "thinking": "<THINKING_LEVEL>"
+      }
+    }
+  },
+  "rigReview": {
+    "low": [
+      {
+        "provider": "<REVIEWER_1_PROVIDER>",
+        "id": "<LOW_REVIEWER_1_MODEL_ID>",
+        "thinkingLevel": "<THINKING_LEVEL>"
+      },
+      {
+        "provider": "<REVIEWER_2_PROVIDER>",
+        "id": "<LOW_REVIEWER_2_MODEL_ID>",
+        "thinkingLevel": "<THINKING_LEVEL>"
+      }
+    ],
+    "medium": [
+      {
+        "provider": "<REVIEWER_1_PROVIDER>",
+        "id": "<MEDIUM_REVIEWER_1_MODEL_ID>",
+        "thinkingLevel": "<THINKING_LEVEL>"
+      },
+      {
+        "provider": "<REVIEWER_2_PROVIDER>",
+        "id": "<MEDIUM_REVIEWER_2_MODEL_ID>",
+        "thinkingLevel": "<THINKING_LEVEL>"
+      }
+    ],
+    "hard": [
+      {
+        "provider": "<REVIEWER_1_PROVIDER>",
+        "id": "<HARD_REVIEWER_1_MODEL_ID>",
+        "thinkingLevel": "<THINKING_LEVEL>"
+      },
+      {
+        "provider": "<REVIEWER_2_PROVIDER>",
+        "id": "<HARD_REVIEWER_2_MODEL_ID>",
+        "thinkingLevel": "<THINKING_LEVEL>"
+      }
+    ]
+  }
+}

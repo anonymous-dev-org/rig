@@ -14,8 +14,8 @@ with history and recovery records under `~/.local/state/rig/pi/`, never in rig.
 private configs, templates, repository docs, sync tooling and browser captures from
 deployment. Disabled skills are retained in the repo and are not deployed.
 Direct principle skills, agents, extensions, themes and instructions are managed local copies. Every full sync restores repo bytes, including edits and deletions, with private backups of replaced files. Add personal resources in separate files outside the managed inventory. Managed JSON assets use the additive ownership policy below.
-Pi's built-in auto-compaction is enabled by default (`"compaction": {"enabled": true}`),
-with a 72,000-token reserve (a 200,000-token trigger for a 272,000-token context window). Manual `/compact` remains available.
+Pi's built-in auto-compaction is enabled by default. Its token budgets are personal:
+rig no longer imposes a reserve sized for one particular model's context window.
 Pi Lens and billion-context are no longer default packages, and rig no longer
 deploys their configuration files. This removes their tools and instructions from
 new sessions using the defaults.
@@ -28,9 +28,11 @@ Full Pi sync also backs up and removes the old managed Pi Lens and billion-conte
 configuration files. Downloaded package caches are not uninstalled. Restart Pi
 afterward; start a new session for a clean comparison of startup token usage.
 
-Every sync enforces both templates, with or without prior history. Repository
-keys win recursively, including changed/deleted values; local-only keys and
-additional MCP servers remain. Arrays are replaced as a whole by repo arrays,
+Every sync enforces the shared keys in both templates, with or without prior history.
+Personal model, thinking, token-budget, fast-mode and agent-override choices are
+excluded from enforcement and retirement, even if an older baseline supplied them.
+Other repository keys win recursively, including changed/deleted values; local-only
+keys and additional MCP servers remain. Arrays are replaced as a whole by repo arrays,
 not concatenated, because commands and argument order must remain valid.
 Pi's `packages` list is special: repository declarations come first and win by
 package identity; additional personal package identities remain. Local pins,
@@ -44,6 +46,42 @@ Add personal keys/packages to home files, not the templates. Existing recovery
 journals finish safely before a fresh enforcement pass applies current defaults. Keep secrets out of rig; use Pi's environment
 variable references (for example `${SERVICE_API_KEY}` in server `env` values),
 and supply those variables in Pi's environment rather than committing credentials.
+
+## Personal model setup
+
+After syncing, edit **`~/.pi/agent/settings.json`**, not the repository templates.
+Use [`personal-settings.example.json`](personal-settings.example.json) as a menu of
+fields to merge into that file. Replace every `<...>` value you use; do not copy
+the example over the whole settings file. It is documentation only and is never deployed.
+
+| Personal choice | Setting |
+| --- | --- |
+| Main model and provider | `defaultModel`, `defaultProvider` |
+| Thinking and model cycling | `defaultThinkingLevel`, `modelThinkingLevels`, `thinkingBudgets`, `enabledModels` |
+| Context/token budgets | `compaction.reserveTokens`, `compaction.keepRecentTokens`, `compaction.modelOverrides` |
+| Subagent models and providers | `subagents.defaultModel`, `subagents.defaultProvider` |
+| Per-agent models, thinking, speed and enabled roles | `subagents.agentOverrides`, `subagents.agentOverridesByProvider` |
+| Fast mode and watchdog preferences | `pi-fast`, `subagents.watchdog` |
+| Review and council pairs | `rigReview.low`, `rigReview.medium`, `rigReview.hard` |
+
+Use `pi --list-models` to find available provider/model IDs, and authenticate the
+providers you choose. Main-model IDs and providers are separate fields; subagent
+models use `provider/modelId`. Per-agent reasoning uses `thinking`, while review
+entries use `thinkingLevel`. Valid levels are `off`, `minimal`, `low`, `medium`,
+`high`, `xhigh`, and `max` (support depends on the selected model).
+
+Existing personal values survive sync, including choices previously installed as
+rig defaults. On a fresh install these fields are absent, not fake model IDs: Pi
+and pi-subagents use their native selection/inheritance until you choose models.
+Review/council require an explicit pair for the requested effort and reject missing
+values or placeholders before starting. Set up each effort you intend to use.
+Restart Pi or run `/reload` after editing settings. Trusted project settings can
+override user settings through Pi's normal settings merge.
+
+Shared packages, resource wiring, theme and compaction enablement remain rig-owned.
+Provider authentication, custom model definitions and credentials remain private.
+
+## Package management
 
 Pi package installs use Bun through `"npmCommand": ["bun"]`. The `npm:`
 package prefixes identify registry sources and remain unchanged. Node.js is still
@@ -179,15 +217,12 @@ The main model can call `council` directly, for example:
 {"effort":"medium","task":"Compare the cancellation designs in pi/.pi/agent/extensions/deep-review.ts and council.ts. Recommend a lifecycle policy and explain tradeoffs.","rounds":3}
 ```
 
-Effort is required and uses the **same exported model/thinking map and read-only
-Agent runner as `/review`**. The legacy `council-astra`/`council-fable` advisor
-profiles are retired; full Pi sync removes their installed files.
-
-| Effort | Advisor 1 | Advisor 2 | Guidance |
-| --- | --- | --- | --- |
-| `low` | `pi-sub-anthropic/claude-opus-5-5`, minimal | `openai/gpt-6.1-sol`, low | Quick bounded decisions |
-| `medium` | `pi-sub-anthropic/claude-opus-5-5`, high | `openai/gpt-6.1-sol`, high | Substantial reasoning |
-| `hard` | `pi-sub-anthropic/claude-fable-5-2`, high | `openai/gpt-6-astra`, high | Difficult/high-stakes tradeoffs |
+Effort is required and uses the **same personal `rigReview` pairs and read-only
+Agent runner as `/review`**. Configure them as described under Personal model setup.
+The legacy `council-astra`/`council-fable` advisor profiles are retired; full Pi sync
+removes their installed files. Use `low` for quick bounded decisions, `medium` for
+substantial reasoning, and `hard` for difficult/high-stakes tradeoffs. The names do
+not select any built-in model or thinking level.
 
 Supply a self-contained task: advisors do not inherit the main conversation or
 skills. Each round starts fresh with the task and, after the independent initial
@@ -261,13 +296,10 @@ safely; they are not automatically retried as smaller chunks.
 ## On-demand deep review
 
 Run `/review <low|medium|hard> [message]` to launch two reviewers in parallel
-in the background. Effort is required and selects these models and thinking levels:
-
-| Effort | Reviewer 1 | Reviewer 2 |
-| --- | --- | --- |
-| `low` | `pi-sub-anthropic/claude-opus-5-5`, minimal | `openai/gpt-6.1-sol`, low |
-| `medium` | `pi-sub-anthropic/claude-opus-5-5`, high | `openai/gpt-6.1-sol`, high |
-| `hard` | `pi-sub-anthropic/claude-fable-5-2`, high | `openai/gpt-6-astra`, high |
+in the background. Effort is required and selects the corresponding pair from
+your private `settings.json` under `rigReview`. Each pair must contain exactly two
+`{provider, id, thinkingLevel}` entries. There are no built-in or fallback models;
+configure your choices using `personal-settings.example.json` before the first run.
 
 For example, `/review hard Focus on cancellation and session switching` adds that
 message to both reviewers' prompts. Without a message, no extra instructions are added.
