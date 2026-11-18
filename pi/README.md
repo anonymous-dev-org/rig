@@ -125,6 +125,11 @@ in Pi, native Pi subagents, and `/review` and `council` reviewers. The footer
 shows `normal`, `fast`, or `ultrafast` for the current model; an unsupported
 speed selection shows `normal`. The label describes the tier requested, not
 the tier OpenAI delivered. Account access and higher usage charges still apply.
+For new assistant responses that explicitly report Ultrafast, Rig corrects Pi’s
+Standard-rate estimate for the models in [OpenAI’s Ultrafast pricing table](https://developers.openai.com/api/docs/pricing?latest-pricing=ultrafast).
+It does not reprice past turns or direct `/review` and `council` requests. The
+footer total is an API-dollar estimate, not an account bill.
+
 Sync preserves an existing `pi-codex-fast` preference in `~/.pi/agent/settings.json`
 (allowed modes: `off`, `fast`, `ultrafast`). The old `pi-fast` preference is
 not read by the replacement. Do not load both speed extensions together.
