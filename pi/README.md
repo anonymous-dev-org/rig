@@ -130,15 +130,20 @@ Sync preserves an existing `pi-codex-fast` preference in `~/.pi/agent/settings.j
 not read by the replacement. Do not load both speed extensions together.
 
 Package-provided prompts and skills arrive through the declared packages.
-Two rig skills, `requirements-spec` and `bug-analysis`, live in
-`pi/.pi/agent/skills/` and are loaded by the model on its own: `AGENTS.md`
-requires a requirements spec before a feature or design change and a root-cause
-bug analysis before a bug fix, each written to `.local/specs/` and approved by
-the user before implementation.
-The 24 `principle-*` [pstack skills](vendor/pstack/README.md) remain active in
-`pi/.pi/agent/skills/` and deploy with Pi. Their upstream
-`disable-model-invocation: true` flags remain unchanged: invoke them explicitly
-with `/skill:principle-<name>`. The other 33 skills and their supporting
+`AGENTS.md` is the router to the direct skills in `pi/.pi/agent/skills/`:
+its section "Route the task to a skill" names the situation in which each one is
+read. Two rig skills decide the process before implementation:
+`requirements-spec` before a feature or design change and `bug-analysis` before a
+bug fix, each writing a file to `.local/specs/` that the user approves first.
+The 24 `principle-*` [pstack skills](vendor/pstack/README.md) also remain active
+there and deploy with Pi. Their upstream `disable-model-invocation: true` flags
+remain unchanged, so Pi does not advertise them in the system prompt; the
+router lists 17 of them by situation and the model reads the file by path.
+The other seven are not routed because `AGENTS.md` or `bug-analysis` already
+covers them or states a different rule: `fix-root-causes`, `laziness-protocol`,
+`prove-it-works`, `sequence-verifiable-units`, `never-block-on-the-human`,
+`build-the-lever` and `guard-the-context-window`. Every principle skill can
+still be invoked with `/skill:principle-<name>`. The other 33 skills and their supporting
 files are retained in `pi/disabled-skills/`, outside Pi's discovery folders.
 Full Pi sync backs up and removes the exact archived files from
 `~/.pi/agent/skills/`, including older installs without ownership history. Unlisted

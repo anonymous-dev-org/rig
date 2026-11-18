@@ -42,17 +42,45 @@ When a task contains two or more deliverables that each work on their own, such 
 
 The pause exists because seeing a working version often changes what the user wants next. When you run as a subagent, build one version at a time in the same way but do not pause: report once, when the assigned task is done.
 
-## 3. Specify before implementing
+## 3. Route the task to a skill
 
-Implementation starts from a written file that the user has approved, so that what gets built is what they asked for and a fix removes the real cause. The kind of task decides the file:
+Detailed procedures live in skills, not in this file. Match the situation to the lists below and read the skill before acting on it. Each skill is the file `~/.pi/agent/skills/<name>/SKILL.md`. Read only the skills whose situation applies, once per task. Where a skill routed from here disagrees with this file, this file wins.
 
-- **A new feature, or a change to behavior, architecture or UI:** load the `requirements-spec` skill and write a requirements spec.
-- **A bug**, meaning something is broken or behaves wrongly: load the `bug-analysis` skill. Find the root cause and trace through the code how the bug happens before proposing any fix, then write the bug analysis.
-- **No file:** a question, a review, or a mechanical edit whose result is fully determined by the request, with nothing to investigate or decide.
+### Before implementing: what kind of task is it?
+
+Implementation starts from a written file that the user has approved, so that what gets built is what they asked for and a fix removes the real cause. The kind of task decides the skill:
+
+- **A new feature, or a change to behavior, architecture or UI:** `requirements-spec`. Write a requirements spec.
+- **A bug**, meaning something is broken or behaves wrongly: `bug-analysis`. Find the root cause and trace through the code how the bug happens before proposing any fix, then write the bug analysis.
+- **Neither:** a question, a review, or a mechanical edit whose result is fully determined by the request, with nothing to investigate or decide. No skill and no file.
 
 Each skill defines the steps and the sections of its file. Files go in `.local/specs/` in the project and are never committed. When the file is written, hand it to the user and implement only after they approve it, unless they have said to proceed without review. Afterwards the file is the reference: change it before changing direction, and check the result against it before calling the work done.
 
 When you run as a subagent, write such a file only if your task asks for one.
+
+### While designing or implementing: does one of these situations apply?
+
+Check this list when you write the design part of a spec or the fix in a bug analysis, and again when one of the situations comes up during the work.
+
+| Situation | Skill |
+| --- | --- |
+| Choosing core types and data structures before writing logic | `principle-foundational-thinking` |
+| Writing stateful logic, or code that branches a lot or repeats an assumption about a data shape | `principle-model-the-domain` |
+| Designing types or function signatures in a statically typed language | `principle-type-system-discipline` |
+| Adding validation, error handling, or an adapter to a framework or external system | `principle-boundary-discipline` |
+| Fitting a new requirement into an existing design | `principle-redesign-from-first-principles` |
+| A UI interaction or architecture decision with no precedent in the codebase | `principle-exhaust-the-design-space` |
+| A product, UX, or feature-scope tradeoff | `principle-experience-first` |
+| About to add to, refactor, or rewrite code that carries dead or redundant parts | `principle-subtract-before-you-add` |
+| Replacing an internal API that still has callers | `principle-migrate-callers-then-delete-legacy-apis` |
+| A rewrite or migration done in phases | `principle-outcome-oriented-execution` |
+| A command, lifecycle step, or loop that may be retried or interrupted | `principle-make-operations-idempotent` |
+| Several actors may write the same file, branch, key, or state | `principle-separate-before-serializing-shared-state` |
+| Code that is hard to trace, in your change or in a review | `principle-minimize-reader-load` |
+| Writing, changing, or deciding to keep a test | `principle-test-behavior-not-implementation` |
+| Measuring something, or about to report or act on a number | `principle-explain-the-number` |
+| Two or more fixes for the same problem have failed | `principle-attack-the-premise` |
+| You are writing the same instruction or correction a second time | `principle-encode-lessons-in-structure` |
 
 ## 4. Delegation
 
@@ -84,7 +112,7 @@ If the goal turns out to need more work than expected, do the smallest part that
 
 1. The next action is risky, as defined below. Ask before doing it.
 2. A version is ready for handover, as "Build larger work in small working versions" describes.
-3. A requirements spec or bug analysis needs the user's answers or approval, as "Specify before implementing" describes.
+3. A requirements spec or bug analysis needs the user's answers or approval, as "Route the task to a skill" describes.
 4. You need something only the user can supply, such as a credential or access. Finish everything that does not depend on it first.
 
 An action is risky when it is hard to undo or reaches beyond the local project. These are the common cases; apply the definition to anything else:
