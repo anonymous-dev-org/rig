@@ -130,11 +130,28 @@ Sync preserves an existing `pi-codex-fast` preference in `~/.pi/agent/settings.j
 not read by the replacement. Do not load both speed extensions together.
 
 Package-provided prompts and skills arrive through the declared packages.
-The 24 `principle-*` [pstack skills](vendor/pstack/README.md) remain active in
-`pi/.pi/agent/skills/` and deploy with Pi. Their upstream
-`disable-model-invocation: true` flags remain unchanged: invoke them explicitly
-with `/skill:principle-<name>`. The other 33 skills and their supporting
-files are retained in `pi/disabled-skills/`, outside Pi's discovery folders.
+Six rig skills live in `pi/.pi/agent/skills/` and deploy with Pi. Each belongs
+to one moment in the work, and the model loads it on its own: Pi advertises the
+skill's description, and the `AGENTS.md` section "Route the task to a skill"
+names the same moment and defines when to wait for a user decision. Sharing
+the working file does not by itself require a pause.
+
+| Skill | Moment |
+| --- | --- |
+| `requirements-spec` | Before implementing a feature or an intentional change to behavior, architecture or UI. Writes the requirements and their checks to `.local/specs/`. |
+| `bug-analysis` | Before fixing an existing defect. Records the causal path, evidence, proposed fix and expected behavior; a failure introduced during implementation stays in the current task. |
+| `solution-design` | While deciding how to build: data model, types, boundaries, reader load, retry-safe operations, shared state, product and UI choices. |
+| `refactor-and-migrate` | While restructuring existing code: refactors, rewrites, API replacements, migrations, repeated edits. |
+| `writing-tests` | While writing, changing, or keeping a test. |
+| `measurement` | Before measuring, and before reporting or acting on a number. |
+
+These skills replace the 24 `principle-*` [pstack skills](vendor/pstack/README.md),
+which were hidden from the model by `disable-model-invocation: true`; several
+are only one or two lines long upstream. Their rules were merged into the six skills by moment, except the
+ones `AGENTS.md` already states (verification, small verifiable versions, not
+blocking on the user, context use). All 57 imported pstack skills and their
+supporting files are now retained in `pi/disabled-skills/`, outside Pi's
+discovery folders.
 Full Pi sync backs up and removes the exact archived files from
 `~/.pi/agent/skills/`, including older installs without ownership history. Unlisted
 personal files are untouched; skill directories may remain empty. The former

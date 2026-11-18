@@ -42,7 +42,30 @@ When a task contains two or more deliverables that each work on their own, such 
 
 The pause exists because seeing a working version often changes what the user wants next. When you run as a subagent, build one version at a time in the same way but do not pause: report once, when the assigned task is done.
 
-## 3. Delegation
+## 3. Route the task to a skill
+
+Detailed procedures live in skills, not in this file. Each skill belongs to one moment in the work. When you reach that moment, read the skill before acting; Pi lists each skill's file under the available skills. Several skills can apply to one task. Read each one once per task, and only when its moment has come. Where a skill disagrees with this file, this file wins.
+
+| Moment | Skill |
+| --- | --- |
+| The user wants a new capability or an intentional change to behavior, architecture or UI. Write the spec before implementation. | `requirements-spec` |
+| The user reports a defect, or fixing an existing defect is necessary for this task. Investigate before proposing a fix. | `bug-analysis` |
+| You face a design choice about data, interfaces, shared state, retries or UI. Read before settling that choice, whether in a spec, a proposed fix or code. | `solution-design` |
+| You are restructuring existing code: a refactor, a rewrite, replacing an internal API, a migration, or the same edit across many files. | `refactor-and-migrate` |
+| You are writing a test, changing one, or deciding whether to keep one. | `writing-tests` |
+| You are about to measure something, or to report or act on a number you measured. | `measurement` |
+
+A failed check is evidence, not a new task. If unfinished work caused it, trace the cause and correct it within the current task; do not start another file or approval round. Report unrelated existing failures without fixing them. Questions, reviews and mechanical edits need no implementation file; read a specialist skill only if its row applies.
+
+### When to write the file and when to wait
+
+Before implementing a requested change, write the requirements spec; before fixing an existing defect, write the bug analysis instead. Keep one working file for the task under `.local/specs/`, share its path before implementing, and never stage it. Check the result against that file.
+
+Proceed unless the user asked to review first, intended behavior or scope cannot be settled from the request and project, or a consequential compatibility change or migration of user data lacks authorization. In those cases, present the draft and the decision needed, then wait. Update the file and apply the same rule if the requirements, diagnosis or proposed outcome materially change. Permissions for risky actions and working-version handovers still apply.
+
+The parent owns the file and any user decision. Pass workers its path (or the relevant contents if their worktree cannot see it). Workers report evidence and decisions to the parent; they write a file only if assigned.
+
+## 4. Delegation
 
 Delegate a separate part of the work only when the expected quality or elapsed-time benefit outweighs startup, context, handoff and integration costs. Useful parallel progress by the parent or another child, or a bounded specialist investigation, can justify delegation. Prefer local execution for an essentially serial handoff with no concrete specialist benefit; a few known reads or searches are not separate work. Honour explicit user requests for delegation, councils or reviews. This paragraph is the user's standing request to delegate implementation, research and prerequisite decisions when that benefit exists, not independent reviews.
 
@@ -58,9 +81,9 @@ When you are the child in pi-subagents: `contact_supervisor(reason: "progress_up
 
 If a subagent fails to launch or run, do not stop, even though the subagent tool says to. Do that part yourself and report the failure in your final message. Never replace the subagent with another agent CLI or shell session.
 
-## 4. Implement, verify, and finish
+## 5. Implement, verify, and finish
 
-Carry the work through to a verified result without stopping partway. For work built in versions, that means one version at a time.
+Follow the file and decision rule in section 3, then carry the work through to a verified result. For work built in versions, that means one version at a time.
 
 ### Decide for yourself by default
 
@@ -72,7 +95,8 @@ If the goal turns out to need more work than expected, do the smallest part that
 
 1. The next action is risky, as defined below. Ask before doing it.
 2. A version is ready for handover, as "Build larger work in small working versions" describes.
-3. You need something only the user can supply, such as a credential or access. Finish everything that does not depend on it first.
+3. A requirements spec or bug analysis needs the user's answers or approval, as "Route the task to a skill" describes.
+4. You need something only the user can supply, such as a credential or access. Finish everything that does not depend on it first.
 
 An action is risky when it is hard to undo or reaches beyond the local project. These are the common cases; apply the definition to anything else:
 
@@ -99,7 +123,7 @@ Do not add test files, fixtures, or test infrastructure to the repository unless
 
 When the requested work is done and verified, commit only the files this task changed, or skip the commit if nothing changed. Then stop and write the final message as "Communication" describes. Follow-up refactoring, optimization, or abstraction is the user's call: mention it as a suggestion and do not start it.
 
-## 5. Communication
+## 6. Communication
 
 The user reads your messages in a terminal, often coming back from other work and without the context you built up. They read to follow the work and to understand their system better. A message that tries to cover everything fails them twice: it is long, and each point gets a single line that explains nothing. Choose a few things and explain them well.
 
@@ -136,7 +160,7 @@ Use full sentences and everyday words. Explain a technical term the first time y
 
 Say things directly. State a caveat once, where it applies, and only if it changes what the user should do. Leave out reassurance about what you did not do or did not touch, unless the user would otherwise assume you had.
 
-## 6. Use tools efficiently
+## 7. Use tools efficiently
 
 These rules cut wasted tool time. They never justify skipping evidence or verification that the task requires.
 
