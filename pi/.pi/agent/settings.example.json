@@ -1,14 +1,36 @@
 {
   "skills": ["!**/council-mode/**","!**/reverse-engineer-anything/**"],
   "theme": "rig",
+  "defaultProvider": "openai",
+  "defaultModel": "gpt-6.2-sol",
+  "enabledModels": [
+    "openai/gpt-6.2-sol",
+    "openai/gpt-6.2-astra",
+    "**/!(gpt-6.1-sol|gpt-6-astra|gpt-6.1-astra)"
+  ],
   "npmCommand": ["bun"],
   "compaction": {
     "enabled": true
   },
   "pi-codex-fast": { "mode": "fast" },
   "subagents": {
+    "defaultModel": "openai/gpt-6.2-sol",
     "defaultSubagentOnlyExtensions": [
       "npm:@calesennett/pi-codex-fast@0.1.14"
+    ]
+  },
+  "rigReview": {
+    "low": [
+      { "provider": "openai", "id": "gpt-6.2-sol", "thinkingLevel": "medium" },
+      { "provider": "pi-sub-anthropic", "id": "claude-opus-5-5", "thinkingLevel": "medium" }
+    ],
+    "medium": [
+      { "provider": "openai", "id": "gpt-6.2-sol", "thinkingLevel": "xhigh" },
+      { "provider": "pi-sub-anthropic", "id": "claude-opus-5-5", "thinkingLevel": "xhigh" }
+    ],
+    "hard": [
+      { "provider": "openai", "id": "gpt-6.2-astra", "thinkingLevel": "xhigh" },
+      { "provider": "pi-sub-anthropic", "id": "claude-fable-5-2", "thinkingLevel": "xhigh" }
     ]
   },
   "enableInstallTelemetry": false,

@@ -28,10 +28,12 @@ Full Pi sync also backs up and removes the old managed Pi Lens and billion-conte
 configuration files. Downloaded package caches are not uninstalled. Restart Pi
 afterward; start a new session for a clean comparison of startup token usage.
 
-Every sync enforces the shared keys in both templates, with or without prior history.
-Personal model, thinking, token-budget, fast-mode and agent-override choices are
-excluded from enforcement and retirement, even if an older baseline supplied them.
-Other repository keys win recursively, including changed/deleted values; local-only
+Sync enforces the shared keys in both templates, with or without prior history.
+Model defaults are an exception: sync fills missing choices and upgrades older
+OpenAI Sol and Astra selections as described below. Personal model, thinking,
+token-budget, fast-mode and agent-override choices are otherwise excluded from
+enforcement and retirement, even if an older baseline supplied them. Other
+repository keys win recursively, including changed/deleted values; local-only
 keys and additional MCP servers remain. Arrays are replaced as a whole by repo arrays,
 not concatenated, because commands and argument order must remain valid.
 Pi's `packages` list is special: repository declarations come first and win by
@@ -70,13 +72,20 @@ models use `provider/modelId`. Per-agent reasoning uses `thinking`, while review
 entries use `thinkingLevel`. Valid levels are `off`, `minimal`, `low`, `medium`,
 `high`, `xhigh`, and `max` (support depends on the selected model).
 
-Existing personal values survive sync, including choices previously installed as
-rig defaults. On a fresh install these fields are absent, not fake model IDs: Pi
-and pi-subagents use their native selection/inheritance until you choose models.
-Review/council require an explicit pair for the requested effort and reject missing
-values or placeholders before starting. Set up each effort you intend to use.
-Restart Pi or run `/reload` after editing settings. Trusted project settings can
-override user settings through Pi's normal settings merge.
+Sync seeds OpenAI Sol 6.2 for main sessions and subagents. The default model
+cycle starts with Sol 6.2 and Astra 6.2 and skips Sol 6.1 and older Astras. The
+default `/review` and `council` pairs use Sol 6.2 with Opus 5.5 for low and
+medium, and Astra 6.2 with Fable 5.2 for hard. Sign in to OpenAI and
+pi-sub-anthropic to use the default pairs, or configure your own. If Sol 6.2
+or Astra 6.2 is missing, refresh Pi's catalog with `pi update --models`.
+
+Sync updates exact older OpenAI model selections in user defaults, model-cycle
+entries, subagent overrides and review/council pairs. Sol 6.1 becomes Sol 6.2;
+Astra 6 and 6.1 become Astra 6.2. It retains each reviewer's thinking level
+and each existing partner, and doesn't replace an existing custom model list.
+Restart Pi after syncing. Trusted project settings can still override user
+settings through Pi's normal settings merge; explicit model selections and
+saved sessions can still use older models.
 
 Shared packages, resource wiring, theme and compaction enablement remain rig-owned.
 Provider authentication, custom model definitions and credentials remain private.
@@ -235,8 +244,9 @@ The main model can call `council` directly, for example:
 {"effort":"medium","task":"Compare the cancellation designs in pi/.pi/agent/extensions/deep-review.ts and council.ts. Recommend a lifecycle policy and explain tradeoffs.","rounds":3}
 ```
 
-Effort is required and uses the **same personal `rigReview` pairs and read-only
-Agent runner as `/review`**. Configure them as described under Personal model setup.
+Effort is required and uses the **same `rigReview` pairs and read-only
+Agent runner as `/review`**. See [model setup](#personal-model-setup) for the
+defaults and overrides.
 The legacy `council-astra`/`council-fable` advisor profiles are retired; full Pi sync
 removes their installed files. Use `low` for quick bounded decisions, `medium` for
 substantial reasoning, and `hard` for difficult/high-stakes tradeoffs. The names do
@@ -264,7 +274,7 @@ to a private temporary file containing both full responses.
 
 Full Pi sync deploys `extensions/council.ts`; JSON-only `sync-settings.mjs` does
 not. Reload or restart after deployment and ask Pi to use the council tool. Both
-preset models must be configured and authenticated.
+preset models must be authenticated.
 
 ## Compaction overflow recovery
 
@@ -315,9 +325,9 @@ safely; they are not automatically retried as smaller chunks.
 
 Run `/review <low|medium|hard> [message]` to launch two reviewers in parallel
 in the background. Effort is required and selects the corresponding pair from
-your private `settings.json` under `rigReview`. Each pair must contain exactly two
-`{provider, id, thinkingLevel}` entries. There are no built-in or fallback models;
-configure your choices using `personal-settings.example.json` before the first run.
+your `settings.json` under `rigReview`. Each pair must contain exactly two
+`{provider, id, thinkingLevel}` entries. Sync seeds the pairs described in
+[model setup](#personal-model-setup); the runner does not substitute fallback models.
 
 For example, `/review hard Focus on cancellation and session switching` adds that
 message to both reviewers' prompts. Without a message, no extra instructions are added.
