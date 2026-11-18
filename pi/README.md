@@ -130,21 +130,27 @@ Sync preserves an existing `pi-codex-fast` preference in `~/.pi/agent/settings.j
 not read by the replacement. Do not load both speed extensions together.
 
 Package-provided prompts and skills arrive through the declared packages.
-`AGENTS.md` is the router to the direct skills in `pi/.pi/agent/skills/`:
-its section "Route the task to a skill" names the situation in which each one is
-read. Two rig skills decide the process before implementation:
-`requirements-spec` before a feature or design change and `bug-analysis` before a
-bug fix, each writing a file to `.local/specs/` that the user approves first.
-The 24 `principle-*` [pstack skills](vendor/pstack/README.md) also remain active
-there and deploy with Pi. Their upstream `disable-model-invocation: true` flags
-remain unchanged, so Pi does not advertise them in the system prompt; the
-router lists 17 of them by situation and the model reads the file by path.
-The other seven are not routed because `AGENTS.md` or `bug-analysis` already
-covers them or states a different rule: `fix-root-causes`, `laziness-protocol`,
-`prove-it-works`, `sequence-verifiable-units`, `never-block-on-the-human`,
-`build-the-lever` and `guard-the-context-window`. Every principle skill can
-still be invoked with `/skill:principle-<name>`. The other 33 skills and their supporting
-files are retained in `pi/disabled-skills/`, outside Pi's discovery folders.
+Six rig skills live in `pi/.pi/agent/skills/` and deploy with Pi. Each belongs
+to one moment in the work, and the model loads it on its own: Pi advertises the
+skill's description, and the `AGENTS.md` section "Route the task to a skill"
+names the same moment.
+
+| Skill | Moment |
+| --- | --- |
+| `requirements-spec` | Before implementing a feature or a change to behavior, architecture or UI. Writes a spec to `.local/specs/` that the user approves first. |
+| `bug-analysis` | Before fixing a bug. Finds the root cause, traces the path through the code, and writes an analysis with the proposed fix to `.local/specs/` for approval. |
+| `solution-design` | While deciding how to build: data model, types, boundaries, reader load, retry-safe operations, shared state, product and UI choices. |
+| `refactor-and-migrate` | While restructuring existing code: refactors, rewrites, API replacements, migrations, repeated edits. |
+| `writing-tests` | While writing, changing, or keeping a test. |
+| `measurement` | Before measuring, and before reporting or acting on a number. |
+
+These skills replace the 24 `principle-*` [pstack skills](vendor/pstack/README.md),
+which were hidden from the model by `disable-model-invocation: true`; several
+are only one or two lines long upstream. Their rules were merged into the six skills by moment, except the
+ones `AGENTS.md` already states (verification, small verifiable versions, not
+blocking on the user, context use). All 57 imported pstack skills and their
+supporting files are now retained in `pi/disabled-skills/`, outside Pi's
+discovery folders.
 Full Pi sync backs up and removes the exact archived files from
 `~/.pi/agent/skills/`, including older installs without ownership history. Unlisted
 personal files are untouched; skill directories may remain empty. The former

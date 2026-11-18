@@ -13,7 +13,7 @@ Before building, write down what will be built in one file and get the user's ap
 
 1. **Read first.** Study the request and the parts of the project it touches: the existing code, conventions, data, and screens. Answer from the project every question the project can answer.
 2. **Ask what only the user can decide.** These are questions about wanted behavior, scope, and preference, where a wrong guess would change what gets built. Ask them all in one message, each with the answer you recommend and why. Do not ask about things you can find out yourself, and do not ask when there is nothing open.
-3. **Write the spec** at `.local/specs/<short-task-name>.md` in the project, using the sections below. Create the folder if it is missing and never commit it.
+3. **Write the spec** at `.local/specs/<short-task-name>.md` in the project, using the sections below. Create the folder if it is missing and never commit it. Before writing the Design section, read the `solution-design` skill. When the work restructures existing code, also read `refactor-and-migrate`.
 4. **Hand it over.** Give the path, summarize the requirements and the main design decision in a few lines, list the assumptions the user should confirm, and wait for approval. Skip the wait only when the user has said to proceed without review.
 5. **Implement from the spec.** When requirements change during the work, update the file first, then the code. Before calling the work done, check every acceptance check in the file.
 

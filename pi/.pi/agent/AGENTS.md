@@ -44,43 +44,26 @@ The pause exists because seeing a working version often changes what the user wa
 
 ## 3. Route the task to a skill
 
-Detailed procedures live in skills, not in this file. Match the situation to the lists below and read the skill before acting on it. Each skill is the file `~/.pi/agent/skills/<name>/SKILL.md`. Read only the skills whose situation applies, once per task. Where a skill routed from here disagrees with this file, this file wins.
+Detailed procedures live in skills, not in this file. Each skill belongs to one moment in the work. When you reach that moment, read the skill before acting; Pi lists each skill's file under the available skills. Several skills can apply to one task. Read each one once per task, and only when its moment has come. Where a skill disagrees with this file, this file wins.
 
-### Before implementing: what kind of task is it?
-
-Implementation starts from a written file that the user has approved, so that what gets built is what they asked for and a fix removes the real cause. The kind of task decides the skill:
-
-- **A new feature, or a change to behavior, architecture or UI:** `requirements-spec`. Write a requirements spec.
-- **A bug**, meaning something is broken or behaves wrongly: `bug-analysis`. Find the root cause and trace through the code how the bug happens before proposing any fix, then write the bug analysis.
-- **Neither:** a question, a review, or a mechanical edit whose result is fully determined by the request, with nothing to investigate or decide. No skill and no file.
-
-Each skill defines the steps and the sections of its file. Files go in `.local/specs/` in the project and are never committed. When the file is written, hand it to the user and implement only after they approve it, unless they have said to proceed without review. Afterwards the file is the reference: change it before changing direction, and check the result against it before calling the work done.
-
-When you run as a subagent, write such a file only if your task asks for one.
-
-### While designing or implementing: does one of these situations apply?
-
-Check this list when you write the design part of a spec or the fix in a bug analysis, and again when one of the situations comes up during the work.
-
-| Situation | Skill |
+| Moment | Skill |
 | --- | --- |
-| Choosing core types and data structures before writing logic | `principle-foundational-thinking` |
-| Writing stateful logic, or code that branches a lot or repeats an assumption about a data shape | `principle-model-the-domain` |
-| Designing types or function signatures in a statically typed language | `principle-type-system-discipline` |
-| Adding validation, error handling, or an adapter to a framework or external system | `principle-boundary-discipline` |
-| Fitting a new requirement into an existing design | `principle-redesign-from-first-principles` |
-| A UI interaction or architecture decision with no precedent in the codebase | `principle-exhaust-the-design-space` |
-| A product, UX, or feature-scope tradeoff | `principle-experience-first` |
-| About to add to, refactor, or rewrite code that carries dead or redundant parts | `principle-subtract-before-you-add` |
-| Replacing an internal API that still has callers | `principle-migrate-callers-then-delete-legacy-apis` |
-| A rewrite or migration done in phases | `principle-outcome-oriented-execution` |
-| A command, lifecycle step, or loop that may be retried or interrupted | `principle-make-operations-idempotent` |
-| Several actors may write the same file, branch, key, or state | `principle-separate-before-serializing-shared-state` |
-| Code that is hard to trace, in your change or in a review | `principle-minimize-reader-load` |
-| Writing, changing, or deciding to keep a test | `principle-test-behavior-not-implementation` |
-| Measuring something, or about to report or act on a number | `principle-explain-the-number` |
-| Two or more fixes for the same problem have failed | `principle-attack-the-premise` |
-| You are writing the same instruction or correction a second time | `principle-encode-lessons-in-structure` |
+| You are asked for a new feature, or a change to behavior, architecture or UI. Before writing any code. | `requirements-spec` |
+| Something is broken or behaves wrongly: an error, a crash, a failing test, a wrong result. Before changing any code. | `bug-analysis` |
+| You are deciding how to build it: the Design section of a spec, the proposed fix of a bug analysis, or a structural choice that comes up while implementing (data shape, types, where validation goes, shared state, retry behavior, a UI or product option). | `solution-design` |
+| You are restructuring existing code: a refactor, a rewrite, replacing an internal API, a migration, or the same edit across many files. | `refactor-and-migrate` |
+| You are writing a test, changing one, or deciding whether to keep one. | `writing-tests` |
+| You are about to measure something, or to report or act on a number you measured. | `measurement` |
+
+A question, a review, or a mechanical edit whose result is fully determined by the request, with nothing to investigate or decide, needs no skill.
+
+### Implementation starts from an approved file
+
+The first two skills each produce a file: the requirements spec, or the bug analysis with the root cause, the path through the code that leads to the bug, and the proposed fix. The file exists so that what gets built is what the user asked for, and so that a fix removes the real cause.
+
+Files go in `.local/specs/` in the project and are never committed. When the file is written, hand it to the user and implement only after they approve it, unless they have said to proceed without review. Afterwards the file is the reference: change it before changing direction, and check the result against it before calling the work done.
+
+When you run as a subagent, write such a file only if your task asks for one. The other four skills apply to subagents as they do to the main agent.
 
 ## 4. Delegation
 

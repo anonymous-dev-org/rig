@@ -26,6 +26,7 @@ Read the actual code and observe the actual state. When reading is not enough, a
 The symptom is where the wrong state became visible. The root cause is the first place the system did something it should not do, or failed to handle a state it should handle. Starting from the symptom, ask "why" at each step back along the journey until the answer is a wrong decision in the code and not a consequence of an earlier one.
 
 - Decide whether the state that triggered the symptom is legitimate. If the system may be in that state, the code that broke on it is the cause. If the state should never exist, find what produced it; a check at the place it broke would only hide the bug.
+- When the bug appears only after a restart, suspect persisted state first: config files, caches, lock files, serialized state.
 - Confirm the cause: show that it explains every observed symptom, and that removing it makes the bug disappear. A temporary change made for this test is reverted afterwards. A cause that explains only part of the evidence is not confirmed.
 - Find out why it was not caught and, when relevant, which change introduced it (`git log`, `git blame`).
 - Search for the same fault elsewhere. List every place that has it.
@@ -33,6 +34,8 @@ The symptom is where the wrong state became visible. The root cause is the first
 ### 4. Propose the fix
 
 Propose the change that removes the root cause, at the place of the cause. Guards, retries, swallowed errors, clamped values and special cases at the place of the symptom are not fixes unless the state they handle is legitimate. When there is more than one reasonable fix, describe each briefly and recommend one with the reason.
+
+When the fix changes a data shape, types, a boundary, or shared state, read the `solution-design` skill before settling it. When it includes a test, read `writing-tests`.
 
 ### 5. Write the file and hand it over
 
@@ -50,7 +53,7 @@ Scale the file to the bug: a small bug gets a short file, but every section that
 - **Reproduction** — exact steps, input and environment, with the actual output. Or the statement that it could not be reproduced and what was tried.
 - **Journey** — the numbered path from the starting point to the symptom. Each step: `path/file.ext:line` and function, what the code does, and the relevant value or state. Mark the step where things first go wrong. Add a `mermaid` diagram when the path crosses several components.
 - **Root cause** — the wrong decision in the code, with its reference, why it is wrong, and the evidence that confirms it. State what is verified and what is inferred.
-- **Why it was not caught** — the missing check, test, or signal, and the change that introduced the bug if known.
+- **Why it was not caught** — the missing check, test, or signal, and the change that introduced the bug if known. When the deciding fact took a long search to find, suggest the cheap permanent signal, such as a log line or an assertion, that would have shown it at first look.
 - **Other occurrences** — the other places with the same fault, or the statement that you searched and found none, with how you searched.
 - **Proposed fix** — the files and functions to change and what changes in each. Alternatives considered and why they were not chosen.
 - **Expected behavior** — numbered statements (`E1`, `E2`, ...) of what the system does after the fix, including what must keep working unchanged.
@@ -60,5 +63,6 @@ Scale the file to the bug: a small bug gets a short file, but every section that
 ## Rules
 
 - No fix before the cause is confirmed. If the cause is still unknown after a serious investigation, write the file with what is established, the hypotheses that remain and how to test each, and hand that over instead of trying fixes.
+- When two fixes built on the same explanation have failed, the explanation is the suspect, not the fixes. Write down the one sentence both fixes assumed. Find an observation that would come out differently if that sentence were false, and make it before writing a third fix. If it contradicts the assumption, look for what the failures have in common that the assumption did not predict, and correct the analysis file.
 - Every claim about the code carries a reference to the file and line it comes from.
 - Fix only this bug. Other problems found on the way go in the file as notes, not into the change.
