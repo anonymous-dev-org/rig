@@ -97,7 +97,27 @@ function removeRetired(local, previous, defaults) {
     return [[key, value]];
   }));
 }
+// These choices belong to the user, even when an older rig baseline owned them.
+function sharedSettings(settings) {
+  const shared = structuredClone(settings);
+  for (const keys of [
+    ['defaultProvider'], ['defaultModel'], ['defaultThinkingLevel'],
+    ['enabledModels'], ['modelThinkingLevels'], ['thinkingBudgets'], ['rigReview'],
+    ['compaction', 'reserveTokens'], ['compaction', 'keepRecentTokens'], ['compaction', 'modelOverrides'],
+    ['pi-fast'], ['subagents', 'defaultModel'], ['subagents', 'defaultProvider'],
+    ['subagents', 'agentOverrides'], ['subagents', 'agentOverridesByProvider'], ['subagents', 'watchdog'],
+  ]) {
+    let object = shared;
+    for (const key of keys.slice(0, -1)) object = isJsonObject(object) ? object[key] : undefined;
+    if (isJsonObject(object)) delete object[keys.at(-1)];
+  }
+  return shared;
+}
 export function enforceDefaults(local, defaults, {packages = false, previous = {}, retiredPackages = []} = {}) {
+  if (packages) {
+    defaults = sharedSettings(defaults);
+    previous = sharedSettings(previous);
+  }
   const result = fillMissing(defaults, removeRetired(local, previous, defaults));
   if (!packages) return result;
   const incoming = packageMap(defaults.packages ?? []);

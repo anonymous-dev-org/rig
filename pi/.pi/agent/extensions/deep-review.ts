@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { appendFileSync, mkdirSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { Agent, type AgentTool } from "@earendil-works/pi-agent-core";
+import { Agent, type AgentTool, type ThinkingLevel } from "@earendil-works/pi-agent-core";
 import { StringEnum, type AssistantMessage } from "@earendil-works/pi-ai";
 import { Type } from "typebox";
 import {
@@ -11,21 +11,22 @@ import {
 } from "@earendil-works/pi-coding-agent";
 
 const REVIEW_TYPE = "rig-deep-review";
-export const REVIEW_EFFORTS = {
-low: [
-{ provider: "pi-sub-anthropic", id: "claude-opus-5-5", thinkingLevel: "minimal" },
-{ provider: "openai", id: "gpt-6.1-sol", thinkingLevel: "low" },
-],
-medium: [
-{ provider: "pi-sub-anthropic", id: "claude-opus-5-5", thinkingLevel: "high" },
-{ provider: "openai", id: "gpt-6.1-sol", thinkingLevel: "high" },
-],
-hard: [
-{ provider: "pi-sub-anthropic", id: "claude-fable-5-2", thinkingLevel: "high" },
-{ provider: "openai", id: "gpt-6-astra", thinkingLevel: "high" },
-],
-} as const;
-type Reviewer = typeof REVIEW_EFFORTS[keyof typeof REVIEW_EFFORTS][number];
+export const REVIEW_EFFORTS = ["low", "medium", "hard"] as const;
+type ReviewEffort = typeof REVIEW_EFFORTS[number];
+type Reviewer = { provider: string; id: string; thinkingLevel: ThinkingLevel };
+
+export function getReviewers(pi: ExtensionAPI, effort: ReviewEffort): Reviewer[] {
+const settings = pi.getSettings() as { rigReview?: Partial<Record<ReviewEffort, unknown>> };
+const reviewers = settings.rigReview?.[effort];
+const setup = `Set rigReview.${effort} in ${join(getAgentDir(), "settings.json")} using rig's pi/personal-settings.example.json. Choose exactly two provider/id/thinkingLevel entries; no fallback models are used.`;
+if (!Array.isArray(reviewers) || reviewers.length !== 2) throw new Error(setup);
+const levels: ThinkingLevel[] = ["off", "minimal", "low", "medium", "high", "xhigh", "max"];
+return reviewers.map((reviewer) => {
+const configured = (value: unknown): value is string => typeof value === "string" && !!value.trim() && !/[<>]/.test(value);
+if (!reviewer || !configured(reviewer.provider) || !configured(reviewer.id) || !levels.includes(reviewer.thinkingLevel)) throw new Error(setup);
+return { provider: reviewer.provider.trim(), id: reviewer.id.trim(), thinkingLevel: reviewer.thinkingLevel };
+});
+}
 
 function gitTool(pi: ExtensionAPI, cwd: string) {
 	const parameters = Type.Object({
@@ -138,7 +139,7 @@ pi.events.emit("rig-deep-review:status", { sessionId: ctx.sessionManager.getSess
 	pi.registerCommand("review", {
 description: "Review with low|medium|hard effort and an optional message; /review stop cancels",
 getArgumentCompletions: (prefix) => {
-const items = [...Object.keys(REVIEW_EFFORTS), "stop"].filter((value) => value.startsWith(prefix));
+const items = [...REVIEW_EFFORTS, "stop"].filter((value) => value.startsWith(prefix));
 return items.length ? items.map((value) => ({ value, label: value })) : null;
 },
 handler: async (args, ctx) => {
@@ -152,8 +153,10 @@ return;
 const match = /^(low|medium|hard)(?:\s+([\s\S]*))?$/.exec(input);
 if (!match) { ctx.ui.notify("Usage: /review <low|medium|hard> [message], or /review stop", "error"); return; }
 if (active) { ctx.ui.notify("A review is already running. Use /review stop first.", "error"); return; }
-const effort = match[1] as keyof typeof REVIEW_EFFORTS;
-const reviewers = REVIEW_EFFORTS[effort];
+const effort = match[1] as ReviewEffort;
+let reviewers: Reviewer[];
+try { reviewers = getReviewers(pi, effort); }
+catch (error) { ctx.ui.notify(String(error), "error"); return; }
 const message = match[2] ?? "";
 const controller = new AbortController();
 active = controller;

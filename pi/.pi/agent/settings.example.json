@@ -2,66 +2,13 @@
   "skills": ["!**/council-mode/**","!**/reverse-engineer-anything/**"],
   "theme": "rig",
   "npmCommand": ["bun"],
-  "defaultProvider": "openai",
-  "defaultModel": "gpt-6.1-sol",
-  "defaultThinkingLevel": "low",
   "compaction": {
-    "enabled": true,
-    "reserveTokens": 72000
-  },
-  "pi-fast": {
-    "enabledByDefault": true
+    "enabled": true
   },
   "subagents": {
-    "defaultModel": "openai/gpt-6.1-sol",
-    "watchdog": { "enabled": false },
     "defaultSubagentOnlyExtensions": [
       "npm:pi-fast@0.3.0"
-    ],
-    "agentOverrides": {
-      "cursor-agent": {
-        "disabled": true
-      },
-      "cursor-agent-writer": {
-        "disabled": true
-      },
-      "codex-exec": {
-        "disabled": true
-      },
-      "codex-exec-writer": {
-        "disabled": true
-      },
-      "claude-code": {
-        "disabled": true
-      },
-      "claude-code-writer": {
-        "disabled": true
-      },
-      "delegate": {
-        "fast": false
-      },
-      "evidence-auditor": {
-        "fast": false,
-        "disabled": true
-      },
-      "oracle": {
-        "fast": false,
-        "disabled": true
-      },
-      "planner": {
-        "fast": false,
-        "disabled": true
-      },
-      "researcher": {
-        "fast": false
-      },
-      "scout": {
-        "fast": false
-      },
-      "worker": {
-        "fast": false
-      }
-    }
+    ]
   },
   "enableInstallTelemetry": false,
   "packages": [
