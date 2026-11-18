@@ -1,10 +1,12 @@
 import { homedir } from "node:os";
 import path from "node:path";
+import { stripVTControlCharacters } from "node:util";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { sliceByColumn, truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
+import { codexServiceTier } from "./lib/codex-speed";
 
 export default function (pi: ExtensionAPI) {
-  let model = "no-model";
+  let activeModel: Parameters<typeof codexServiceTier>[0];
   let requestRender: (() => void) | undefined;
   const tokenFormat = new Intl.NumberFormat("en-US", {
     notation: "compact",
@@ -12,7 +14,7 @@ export default function (pi: ExtensionAPI) {
   });
 
   pi.on("session_start", async (_event, ctx) => {
-    model = ctx.model?.id ?? "no-model";
+    activeModel = ctx.model;
     if (ctx.mode !== "tui") return;
     const home = homedir();
     let cwd = ctx.cwd;
@@ -74,12 +76,13 @@ export default function (pi: ExtensionAPI) {
             }
           }
           const cachedPercent = inputTokens > 0 ? (cachedInputTokens / inputTokens * 100).toFixed(0) : "0";
-          const fast = footerData.getExtensionStatuses().get("pi-fast") ?? "Fast n/a";
-const deepReviewing = footerData.getExtensionStatuses().get("rig-deep-review");
-const right = (deepReviewing ? theme.fg("accent", "reviewing  ") : "") +
+          const statuses = footerData.getExtensionStatuses();
+          const selected = stripVTControlCharacters(statuses.get("fast-priority") ?? "").toLowerCase();
+          const speed = codexServiceTier(activeModel, selected) ? selected : "normal";
+          const right = (statuses.has("rig-deep-review") ? theme.fg("accent", "reviewing  ") : "") +
             theme.fg(contextColor, context) +
-theme.fg("dim", `  in ${tokenFormat.format(inputTokens).toLowerCase()} (${cachedPercent}%) - out ${tokenFormat.format(outputTokens).toLowerCase()} ($${cost.toFixed(3)})  ${fast} │ `) +
-            theme.fg("accent", thinking) + theme.fg("dim", ` │ ${model} `);
+            theme.fg("dim", `  in ${tokenFormat.format(inputTokens).toLowerCase()} (${cachedPercent}%) - out ${tokenFormat.format(outputTokens).toLowerCase()} ($${cost.toFixed(3)})  ${speed} │ `) +
+            theme.fg("accent", thinking) + theme.fg("dim", ` │ ${activeModel?.id ?? "no-model"} `);
           const rightWidth = visibleWidth(right);
           if (rightWidth >= width) return [truncateToWidth(right, width)];
 
@@ -105,7 +108,7 @@ theme.fg("dim", `  in ${tokenFormat.format(inputTokens).toLowerCase()} (${cached
   pi.on("thinking_level_select", async () => requestRender?.());
 
   pi.on("model_select", async (event) => {
-    model = event.model.id;
+    activeModel = event.model;
     requestRender?.();
   });
 }

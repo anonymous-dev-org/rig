@@ -5,6 +5,7 @@
   "compaction": {
     "enabled": true
   },
+  "pi-codex-fast": { "mode": "fast" },
   "subagents": {
     "defaultSubagentOnlyExtensions": [
       "npm:@calesennett/pi-codex-fast@0.1.14"
