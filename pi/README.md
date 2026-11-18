@@ -61,7 +61,7 @@ the example over the whole settings file. It is documentation only and is never 
 | Context/token budgets | `compaction.reserveTokens`, `compaction.keepRecentTokens`, `compaction.modelOverrides` |
 | Subagent models and providers | `subagents.defaultModel`, `subagents.defaultProvider` |
 | Per-agent models, thinking, speed and enabled roles | `subagents.agentOverrides`, `subagents.agentOverridesByProvider` |
-| Fast mode and watchdog preferences | `pi-fast`, `subagents.watchdog` |
+| Fast mode and watchdog preferences | `pi-codex-fast.mode`, `subagents.watchdog` |
 | Review and council pairs | `rigReview.low`, `rigReview.medium`, `rigReview.hard` |
 
 Use `pi --list-models` to find available provider/model IDs, and authenticate the
@@ -101,6 +101,22 @@ local-only package declarations and their filters remain intact.
 expose the public Node/Bun package API; unsupported wrappers fail with guidance.
 Preview only describes these actions. The narrow `sync-settings.mjs` command remains
 JSON-only. Restart/reload Pi after sync to load the installed resources.
+
+### OpenAI Fast and Ultrafast
+
+Rig installs `@calesennett/pi-codex-fast@0.1.14` in place of `pi-fast`, including
+for subagent-only extension loading. Sync retires the previous repo-owned package.
+After syncing, restart Pi or run `/reload`; use `/codex-fast` or
+`/codex-ultrafast` to toggle the corresponding tier. Interactive toggles save
+the selection globally. For a one-launch override use `pi --fast` or
+`pi --ultrafast`; `pi --no-fast` disables both for that launch.
+
+Both Sol 6.2 and Astra 6.2 are supported. Speed modes remain off by default;
+account access and higher usage charges still apply. A selected mode requests
+a service tier, not proof that OpenAI delivered it. Personal defaults belong
+in `~/.pi/agent/settings.json` as `"pi-codex-fast": { "mode": "off" }`
+(allowed modes: `off`, `fast`, `ultrafast`). The old `pi-fast` preference is
+not read by the replacement. Do not load both speed extensions together.
 
 Package-provided prompts and skills arrive through the declared packages.
 The 24 `principle-*` [pstack skills](vendor/pstack/README.md) remain active in
