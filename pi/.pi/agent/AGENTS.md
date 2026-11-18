@@ -51,7 +51,8 @@ Detailed procedures live in skills, not in this file. Each skill belongs to one 
 | The user wants a new capability or an intentional change to behavior, architecture or UI. Write the spec before implementation. | `requirements-spec` |
 | The user reports a defect, or fixing an existing defect is necessary for this task. Investigate before proposing a fix. | `bug-analysis` |
 | You face a design choice about data, interfaces, shared state, retries or UI. Read before settling that choice, whether in a spec, a proposed fix or code. | `solution-design` |
-| You are restructuring existing code: a refactor, a rewrite, replacing an internal API, a migration, or the same edit across many files. | `refactor-and-migrate` |
+| You are restructuring code or changing an existing contract (an API, a setting, or a stored format). | `refactor-and-migrate` |
+| You are about to write or materially change implementation logic. Read before the first such edit, not for prose, formatting or test-only edits. | `writing-code` |
 | You are writing a test, changing one, or deciding whether to keep one. | `writing-tests` |
 | You are about to measure something, or to report or act on a number you measured. | `measurement` |
 
