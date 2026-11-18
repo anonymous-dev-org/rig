@@ -44,10 +44,10 @@ Let the compiler reject what must never happen.
 ## 4. Boundaries: where validation and error handling go
 
 - Validate, narrow types, and handle errors defensively where data enters the system: CLI arguments, config files, network, external APIs, storage.
-- Inside the system, trust the types. Do not validate again, and do not add nil checks deep in a call chain for something the entry point already guaranteed.
+- Remove a repeated check only if an earlier check guarantees the same condition still holds here. A well-typed user ID does not prove the caller may access that user's record; state may also have changed since it was checked.
 - Keep business logic in pure functions with no framework dependency. The code that talks to the framework is thin and only wires things together.
 - Do not expose transport, storage, or framework types through a module's public surface. Expose domain concepts.
-- Two questions decide a case. "Is this data crossing a system boundary right now?" If not, validation here is redundant. "Can this be a pure function that the outer layer calls?" If yes, extract it.
+- Keep authorization and domain checks where the decision is made, even when the caller is internal.
 
 ## 5. Reader load
 

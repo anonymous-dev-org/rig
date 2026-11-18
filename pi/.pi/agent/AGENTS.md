@@ -48,22 +48,22 @@ Detailed procedures live in skills, not in this file. Each skill belongs to one 
 
 | Moment | Skill |
 | --- | --- |
-| You are asked for a new feature, or a change to behavior, architecture or UI. Before writing any code. | `requirements-spec` |
-| Something is broken or behaves wrongly: an error, a crash, a failing test, a wrong result. Before changing any code. | `bug-analysis` |
-| You are deciding how to build it: the Design section of a spec, the proposed fix of a bug analysis, or a structural choice that comes up while implementing (data shape, types, where validation goes, shared state, retry behavior, a UI or product option). | `solution-design` |
+| The user wants a new capability or an intentional change to behavior, architecture or UI. Write the spec before implementation. | `requirements-spec` |
+| The user reports a defect, or fixing an existing defect is necessary for this task. Investigate before proposing a fix. | `bug-analysis` |
+| You face a design choice about data, interfaces, shared state, retries or UI. Read before settling that choice, whether in a spec, a proposed fix or code. | `solution-design` |
 | You are restructuring existing code: a refactor, a rewrite, replacing an internal API, a migration, or the same edit across many files. | `refactor-and-migrate` |
 | You are writing a test, changing one, or deciding whether to keep one. | `writing-tests` |
 | You are about to measure something, or to report or act on a number you measured. | `measurement` |
 
-A question, a review, or a mechanical edit whose result is fully determined by the request, with nothing to investigate or decide, needs no skill.
+A failed check is evidence, not a new task. If unfinished work caused it, trace the cause and correct it within the current task; do not start another file or approval round. Report unrelated existing failures without fixing them. Questions, reviews and mechanical edits need no implementation file; read a specialist skill only if its row applies.
 
-### Implementation starts from an approved file
+### When to write the file and when to wait
 
-The first two skills each produce a file: the requirements spec, or the bug analysis with the root cause, the path through the code that leads to the bug, and the proposed fix. The file exists so that what gets built is what the user asked for, and so that a fix removes the real cause.
+Before implementing a requested change, write the requirements spec; before fixing an existing defect, write the bug analysis instead. Keep one working file for the task under `.local/specs/`, share its path before implementing, and never stage it. Check the result against that file.
 
-Files go in `.local/specs/` in the project and are never committed. When the file is written, hand it to the user and implement only after they approve it, unless they have said to proceed without review. Afterwards the file is the reference: change it before changing direction, and check the result against it before calling the work done.
+Proceed unless the user asked to review first, intended behavior or scope cannot be settled from the request and project, or a consequential compatibility change or migration of user data lacks authorization. In those cases, present the draft and the decision needed, then wait. Update the file and apply the same rule if the requirements, diagnosis or proposed outcome materially change. Permissions for risky actions and working-version handovers still apply.
 
-When you run as a subagent, write such a file only if your task asks for one. The other four skills apply to subagents as they do to the main agent.
+The parent owns the file and any user decision. Pass workers its path (or the relevant contents if their worktree cannot see it). Workers report evidence and decisions to the parent; they write a file only if assigned.
 
 ## 4. Delegation
 
@@ -83,7 +83,7 @@ If a subagent fails to launch or run, do not stop, even though the subagent tool
 
 ## 5. Implement, verify, and finish
 
-Once the requirements spec or bug analysis is approved, or when the task needs neither, carry the work through to a verified result without stopping partway. For work built in versions, that means one version at a time.
+Follow the file and decision rule in section 3, then carry the work through to a verified result. For work built in versions, that means one version at a time.
 
 ### Decide for yourself by default
 

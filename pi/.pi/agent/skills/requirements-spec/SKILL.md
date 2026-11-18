@@ -1,21 +1,20 @@
 ---
 name: requirements-spec
-description: "Use before implementing a new feature or a change to behavior, architecture or UI. Collects what the user wants into one requirements file that the user approves and the implementation follows. Not for bugs (use bug-analysis), questions, or mechanical edits."
+description: "Before implementing a new capability or an intentional change to behavior, architecture or UI, write one requirements file with checks. For a defect in existing behavior, use bug-analysis instead."
 ---
 
 # Requirements spec
 
-Before building, write down what will be built in one file and get the user's approval. The file is the base for the implementation: anything not in it is not built, and anything in it can be checked when the work is done.
+Before building, write down the result the user asked for, what must stay unchanged, and how to check both. Use this file as the basis for implementation.
 
 **Why:** A request in chat leaves gaps that you would otherwise fill with guesses. Writing the requirements down shows the gaps while they are still cheap to close, and gives the user one place to correct the direction before any code exists.
 
 ## Steps
 
 1. **Read first.** Study the request and the parts of the project it touches: the existing code, conventions, data, and screens. Answer from the project every question the project can answer.
-2. **Ask what only the user can decide.** These are questions about wanted behavior, scope, and preference, where a wrong guess would change what gets built. Ask them all in one message, each with the answer you recommend and why. Do not ask about things you can find out yourself, and do not ask when there is nothing open.
-3. **Write the spec** at `.local/specs/<short-task-name>.md` in the project, using the sections below. Create the folder if it is missing and never commit it. Before writing the Design section, read the `solution-design` skill. When the work restructures existing code, also read `refactor-and-migrate`.
-4. **Hand it over.** Give the path, summarize the requirements and the main design decision in a few lines, list the assumptions the user should confirm, and wait for approval. Skip the wait only when the user has said to proceed without review.
-5. **Implement from the spec.** When requirements change during the work, update the file first, then the code. Before calling the work done, check every acceptance check in the file.
+2. **Draft the spec** at `.local/specs/<short-task-name>.md` using the sections below. Read `solution-design` before settling a design choice and `refactor-and-migrate` when planning a restructuring.
+3. **Share the path.** Record assumptions and any decision only the user can make, with your recommended answer. Follow the decision rule in `AGENTS.md` section 3.
+4. **Implement and verify.** Work from the file. Check each numbered requirement before calling the work done.
 
 ## Sections of the file
 
@@ -23,7 +22,7 @@ Leave out a section that does not apply instead of filling it with nothing. Writ
 
 - **Goal** — what the user wants and why, in two or three sentences.
 - **Scope** — what is included, and what is explicitly left out.
-- **Requirements** — numbered statements (`R1`, `R2`, ...) of behavior the result must have. Each one is a single observable behavior that can be checked, written from the user's side: "When X, the system does Y." Include error cases and limits the user cares about.
+- **Requirements** — give each requested outcome, structural constraint and behavior that must stay unchanged its own number (`R1`, `R2`, ...). State each so someone can check it. For example, “The UI no longer imports the storage library” and “Saving still produces the same record” need different checks.
 - **Design** — how the requirements will be met, covering only the parts this task has:
   - *Architecture:* the components involved, what each is responsible for, and how data or control flows between them. Use a `mermaid` diagram when several parts talk to each other.
   - *UI:* each screen or view, what it shows, and what each action does, including empty, loading and error states.
@@ -36,7 +35,7 @@ Leave out a section that does not apply instead of filling it with nothing. Writ
 
 ## Rules
 
-- State requirements as behavior, not as implementation. "The list keeps its scroll position after a refresh" is a requirement; "store the offset in a ref" belongs in Design.
+- Distinguish the user's constraints from your choices. If the user requires a module boundary, it is a requirement. If you choose a module boundary to meet a behavior requirement, it belongs in Design.
 - Every design element must serve a numbered requirement. Remove the ones that do not.
 - Keep the file as long as the task needs and no longer. A small feature may need half a page.
 - The file describes the current agreement, not its history. Edit entries in place and delete what no longer applies.

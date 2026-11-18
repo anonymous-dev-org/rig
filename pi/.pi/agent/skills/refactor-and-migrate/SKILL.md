@@ -32,15 +32,15 @@ Migrate every caller and delete the old API in the same change.
 
 Aim at the end state. Do not write throwaway code only to keep every intermediate state fully working.
 
-- Temporary breakage between phases is acceptable when it is planned, limited to named areas, and reversible. Say in the spec where it is allowed.
+- Keep any temporary breakage inside a reversible local step. Do not commit or hand over a version with a new failure.
 - While a phase is in progress, keep running the checks for the areas you are touching.
 - At the end, run the full static and runtime verification.
 
 ## 5. Work in units you can check
 
-- Start from a clean, passing base, so that every check compares against a known state.
-- One unit is: known-good state, one change, run the check, then continue. Do not start the next unit while the current one fails. A break found at the unit that caused it is cheap to locate; a break found after a batch is buried.
-- Order commits so that the sequence proves the work: the failing test before the fix, the removal before the reshaping, the baseline measurement before the change. Each commit stands on its own.
+- Check the starting state and record existing failures so you can distinguish them from failures introduced by the change.
+- Make one change, run its checks, and resolve any new failure before starting the next unit.
+- For a regression, observe the check fail before the fix and pass afterwards. If the test belongs in the repository, commit it together with the fix, not as a failing checkpoint.
 
 ## 6. Script edits that repeat
 

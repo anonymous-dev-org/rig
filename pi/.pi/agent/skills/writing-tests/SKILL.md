@@ -5,7 +5,7 @@ description: "Use when writing a test, changing one, or deciding whether to keep
 
 # Writing tests
 
-Add a new test file only when the user asked for tests or the approved spec or bug analysis includes them. Updating an existing test to match an intended change in behavior is part of the change.
+An acceptance check describes what to verify; it does not authorize adding a test file, fixture or test infrastructure. Unless the user asks for those, use an existing test or a throwaway check. Update existing tests to match an intended behavior change, not to hide an unintended failure.
 
 ## What a test asserts
 

@@ -133,12 +133,13 @@ Package-provided prompts and skills arrive through the declared packages.
 Six rig skills live in `pi/.pi/agent/skills/` and deploy with Pi. Each belongs
 to one moment in the work, and the model loads it on its own: Pi advertises the
 skill's description, and the `AGENTS.md` section "Route the task to a skill"
-names the same moment.
+names the same moment and defines when to wait for a user decision. Sharing
+the working file does not by itself require a pause.
 
 | Skill | Moment |
 | --- | --- |
-| `requirements-spec` | Before implementing a feature or a change to behavior, architecture or UI. Writes a spec to `.local/specs/` that the user approves first. |
-| `bug-analysis` | Before fixing a bug. Finds the root cause, traces the path through the code, and writes an analysis with the proposed fix to `.local/specs/` for approval. |
+| `requirements-spec` | Before implementing a feature or an intentional change to behavior, architecture or UI. Writes the requirements and their checks to `.local/specs/`. |
+| `bug-analysis` | Before fixing an existing defect. Records the causal path, evidence, proposed fix and expected behavior; a failure introduced during implementation stays in the current task. |
 | `solution-design` | While deciding how to build: data model, types, boundaries, reader load, retry-safe operations, shared state, product and UI choices. |
 | `refactor-and-migrate` | While restructuring existing code: refactors, rewrites, API replacements, migrations, repeated edits. |
 | `writing-tests` | While writing, changing, or keeping a test. |

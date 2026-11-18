@@ -1,11 +1,11 @@
 ---
 name: bug-analysis
-description: "Use when something is broken or behaves wrongly: an error, a crash, a failing test, a wrong result, a regression. Finds the root cause, traces through the code how the bug happens, then writes a bug analysis file with the proposed fix and expected behavior for the user to approve before the fix is implemented."
+description: "Investigate a reported or in-scope defect in existing behavior. Trace the failure through the code, confirm its cause, then record the fix and expected behavior. A failure introduced by unfinished work stays in the current task."
 ---
 
 # Bug analysis
 
-Do not change code until you can explain the bug. First find the root cause and show, step by step through the code, how the system gets from a normal starting point to the wrong result. Then propose a fix and write both down in one file. The fix is implemented from that file after the user approves it.
+Do not implement a fix until the cause is established. Reversible local probes are for gathering evidence, not for leaving a speculative fix in place. Trace the failure first, then record the findings, proposed fix and expected behavior in the implementation file.
 
 **Why:** A fix made where the bug shows up usually hides it and leaves the cause in place to fail somewhere else. An explanation with code references can be checked by the user; a guess cannot.
 
@@ -27,7 +27,7 @@ The symptom is where the wrong state became visible. The root cause is the first
 
 - Decide whether the state that triggered the symptom is legitimate. If the system may be in that state, the code that broke on it is the cause. If the state should never exist, find what produced it; a check at the place it broke would only hide the bug.
 - When the bug appears only after a restart, suspect persisted state first: config files, caches, lock files, serialized state.
-- Confirm the cause: show that it explains every observed symptom, and that removing it makes the bug disappear. A temporary change made for this test is reverted afterwards. A cause that explains only part of the evidence is not confirmed.
+- Test the explanation against the failure: use a replay, a contrasting input, or an isolated probe that would give a different result if you were wrong. Record what you observed, and remove temporary instrumentation or changes. If the evidence does not distinguish the cause from the alternatives, record findings and the next check instead of proposing a fix.
 - Find out why it was not caught and, when relevant, which change introduced it (`git log`, `git blame`).
 - Search for the same fault elsewhere. List every place that has it.
 
@@ -35,15 +35,15 @@ The symptom is where the wrong state became visible. The root cause is the first
 
 Propose the change that removes the root cause, at the place of the cause. Guards, retries, swallowed errors, clamped values and special cases at the place of the symptom are not fixes unless the state they handle is legitimate. When there is more than one reasonable fix, describe each briefly and recommend one with the reason.
 
-When the fix changes a data shape, types, a boundary, or shared state, read the `solution-design` skill before settling it. When it includes a test, read `writing-tests`.
+Read `solution-design` if the fix needs a design choice. Read `writing-tests` when writing or changing a test, not just to run the reproduction.
 
 ### 5. Write the file and hand it over
 
-Write `.local/specs/bug-<short-name>.md` in the project, using the sections below. Create the folder if it is missing and never commit it. Then give the user the path, the root cause in two or three sentences, and the fix you recommend, and wait for approval. Skip the wait only when the user has said to proceed without review.
+Write `.local/specs/bug-<short-name>.md`, or add the findings to the current task's spec if this is a blocker in that task. Share the path and the decisive evidence. Follow the decision rule in `AGENTS.md` section 3.
 
 ### 6. Implement from the file
 
-After approval, implement the fix as written. If the work shows the analysis was wrong, stop, correct the file, and tell the user before continuing. Finish by running the reproduction from step 1 and every acceptance check, and confirm the bug is gone.
+Implement the confirmed fix. If evidence overturns the diagnosis, return to investigation and correct the file before continuing. Rerun the original reproduction and acceptance checks. If a replay is unavailable, report the substitute check and what remains unverified.
 
 ## Sections of the file
 
