@@ -130,6 +130,11 @@ Sync preserves an existing `pi-codex-fast` preference in `~/.pi/agent/settings.j
 not read by the replacement. Do not load both speed extensions together.
 
 Package-provided prompts and skills arrive through the declared packages.
+Two rig skills, `requirements-spec` and `bug-analysis`, live in
+`pi/.pi/agent/skills/` and are loaded by the model on its own: `AGENTS.md`
+requires a requirements spec before a feature or design change and a root-cause
+bug analysis before a bug fix, each written to `.local/specs/` and approved by
+the user before implementation.
 The 24 `principle-*` [pstack skills](vendor/pstack/README.md) remain active in
 `pi/.pi/agent/skills/` and deploy with Pi. Their upstream
 `disable-model-invocation: true` flags remain unchanged: invoke them explicitly
