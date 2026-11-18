@@ -118,7 +118,10 @@ export function enforceDefaults(local, defaults, {packages = false, previous = {
     defaults = sharedSettings(defaults);
     previous = sharedSettings(previous);
   }
-  const result = fillMissing(defaults, removeRetired(local, previous, defaults));
+  const retained = removeRetired(local, previous, defaults);
+  const result = fillMissing(defaults, retained);
+  // Seed a speed preference without resetting modes saved by /codex-fast.
+  if (packages && Object.hasOwn(local, 'pi-codex-fast')) result['pi-codex-fast'] = local['pi-codex-fast'];
   if (!packages) return result;
   const incoming = packageMap(defaults.packages ?? []);
   const current = packageMap(local.packages ?? []);

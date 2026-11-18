@@ -9,6 +9,7 @@ import {
 	convertToLlm, createReadOnlyTools, getAgentDir,
 	type ExtensionAPI, type ExtensionContext, type SessionManager,
 } from "@earendil-works/pi-coding-agent";
+import { codexServiceTier, reviewSpeedMode } from "./lib/codex-speed";
 
 const REVIEW_TYPE = "rig-deep-review";
 export const REVIEW_EFFORTS = ["low", "medium", "hard"] as const;
@@ -86,13 +87,25 @@ signal: AbortSignal, recordUsage: (message: AssistantMessage) => void,
 ): Promise<string> {
 	const model = ctx.modelRegistry.find(reviewer.provider, reviewer.id);
 	if (!model || !ctx.modelRegistry.hasConfiguredAuth(model)) throw new Error(`Model ${reviewer.provider}/${reviewer.id} is unavailable or unauthenticated.`);
+	const serviceTier = codexServiceTier(model, await reviewSpeedMode(cwd));
 	const agent = new Agent({
 		initialState: {
 systemPrompt, model, thinkingLevel: reviewer.thinkingLevel,
 			tools: [...createReadOnlyTools(cwd).filter((tool) => ["read", "grep", "find", "ls"].includes(tool.name)), gitTool(pi, cwd)],
 		},
 		convertToLlm,
-		streamFn: (requestedModel, context, options) => ctx.modelRegistry.streamSimple(requestedModel, context, options),
+		streamFn: (requestedModel, context, options) => ctx.modelRegistry.streamSimple(requestedModel, context, {
+			...options,
+			...(serviceTier && {
+				onPayload: async (payload, payloadModel) => {
+					const current = await options?.onPayload?.(payload, payloadModel) ?? payload;
+					if (current && typeof current === "object" && !Array.isArray(current)) {
+						return { ...current, service_tier: serviceTier };
+					}
+					return current;
+				},
+			}),
+		}),
 	});
 	const unsubscribe = agent.subscribe((event) => {
 		if (event.type === "message_end" && event.message.role === "assistant") recordUsage(event.message);

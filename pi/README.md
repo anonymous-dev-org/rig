@@ -111,10 +111,12 @@ After syncing, restart Pi or run `/reload`; use `/codex-fast` or
 the selection globally. For a one-launch override use `pi --fast` or
 `pi --ultrafast`; `pi --no-fast` disables both for that launch.
 
-Both Sol 6.2 and Astra 6.2 are supported. Speed modes remain off by default;
-account access and higher usage charges still apply. A selected mode requests
-a service tier, not proof that OpenAI delivered it. Personal defaults belong
-in `~/.pi/agent/settings.json` as `"pi-codex-fast": { "mode": "off" }`
+Fast is the default for supported models (including Sol 6.2 and Astra 6.2),
+in Pi, native Pi subagents, and `/review` and `council` reviewers. The footer
+shows `normal`, `fast`, or `ultrafast` for the current model; an unsupported
+speed selection shows `normal`. The label describes the tier requested, not
+the tier OpenAI delivered. Account access and higher usage charges still apply.
+Sync preserves an existing `pi-codex-fast` preference in `~/.pi/agent/settings.json`
 (allowed modes: `off`, `fast`, `ultrafast`). The old `pi-fast` preference is
 not read by the replacement. Do not load both speed extensions together.
 
