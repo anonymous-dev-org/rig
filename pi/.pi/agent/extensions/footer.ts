@@ -1,13 +1,64 @@
 import { homedir } from "node:os";
 import path from "node:path";
 import { stripVTControlCharacters } from "node:util";
-import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { calculateCost } from "@earendil-works/pi-ai";
+import type { ExtensionAPI, ProviderStreamEvent } from "@earendil-works/pi-coding-agent";
 import { sliceByColumn, truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 import { codexServiceTier } from "./lib/codex-speed";
+
+// https://developers.openai.com/api/docs/pricing?latest-pricing=ultrafast
+const ultrafastPromotionEnds = Date.parse("2027-03-01T00:00:00-08:00");
+
+function ultrafastMultiplier(model: string, timestamp: number) {
+  switch (model) {
+    case "gpt-6.2-astra":
+    case "gpt-6.2-sol":
+      return timestamp < ultrafastPromotionEnds ? 3 : 6;
+    case "gpt-6-astra":
+    case "gpt-6.1-sol":
+      return 6;
+    default:
+      return 1;
+  }
+}
 
 export default function (pi: ExtensionAPI) {
   let activeModel: Parameters<typeof codexServiceTier>[0];
   let requestRender: (() => void) | undefined;
+  let ultrafastResponse: Pick<ProviderStreamEvent, "provider" | "api" | "model"> & { id: string } | undefined;
+
+  pi.on("turn_start", () => { ultrafastResponse = undefined; });
+  pi.on("provider_stream_event", ({ provider, api, model, data }) => {
+    if (provider !== "openai" && provider !== "openai-codex") return;
+    if (api !== "openai-responses" && api !== "openai-codex-responses") return;
+    const event = data as { type?: string; response?: { id?: unknown; service_tier?: unknown } } | null;
+    if (event?.type !== "response.completed" && event?.type !== "response.done" && event?.type !== "response.incomplete") return;
+    const response = event.response;
+    ultrafastResponse = response?.service_tier === "ultrafast" && typeof response.id === "string"
+      ? { provider, api, model, id: response.id }
+      : undefined;
+  });
+
+  pi.on("message_end", ({ message }, { model }) => {
+    if (message.role !== "assistant") return;
+    const response = ultrafastResponse;
+    ultrafastResponse = undefined;
+    if (!response || message.responseId !== response.id || message.provider !== response.provider ||
+      message.api !== response.api || message.model !== response.model || model?.id !== response.model ||
+      model.provider !== response.provider || model.api !== response.api || message.usage.cost.totalFromProvider) return;
+
+    const multiplier = ultrafastMultiplier(message.model, message.timestamp);
+    if (multiplier === 1) return;
+    const usage = { ...message.usage, cost: { ...message.usage.cost } };
+    const standard = calculateCost(model, usage);
+    // Don't reprice a response once Pi itself accounts for the tier.
+    if (standard.total !== message.usage.cost.total) return;
+    for (const key of ["input", "output", "cacheRead", "cacheWrite", "total"] as const) {
+      usage.cost[key] *= multiplier;
+    }
+    return { message: { ...message, usage } };
+  });
+
   const tokenFormat = new Intl.NumberFormat("en-US", {
     notation: "compact",
     maximumFractionDigits: 1,
