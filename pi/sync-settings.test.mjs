@@ -382,7 +382,18 @@ function cliFixture(t) {
 }
 test('CLI bootstraps both ordinary home configs and repeats independently of cwd', t => {
   const {repo,home,run} = cliFixture(t);
-  assert.equal(run().status,0); assert.equal(run().status,0);
+  assert.equal(run().status,0);
+  const settingsFile = path.join(home,'.pi/agent/settings.json');
+  const seeded = JSON.parse(fs.readFileSync(settingsFile));
+  assert.equal(seeded.defaultProvider,'openai');
+  assert.equal(seeded.defaultModel,'gpt-6.2-sol');
+  assert.equal(seeded.subagents.defaultModel,'openai/gpt-6.2-sol');
+  assert.deepEqual(seeded.enabledModels.slice(0,2),['openai/gpt-6.2-sol','openai/gpt-6.2-astra']);
+  assert.deepEqual(Object.values(seeded.rigReview).map(pair => pair[0].id),
+    ['gpt-6.2-sol','gpt-6.2-sol','gpt-6.2-astra']);
+  const bytes = fs.readFileSync(settingsFile,'utf8');
+  assert.equal(run().status,0);
+  assert.equal(fs.readFileSync(settingsFile,'utf8'),bytes);
   const mcp = JSON.parse(fs.readFileSync(path.join(home,'.pi/agent/mcp.json')));
   assert.deepEqual(mcp.mcpServers.playwright,{command:'bunx',args:['@playwright/mcp@latest','--isolated','--headless']});
   for (const name of ['settings','mcp']) {

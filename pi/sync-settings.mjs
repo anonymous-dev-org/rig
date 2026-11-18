@@ -97,7 +97,7 @@ function removeRetired(local, previous, defaults) {
     return [[key, value]];
   }));
 }
-// These choices belong to the user, even when an older rig baseline owned them.
+// Personal settings, including seeded model choices, are never enforced or retired.
 function sharedSettings(settings) {
   const shared = structuredClone(settings);
   for (const keys of [
@@ -113,7 +113,44 @@ function sharedSettings(settings) {
   }
   return shared;
 }
+function upgradeModel(ref) {
+  if (typeof ref !== 'string') return ref;
+  return ref.replace(/^(openai\/)?(gpt-6\.1-sol|gpt-6(?:\.1)?-astra)(?=:[a-z]+$|$)/,
+    (_, provider, id) => `${provider ?? ''}${id === 'gpt-6.1-sol' ? 'gpt-6.2-sol' : 'gpt-6.2-astra'}`);
+}
+function applyModelDefaults(local, defaults) {
+  const seed = {};
+  const {defaultProvider, defaultModel, enabledModels, subagents, rigReview} = defaults;
+  // Treat the main provider/model as a pair; never pair a personal model with a repo provider.
+  if (defaultProvider && defaultModel && !Object.hasOwn(local, 'defaultModel') &&
+      (!Object.hasOwn(local, 'defaultProvider') || local.defaultProvider === defaultProvider))
+    Object.assign(seed, {defaultProvider, defaultModel});
+  if (enabledModels) seed.enabledModels = enabledModels;
+  if (subagents?.defaultModel) seed.subagents = {defaultModel:subagents.defaultModel};
+  if (rigReview) seed.rigReview = rigReview;
+
+  const settings = structuredClone(fillMissing(local, seed));
+  if ((!settings.defaultProvider || settings.defaultProvider === 'openai') && typeof settings.defaultModel === 'string')
+    settings.defaultModel = upgradeModel(settings.defaultModel);
+  if (Array.isArray(settings.enabledModels)) settings.enabledModels = settings.enabledModels.map(upgradeModel);
+  const agents = settings.subagents;
+  const upgradeAgent = agent => {
+    if (isJsonObject(agent) && typeof agent.model === 'string') agent.model = upgradeModel(agent.model);
+  };
+  if (isJsonObject(agents)) {
+    if (typeof agents.defaultModel === 'string') agents.defaultModel = upgradeModel(agents.defaultModel);
+    for (const overrides of [agents.agentOverrides, ...Object.values(agents.agentOverridesByProvider ?? {})])
+      if (isJsonObject(overrides)) Object.values(overrides).forEach(upgradeAgent);
+  }
+  for (const reviewers of Object.values(settings.rigReview ?? {})) {
+    if (!Array.isArray(reviewers)) continue;
+    for (const reviewer of reviewers)
+      if (reviewer?.provider === 'openai' && typeof reviewer.id === 'string') reviewer.id = upgradeModel(reviewer.id);
+  }
+  return settings;
+}
 export function enforceDefaults(local, defaults, {packages = false, previous = {}, retiredPackages = []} = {}) {
+  const modelDefaults = defaults;
   if (packages) {
     defaults = sharedSettings(defaults);
     previous = sharedSettings(previous);
@@ -126,7 +163,7 @@ export function enforceDefaults(local, defaults, {packages = false, previous = {
   const incoming = packageMap(defaults.packages ?? []);
   const current = packageMap(local.packages ?? []);
   const retired = new Set([...packageMap(previous.packages ?? []).keys(), ...retiredPackages.map(packageIdentity)]);
-  return {...result, packages:[...incoming.values(), ...[...current].filter(([key]) => !incoming.has(key) && !retired.has(key)).map(([, entry]) => entry)]};
+  return {...applyModelDefaults(result, modelDefaults), packages:[...incoming.values(), ...[...current].filter(([key]) => !incoming.has(key) && !retired.has(key)).map(([, entry]) => entry)]};
 }
 function fileStatus(file) {
   try { return fs.lstatSync(file); } catch (e) { if (e.code === 'ENOENT') return null; throw e; }

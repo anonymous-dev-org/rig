@@ -2,9 +2,9 @@
 
 Shared defaults live in this checkout and are enforced on every sync for selected components. Personal additions and state stay outside it. Sync creates no deployment symlinks.
 
-Pi model, reasoning, token-budget and per-agent preferences are user-owned. See
-[personal model setup](pi/README.md#personal-model-setup) after syncing; placeholders
-are documented separately and are never installed as active model settings.
+Rig seeds Sol 6.2 and Astra 6.2 in Pi and upgrades older OpenAI selections of
+those models. Other model and reasoning choices remain personal; see
+[model setup](pi/README.md#personal-model-setup).
 
 ## Sync
 
