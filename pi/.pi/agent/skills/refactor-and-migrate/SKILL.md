@@ -1,6 +1,6 @@
 ---
 name: refactor-and-migrate
-description: "Use when changing the structure of existing code: a refactor, a rewrite, replacing an internal API, a migration, or the same edit applied across many files. Covers what to remove first, how to replace an API without leaving compatibility code behind, how to order the steps so each one can be checked, and when to script the edits."
+description: "Use when restructuring existing code, migrating an API or stored format, changing a contract, or repeating an edit across many files. Identify consumers, verify compatibility, and sequence changes in working units."
 ---
 
 # Refactor and migrate
@@ -20,13 +20,12 @@ Restructuring fails in two typical ways: old and new code end up living side by 
 - Do not make the same decision in several places. Put it in one place and pass the result on.
 - Add a layer, an abstraction, or a setting only when a current requirement needs it.
 
-## 3. Replacing an internal API
+## 3. Changing a contract
 
-Migrate every caller and delete the old API in the same change.
+Before assuming all callers can move together, look for consumers a symbol search misses: old files on disk, scripts that parse CLI output, or clients released separately. Name the assumption that makes the change safe and check it through a real consumer. For a stored-field rename, for example, open a record written by the old version with the new reader. A round trip using only the new writer and reader cannot show backward compatibility.
 
-- Do not keep a compatibility wrapper, a deprecated alias, or a flag that switches between old and new. Each one becomes permanent.
-- Update the tests to assert the new contract. Delete tests that only protected details of the old implementation.
-- This applies when all callers are inside the project. When external users depend on the old API, keeping it working is a requirement: put it in the requirements spec and let the user decide.
+- If all consumers can move together and no compatibility promise applies, migrate them and remove the old API in the same change.
+- Otherwise preserve the required behavior and exercise the affected versions or data. If you cannot run that check, say what remains unverified; do not treat a successful build as evidence. Take any consequential compatibility decision back to the spec.
 
 ## 4. Rewrites and migrations done in phases
 

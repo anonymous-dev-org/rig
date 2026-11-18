@@ -129,8 +129,10 @@ Sync preserves an existing `pi-codex-fast` preference in `~/.pi/agent/settings.j
 (allowed modes: `off`, `fast`, `ultrafast`). The old `pi-fast` preference is
 not read by the replacement. Do not load both speed extensions together.
 
+### Rig skills
+
 Package-provided prompts and skills arrive through the declared packages.
-Six rig skills live in `pi/.pi/agent/skills/` and deploy with Pi. Each belongs
+Seven rig skills live in `pi/.pi/agent/skills/` and deploy with Pi. Each belongs
 to one moment in the work, and the model loads it on its own: Pi advertises the
 skill's description, and the `AGENTS.md` section "Route the task to a skill"
 names the same moment and defines when to wait for a user decision. Sharing
@@ -141,17 +143,17 @@ the working file does not by itself require a pause.
 | `requirements-spec` | Before implementing a feature or an intentional change to behavior, architecture or UI. Writes the requirements and their checks to `.local/specs/`. |
 | `bug-analysis` | Before fixing an existing defect. Records the causal path, evidence, proposed fix and expected behavior; a failure introduced during implementation stays in the current task. |
 | `solution-design` | While deciding how to build: data model, types, boundaries, reader load, retry-safe operations, shared state, product and UI choices. |
-| `refactor-and-migrate` | While restructuring existing code: refactors, rewrites, API replacements, migrations, repeated edits. |
+| `refactor-and-migrate` | When restructuring code or changing an existing contract. Check compatibility through an affected consumer, not just by searching for callers. |
+| `writing-code` | Before the first edit to implementation logic. Use local conventions, make decisions clear, and preserve unrelated behavior. |
 | `writing-tests` | While writing, changing, or keeping a test. |
 | `measurement` | Before measuring, and before reporting or acting on a number. |
 
-These skills replace the 24 `principle-*` [pstack skills](vendor/pstack/README.md),
-which were hidden from the model by `disable-model-invocation: true`; several
-are only one or two lines long upstream. Their rules were merged into the six skills by moment, except the
-ones `AGENTS.md` already states (verification, small verifiable versions, not
-blocking on the user, context use). All 57 imported pstack skills and their
-supporting files are now retained in `pi/disabled-skills/`, outside Pi's
-discovery folders.
+All 57 imported [pstack skills](vendor/pstack/README.md) stay in `pi/disabled-skills/`, outside Pi's discovery folders. The active skills borrow individual decisions rather than reinstating whole workflows:
+
+- `writing-code` draws on [reader load](disabled-skills/principle-minimize-reader-load/SKILL.md) and [encoding a repeated correction](disabled-skills/correct/SKILL.md). For names, branches and comments it also draws on Anthropic’s [code-simplifier](https://github.com/anthropics/claude-plugins-official/blob/main/plugins/code-simplifier/agents/code-simplifier.md) and Google’s [review guide](https://google.github.io/eng-practices/review/reviewer/looking-for.html), not their language-specific style or review process.
+- `refactor-and-migrate` takes the real-consumer check from [blast-radius](disabled-skills/blast-radius/SKILL.md), not its report template or review agents.
+- Domain modeling, tests and measurement already have active routes. Formal verification, onboarding, writing, and orchestration serve different tasks; they are not defaults for writing a function.
+
 Full Pi sync backs up and removes the exact archived files from
 `~/.pi/agent/skills/`, including older installs without ownership history. Unlisted
 personal files are untouched; skill directories may remain empty. The former
