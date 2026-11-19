@@ -65,6 +65,7 @@ the example over the whole settings file. It is documentation only and is never 
 | Per-agent models, thinking, speed and enabled roles | `subagents.agentOverrides`, `subagents.agentOverridesByProvider` |
 | Fast mode and watchdog preferences | `pi-codex-fast.mode`, `subagents.watchdog` |
 | Review and council pairs | `rigReview.low`, `rigReview.medium`, `rigReview.hard` |
+| Third reviewer (`/review` only) | `rigReviewAdditional.low`, `rigReviewAdditional.medium`, `rigReviewAdditional.hard` |
 
 Use `pi --list-models` to find available provider/model IDs, and authenticate the
 providers you choose. Main-model IDs and providers are separate fields; subagent
@@ -78,6 +79,12 @@ default model rotation; Pi cycles through all available models unless you set
 Opus 5.5 for low and medium, and Astra 6.2 with Fable 5.2 for hard. Sign in to OpenAI and
 pi-sub-anthropic to use the default pairs, or configure your own. If Sol 6.2
 or Astra 6.2 is missing, refresh Pi's catalog with `pi update --models`.
+
+Sync also seeds OpenCode Go GLM-5.3 as the third `/review` reviewer. Its thinking
+levels are `low`, `high`, and `max` for low, medium, and hard reviews respectively.
+Authenticate `opencode-go` to use it. To keep two reviewers for a mode, set that
+mode's `rigReviewAdditional` entry to `null`; set `"rigReviewAdditional": null`
+to opt out for every mode. Council still uses only the original pair.
 
 Sync updates exact older OpenAI model selections in user defaults, model-cycle
 entries, subagent overrides and review/council pairs. Sol 6.1 becomes Sol 6.2;
@@ -347,17 +354,17 @@ safely; they are not automatically retried as smaller chunks.
 
 ## On-demand deep review
 
-Run `/review <low|medium|hard> [message]` to launch two reviewers in parallel
-in the background. Effort is required and selects the corresponding pair from
-your `settings.json` under `rigReview`. Each pair must contain exactly two
-`{provider, id, thinkingLevel}` entries. Sync seeds the pairs described in
-[model setup](#personal-model-setup); the runner does not substitute fallback models.
+Run `/review <low|medium|hard> [message]` to launch reviewers in parallel in the
+background. Effort selects two `{provider, id, thinkingLevel}` entries from
+`rigReview` and an optional third from `rigReviewAdditional` in `settings.json`.
+Sync seeds the reviewers described in [model setup](#personal-model-setup); the
+runner does not substitute fallback models.
 
 For example, `/review hard Focus on cancellation and session switching` adds that
-message to both reviewers' prompts. Without a message, no extra instructions are added.
+message to every reviewer's prompt. Without a message, no extra instructions are added.
 Its shared system prompt is `~/.pi/agent/DEEP_REVIEW.md`; its extension is `deep-review.ts`.
 
-Both reviewers receive the worktree path, session transcript path, and captured
+All reviewers receive the worktree path, session transcript path, and captured
 branch entry ID. They independently read the conversation and inspect relevant
 source and Git changes, including committed work identified from the conversation.
 The restricted Git tool supports inspection only; reviewers cannot edit files,
@@ -368,9 +375,8 @@ explicit numeric rating out of 10 for each area: 10 is perfect and 0 is never sh
 this. Higher bug ratings mean greater correctness and fewer or less serious bugs.
 Each rating must be justified. Findings
 must explain the evidence, consequences, and smallest corrective action; potential
-issues are distinguished from confirmed bugs. Each successful report is delivered
-verbatim as a separate developer-feedback message, even if the other reviewer fails.
-No extra prefix or summary is added to the report body.
+issues are distinguished from confirmed bugs. Reports and individual failures
+are delivered together under separate reviewer headings.
 
 Only one `/review` run can be active at once. Run `/review stop` while it is
 running to stop the reviewers and clear their status. Starting another review
