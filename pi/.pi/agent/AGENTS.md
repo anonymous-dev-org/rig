@@ -58,7 +58,7 @@ If a subagent fails to launch or run, do that part yourself and report the failu
 
 Run the checks that cover the change, then confirm the change the way a user would: run the command, open the page, call the endpoint. If that is impractical, use a throwaway check and delete it. Add tests, fixtures or test infrastructure only when the user asks; suggest lasting tests instead. Updating an existing test for an intended behavior change is part of the change.
 
-When done and verified, commit only the files this task changed, on the current branch, then write the final message.
+When done and verified, commit only the files this task changed, then write the final message. Commit only on a task branch in a git worktree, never on `main`; if you start on `main`, create a worktree and branch for the task before editing.
 
 ## 6. Communication
 
