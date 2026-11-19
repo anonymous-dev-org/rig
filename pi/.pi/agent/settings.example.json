@@ -7,7 +7,7 @@
   "compaction": {
     "enabled": true
   },
-  "pi-codex-fast": { "mode": "fast" },
+  "pi-codex-fast": { "mode": "off" },
   "subagents": {
     "defaultModel": "openai/gpt-6.2-sol",
     "defaultSubagentOnlyExtensions": [

@@ -127,9 +127,9 @@ After syncing, restart Pi or run `/reload`; use `/codex-fast` or
 the selection globally. For a one-launch override use `pi --fast` or
 `pi --ultrafast`; `pi --no-fast` disables both for that launch.
 
-Fast is the default for supported models (including Sol 6.2 and Astra 6.2),
-in Pi, native Pi subagents, and `/review` and `council` reviewers. The footer
-shows `normal`, `fast`, or `ultrafast` for the current model; an unsupported
+Normal speed is the default in Pi, native Pi subagents, and `/review` and
+`council` reviewers. The footer shows `normal`, `fast`, or `ultrafast` for
+the current model; an unsupported
 speed selection shows `normal`. The label describes the tier requested, not
 the tier OpenAI delivered. Account access and higher usage charges still apply.
 For new assistant responses that explicitly report Ultrafast, Rig corrects Pi’s
