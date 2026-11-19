@@ -72,10 +72,10 @@ models use `provider/modelId`. Per-agent reasoning uses `thinking`, while review
 entries use `thinkingLevel`. Valid levels are `off`, `minimal`, `low`, `medium`,
 `high`, `xhigh`, and `max` (support depends on the selected model).
 
-Sync seeds OpenAI Sol 6.2 for main sessions and subagents. The default model
-cycle starts with Sol 6.2 and Astra 6.2 and skips Sol 6.1 and older Astras. The
-default `/review` and `council` pairs use Sol 6.2 with Opus 5.5 for low and
-medium, and Astra 6.2 with Fable 5.2 for hard. Sign in to OpenAI and
+Sync seeds OpenAI Sol 6.2 for main sessions and subagents. Rig does not set a
+default model rotation; Pi cycles through all available models unless you set
+`enabledModels`. The default `/review` and `council` pairs use Sol 6.2 with
+Opus 5.5 for low and medium, and Astra 6.2 with Fable 5.2 for hard. Sign in to OpenAI and
 pi-sub-anthropic to use the default pairs, or configure your own. If Sol 6.2
 or Astra 6.2 is missing, refresh Pi's catalog with `pi update --models`.
 
