@@ -16,17 +16,31 @@ export const REVIEW_EFFORTS = ["low", "medium", "hard"] as const;
 type ReviewEffort = typeof REVIEW_EFFORTS[number];
 type Reviewer = { provider: string; id: string; thinkingLevel: ThinkingLevel };
 
-export function getReviewers(pi: ExtensionAPI, effort: ReviewEffort): Reviewer[] {
-const settings = pi.getSettings() as { rigReview?: Partial<Record<ReviewEffort, unknown>> };
-const reviewers = settings.rigReview?.[effort];
-const setup = `Set rigReview.${effort} in ${join(getAgentDir(), "settings.json")} using rig's pi/personal-settings.example.json. Choose exactly two provider/id/thinkingLevel entries; no fallback models are used.`;
-if (!Array.isArray(reviewers) || reviewers.length !== 2) throw new Error(setup);
+export function getReviewers(pi: ExtensionAPI, effort: ReviewEffort, { includeAdditional = false } = {}): Reviewer[] {
+const settings = pi.getSettings() as {
+rigReview?: Partial<Record<ReviewEffort, unknown>>;
+rigReviewAdditional?: Partial<Record<ReviewEffort, unknown>>;
+};
+const pair = settings.rigReview?.[effort];
+const settingsPath = join(getAgentDir(), "settings.json");
+const pairSetting = `rigReview.${effort}`;
+const additionalSetting = `rigReviewAdditional.${effort}`;
+if (!Array.isArray(pair) || pair.length !== 2) {
+throw new Error(`Set ${pairSetting} in ${settingsPath} to exactly two provider/id/thinkingLevel entries. See pi/personal-settings.example.json.`);
+}
 const levels: ThinkingLevel[] = ["off", "minimal", "low", "medium", "high", "xhigh", "max"];
-return reviewers.map((reviewer) => {
 const configured = (value: unknown): value is string => typeof value === "string" && !!value.trim() && !/[<>]/.test(value);
-if (!reviewer || !configured(reviewer.provider) || !configured(reviewer.id) || !levels.includes(reviewer.thinkingLevel)) throw new Error(setup);
+const parse = (value: unknown, setting: string): Reviewer => {
+const reviewer = value as Partial<Reviewer> | null | undefined;
+if (!reviewer || !configured(reviewer.provider) || !configured(reviewer.id) || !reviewer.thinkingLevel || !levels.includes(reviewer.thinkingLevel)) {
+throw new Error(`Set ${setting} in ${settingsPath} using valid provider/id/thinkingLevel entries. See pi/personal-settings.example.json.`);
+}
 return { provider: reviewer.provider.trim(), id: reviewer.id.trim(), thinkingLevel: reviewer.thinkingLevel };
-});
+};
+const reviewers = pair.map((reviewer) => parse(reviewer, pairSetting));
+const additional = includeAdditional ? settings.rigReviewAdditional?.[effort] : undefined;
+if (additional != null) reviewers.push(parse(additional, additionalSetting));
+return reviewers;
 }
 
 function gitTool(pi: ExtensionAPI, cwd: string) {
@@ -168,7 +182,7 @@ if (!match) { ctx.ui.notify("Usage: /review <low|medium|hard> [message], or /rev
 if (active) { ctx.ui.notify("A review is already running. Use /review stop first.", "error"); return; }
 const effort = match[1] as ReviewEffort;
 let reviewers: Reviewer[];
-try { reviewers = getReviewers(pi, effort); }
+try { reviewers = getReviewers(pi, effort, { includeAdditional: true }); }
 catch (error) { ctx.ui.notify(String(error), "error"); return; }
 const message = match[2] ?? "";
 const controller = new AbortController();

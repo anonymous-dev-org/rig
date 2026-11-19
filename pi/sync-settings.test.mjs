@@ -391,6 +391,11 @@ test('CLI bootstraps both ordinary home configs and repeats independently of cwd
   assert.deepEqual(seeded.enabledModels.slice(0,2),['openai/gpt-6.2-sol','openai/gpt-6.2-astra']);
   assert.deepEqual(Object.values(seeded.rigReview).map(pair => pair[0].id),
     ['gpt-6.2-sol','gpt-6.2-sol','gpt-6.2-astra']);
+  assert.deepEqual(seeded.rigReviewAdditional, {
+    low: {provider:'opencode-go', id:'glm-5.3', thinkingLevel:'low'},
+    medium: {provider:'opencode-go', id:'glm-5.3', thinkingLevel:'high'},
+    hard: {provider:'opencode-go', id:'glm-5.3', thinkingLevel:'max'},
+  });
   const bytes = fs.readFileSync(settingsFile,'utf8');
   assert.equal(run().status,0);
   assert.equal(fs.readFileSync(settingsFile,'utf8'),bytes);

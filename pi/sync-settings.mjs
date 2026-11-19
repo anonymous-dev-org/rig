@@ -102,7 +102,7 @@ function sharedSettings(settings) {
   const shared = structuredClone(settings);
   for (const keys of [
     ['defaultProvider'], ['defaultModel'], ['defaultThinkingLevel'],
-    ['enabledModels'], ['modelThinkingLevels'], ['thinkingBudgets'], ['rigReview'],
+    ['enabledModels'], ['modelThinkingLevels'], ['thinkingBudgets'], ['rigReview'], ['rigReviewAdditional'],
     ['compaction', 'reserveTokens'], ['compaction', 'keepRecentTokens'], ['compaction', 'modelOverrides'],
     ['pi-fast'], ['subagents', 'defaultModel'], ['subagents', 'defaultProvider'],
     ['subagents', 'agentOverrides'], ['subagents', 'agentOverridesByProvider'], ['subagents', 'watchdog'],
@@ -120,7 +120,7 @@ function upgradeModel(ref) {
 }
 function applyModelDefaults(local, defaults) {
   const seed = {};
-  const {defaultProvider, defaultModel, enabledModels, subagents, rigReview} = defaults;
+  const {defaultProvider, defaultModel, enabledModels, subagents, rigReview, rigReviewAdditional} = defaults;
   // Treat the main provider/model as a pair; never pair a personal model with a repo provider.
   if (defaultProvider && defaultModel && !Object.hasOwn(local, 'defaultModel') &&
       (!Object.hasOwn(local, 'defaultProvider') || local.defaultProvider === defaultProvider))
@@ -128,6 +128,7 @@ function applyModelDefaults(local, defaults) {
   if (enabledModels) seed.enabledModels = enabledModels;
   if (subagents?.defaultModel) seed.subagents = {defaultModel:subagents.defaultModel};
   if (rigReview) seed.rigReview = rigReview;
+  if (rigReviewAdditional) seed.rigReviewAdditional = rigReviewAdditional;
 
   const settings = structuredClone(fillMissing(local, seed));
   if ((!settings.defaultProvider || settings.defaultProvider === 'openai') && typeof settings.defaultModel === 'string')

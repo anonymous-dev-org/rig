@@ -54,5 +54,10 @@
         "thinkingLevel": "<THINKING_LEVEL>"
       }
     ]
+  },
+  "rigReviewAdditional": {
+    "low": { "provider": "opencode-go", "id": "glm-5.3", "thinkingLevel": "low" },
+    "medium": { "provider": "opencode-go", "id": "glm-5.3", "thinkingLevel": "high" },
+    "hard": { "provider": "opencode-go", "id": "glm-5.3", "thinkingLevel": "max" }
   }
 }

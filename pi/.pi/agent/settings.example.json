@@ -33,6 +33,11 @@
       { "provider": "pi-sub-anthropic", "id": "claude-fable-5-2", "thinkingLevel": "xhigh" }
     ]
   },
+  "rigReviewAdditional": {
+    "low": { "provider": "opencode-go", "id": "glm-5.3", "thinkingLevel": "low" },
+    "medium": { "provider": "opencode-go", "id": "glm-5.3", "thinkingLevel": "high" },
+    "hard": { "provider": "opencode-go", "id": "glm-5.3", "thinkingLevel": "max" }
+  },
   "enableInstallTelemetry": false,
   "packages": [
     { "source": "npm:pi-subagents@latest", "skills": ["!skills/council-mode/**"], "prompts": [] },
