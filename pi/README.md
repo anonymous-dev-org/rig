@@ -278,6 +278,12 @@ The main model can call `council` directly, for example:
 Effort is required and uses the **same `rigReview` pairs and read-only
 Agent runner as `/review`**. See [model setup](#personal-model-setup) for the
 defaults and overrides.
+Both retry transient model failures from the last completed step, without
+repeating earlier tool calls or completed council rounds. They use Pi's
+exponential backoff and honor explicit `retry` settings. Without a configured
+`retry.maxRetries`, they retry up to six times (up to 126 seconds of total
+backoff with the default delays). Cancelling also interrupts backoff.
+
 The legacy `council-astra`/`council-fable` advisor profiles are retired; full Pi sync
 removes their installed files. Use `low` for quick bounded decisions, `medium` for
 substantial reasoning, and `hard` for difficult/high-stakes tradeoffs. The names do
