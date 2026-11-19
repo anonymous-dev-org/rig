@@ -3,11 +3,6 @@
   "theme": "rig",
   "defaultProvider": "openai",
   "defaultModel": "gpt-6.2-sol",
-  "enabledModels": [
-    "openai/gpt-6.2-sol",
-    "openai/gpt-6.2-astra",
-    "**/!(gpt-6.1-sol|gpt-6-astra|gpt-6.1-astra)"
-  ],
   "npmCommand": ["bun"],
   "compaction": {
     "enabled": true
