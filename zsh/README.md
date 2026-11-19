@@ -20,4 +20,6 @@ Use ↑/↓ or `1`/`2` to select a checkout, then Enter to confirm. New worktree
 
 The launcher is `zsh/.local/lib/rig/pi-launcher.sh`, deployed with the Zsh component. The `pi` alias runs it through Bash; its child process calls the real Pi executable, not the alias. The existing version-check skip and macOS sleep prevention are preserved. Outside Git it starts normally. Any explicit arguments (including resume, help, package commands, and initial prompts), or noninteractive input/output, bypass checkout selection unchanged. Use `command pi` to bypass the launcher entirely.
 
-After syncing the Zsh component, open a new shell. You can try the script before syncing with `bash /path/to/rig/zsh/.local/lib/rig/pi-launcher.sh`. Both choices update the primary checkout to `main`; exiting Pi leaves your parent shell directory unchanged and retains the worktree for later use.
+After syncing the Zsh component, open a new shell. You can try the script before syncing with `bash /path/to/rig/zsh/.local/lib/rig/pi-launcher.sh`. Both choices update the primary checkout to `main`; exiting Pi leaves your parent shell directory unchanged.
+
+When Pi exits successfully from a worktree created by the launcher, it asks whether to delete that local checkout. Press Enter to keep it or type `y` to remove it. Removal keeps the branch and its commits and does not force past Git's checks for local changes. The launcher does not offer cleanup for the main checkout or for launches that bypass checkout selection.
