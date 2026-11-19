@@ -283,15 +283,15 @@ review work; timing and quality improvements require a separate measured compari
 The main model can call `council` directly, for example:
 
 ```json
-{"effort":"medium","task":"Compare the cancellation designs in pi/.pi/agent/extensions/deep-review.ts and council.ts. Recommend a lifecycle policy and explain tradeoffs.","rounds":3}
+{"effort":"medium","task":"Compare the cancellation designs in pi/.pi/agent/extensions/deep-review.ts and pi/.pi/agent/extensions/council.ts. Recommend a lifecycle policy and explain tradeoffs."}
 ```
 
 Effort is required and uses the **same `rigReview` pairs, optional third reviewer
 and read-only Agent runner as `/review`**. See [model setup](#personal-model-setup) for the
 defaults and overrides.
-Both retry transient model failures from the last completed step, without
-repeating earlier tool calls or completed council rounds. They use Pi's
-exponential backoff and honor explicit `retry` settings. Without a configured
+Both retry transient model failures from the last completed step without
+repeating earlier tool calls. They use Pi's exponential backoff and honor explicit
+`retry` settings. Without a configured
 `retry.maxRetries`, they retry up to six times (up to 126 seconds of total
 backoff with the default delays). Cancelling also interrupts backoff.
 
@@ -301,17 +301,11 @@ substantial reasoning, and `hard` for difficult/high-stakes tradeoffs. The names
 not select any built-in model or thinking level.
 
 Supply a self-contained task: advisors do not inherit the main conversation or
-skills. Each round starts fresh with the task and, after the independent initial
-round, all previous responses. Calls within each round run in parallel. `rounds`
-includes the initial round, defaults to 3 and is limited to 1–5. One round returns
-independent answers without consensus. More rounds and higher effort can cost more.
-
-Agreement requires structured endorsements of the **exact same nonempty proposal**
-after a cross-response round. Otherwise the result is explicitly `unresolved`,
-with the round count and every advisor's final response. Invalid structured output or model
-failure stops deliberation without discarding the successful peer or earlier
-answers. No fallback models are substituted. Agreement is the advisors' endorsement,
-not a guarantee of truth; the main model must still assess the evidence.
+skills. All advisors run in parallel, get the same task, and never see one
+another's replies. Council waits for all of them and returns their answers
+together, retaining successful replies if an advisor fails. The main model
+combines the answers and explains important disagreements; council does not
+try to reach or verify consensus.
 
 Advisors have only read/grep/find/ls and restricted Git inspection, with no shell,
 writes, extensions or recursive council/subagent calls. Cancellation (including
