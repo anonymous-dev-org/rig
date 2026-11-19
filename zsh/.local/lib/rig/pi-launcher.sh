@@ -145,9 +145,23 @@ printf '\n/.pi/worktrees/\n' >> "$exclude"
 fi
 printf '\n%s→ Creating worktree: %s%s\n' "$bold" "$name" "$reset" >&2
 git -C "$primary" worktree add --quiet -b "$name" "$target" HEAD
-cd "$target"
 printf '%s✓ Starting Pi in %s%s\n\n' "$bold" "$target" "$reset" >&2
+(
+cd "$target"
 launch --name "$name"
+)
+printf '\nDelete local worktree %s? [y/N] ' "$target" >&2
+if IFS= read -r answer; then
+case "$answer" in
+[yY]|[yY][eE][sS])
+if git -C "$primary" worktree remove -- "$target"; then
+printf 'Removed worktree; kept branch %s.\n' "$name" >&2
+else
+printf 'Could not remove worktree: %s\n' "$target" >&2
+fi
+;;
+esac
+fi
 ;;
 2)
 refresh_main
