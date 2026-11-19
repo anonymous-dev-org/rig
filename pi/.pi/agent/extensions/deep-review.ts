@@ -101,7 +101,7 @@ signal: AbortSignal, recordUsage: (message: AssistantMessage) => void,
 ): Promise<string> {
 	const model = ctx.modelRegistry.find(reviewer.provider, reviewer.id);
 	if (!model || !ctx.modelRegistry.hasConfiguredAuth(model)) throw new Error(`Model ${reviewer.provider}/${reviewer.id} is unavailable or unauthenticated.`);
-	const serviceTier = codexServiceTier(model, await reviewSpeedMode(cwd));
+ const sessionId = randomUUID();
 	const agent = new Agent({
 		initialState: {
 systemPrompt, model, thinkingLevel: reviewer.thinkingLevel,
@@ -109,7 +109,7 @@ systemPrompt, model, thinkingLevel: reviewer.thinkingLevel,
 		},
 		convertToLlm,
 		streamFn: (requestedModel, context, options) => ctx.modelRegistry.streamSimple(requestedModel, context, {
-			...options,
+			...options, sessionId,
 			...(serviceTier && {
 				onPayload: async (payload, payloadModel) => {
 					const current = await options?.onPayload?.(payload, payloadModel) ?? payload;

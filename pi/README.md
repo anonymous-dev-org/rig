@@ -65,7 +65,7 @@ the example over the whole settings file. It is documentation only and is never 
 | Per-agent models, thinking, speed and enabled roles | `subagents.agentOverrides`, `subagents.agentOverridesByProvider` |
 | Fast mode and watchdog preferences | `pi-codex-fast.mode`, `subagents.watchdog` |
 | Review and council pairs | `rigReview.low`, `rigReview.medium`, `rigReview.hard` |
-| Third reviewer (`/review` only) | `rigReviewAdditional.low`, `rigReviewAdditional.medium`, `rigReviewAdditional.hard` |
+| Third reviewer for `/review` and council | `rigReviewAdditional.low`, `rigReviewAdditional.medium`, `rigReviewAdditional.hard` |
 
 Use `pi --list-models` to find available provider/model IDs, and authenticate the
 providers you choose. Main-model IDs and providers are separate fields; subagent
@@ -80,11 +80,11 @@ Opus 5.5 for low and medium, and Astra 6.2 with Fable 5.2 for hard. Sign in to O
 pi-sub-anthropic to use the default pairs, or configure your own. If Sol 6.2
 or Astra 6.2 is missing, refresh Pi's catalog with `pi update --models`.
 
-Sync also seeds OpenCode Go GLM-5.3 as the third `/review` reviewer. Its thinking
-levels are `low`, `high`, and `max` for low, medium, and hard reviews respectively.
-Authenticate `opencode-go` to use it. To keep two reviewers for a mode, set that
-mode's `rigReviewAdditional` entry to `null`; set `"rigReviewAdditional": null`
-to opt out for every mode. Council still uses only the original pair.
+Sync also seeds OpenCode Go GLM-5.3 as the third reviewer for `/review` and
+council. Its thinking levels are `low`, `high`, and `max` for low, medium, and
+hard efforts respectively. Authenticate `opencode-go` to use it. To keep two
+reviewers for a mode, set that mode's `rigReviewAdditional` entry to `null`;
+set `"rigReviewAdditional": null` to opt out for every mode.
 
 Sync updates exact older OpenAI model selections in user defaults, model-cycle
 entries, subagent overrides and review/council pairs. Sol 6.1 becomes Sol 6.2;
@@ -275,8 +275,8 @@ The main model can call `council` directly, for example:
 {"effort":"medium","task":"Compare the cancellation designs in pi/.pi/agent/extensions/deep-review.ts and council.ts. Recommend a lifecycle policy and explain tradeoffs.","rounds":3}
 ```
 
-Effort is required and uses the **same `rigReview` pairs and read-only
-Agent runner as `/review`**. See [model setup](#personal-model-setup) for the
+Effort is required and uses the **same `rigReview` pairs, optional third reviewer
+and read-only Agent runner as `/review`**. See [model setup](#personal-model-setup) for the
 defaults and overrides.
 The legacy `council-astra`/`council-fable` advisor profiles are retired; full Pi sync
 removes their installed files. Use `low` for quick bounded decisions, `medium` for
@@ -285,13 +285,13 @@ not select any built-in model or thinking level.
 
 Supply a self-contained task: advisors do not inherit the main conversation or
 skills. Each round starts fresh with the task and, after the independent initial
-round, both previous responses. Calls within each round run in parallel. `rounds`
+round, all previous responses. Calls within each round run in parallel. `rounds`
 includes the initial round, defaults to 3 and is limited to 1–5. One round returns
 independent answers without consensus. More rounds and higher effort can cost more.
 
 Agreement requires structured endorsements of the **exact same nonempty proposal**
 after a cross-response round. Otherwise the result is explicitly `unresolved`,
-with the round count and both final responses. Invalid structured output or model
+with the round count and every advisor's final response. Invalid structured output or model
 failure stops deliberation without discarding the successful peer or earlier
 answers. No fallback models are substituted. Agreement is the advisors' endorsement,
 not a guarantee of truth; the main model must still assess the evidence.
@@ -301,10 +301,10 @@ writes, extensions or recursive council/subagent calls. Cancellation (including
 Escape), session navigation, shutdown/reload and manual compaction abort active
 work. Nested model usage, including tool-use turns, is returned once for Pi's
 session accounting even when an advisor fails. Output over 2000 lines/50KB links
-to a private temporary file containing both full responses.
+to a private temporary file containing every full response.
 
 Full Pi sync deploys `extensions/council.ts`; JSON-only `sync-settings.mjs` does
-not. Reload or restart after deployment and ask Pi to use the council tool. Both
+not. Reload or restart after deployment and ask Pi to use the council tool. All
 preset models must be authenticated.
 
 ## Compaction overflow recovery
