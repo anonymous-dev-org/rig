@@ -17,6 +17,15 @@
       }
     }
   },
+  "compaction": {
+    "reserveTokens": "<ORDINARY_RESERVE_TOKENS>",
+    "keepRecentTokens": "<KEEP_RECENT_TOKENS>",
+    "modelOverrides": {
+      "<PROVIDER>/<MODEL_ID>": {
+        "reserveTokens": "<CONTEXT_WINDOW_MINUS_DESIRED_THRESHOLD>"
+      }
+    }
+  },
   "rigReview": {
     "low": [
       {

@@ -67,6 +67,15 @@ the example over the whole settings file. It is documentation only and is never 
 | Review and council pairs | `rigReview.low`, `rigReview.medium`, `rigReview.hard` |
 | Third reviewer for `/review` and council | `rigReviewAdditional.low`, `rigReviewAdditional.medium`, `rigReviewAdditional.hard` |
 
+Compaction budgets follow one rule: Pi auto-compacts when estimated
+context exceeds `contextWindow − reserveTokens`, so to cap a model at T tokens
+set its `compaction.modelOverrides` entry to `reserveTokens = contextWindow − T`
+(a 1,048,576-token window capped at 600K takes 448,576). Keys are exact
+`provider/modelId` values; merge only the per-model override to leave the
+ordinary budgets unchanged, and size the reserve for the window the provider
+actually serves — subscription-authenticated Claude models advertise 1M but
+are served at the standard 200K.
+
 Use `pi --list-models` to find available provider/model IDs, and authenticate the
 providers you choose. Main-model IDs and providers are separate fields; subagent
 models use `provider/modelId`. Per-agent reasoning uses `thinking`, while review
