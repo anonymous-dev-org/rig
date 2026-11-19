@@ -29,9 +29,18 @@
     ]
   },
   "rigReviewAdditional": {
-    "low": { "provider": "opencode-go", "id": "glm-5.3", "thinkingLevel": "low" },
-    "medium": { "provider": "opencode-go", "id": "glm-5.3", "thinkingLevel": "high" },
-    "hard": { "provider": "opencode-go", "id": "glm-5.3", "thinkingLevel": "max" }
+    "low": [
+      { "provider": "opencode-go", "id": "glm-5.3", "thinkingLevel": "low" },
+      { "provider": "opencode-go", "id": "deepseek-v4-pro", "thinkingLevel": "low" }
+    ],
+    "medium": [
+      { "provider": "opencode-go", "id": "glm-5.3", "thinkingLevel": "high" },
+      { "provider": "opencode-go", "id": "deepseek-v4-pro", "thinkingLevel": "high" }
+    ],
+    "hard": [
+      { "provider": "opencode-go", "id": "glm-5.3", "thinkingLevel": "max" },
+      { "provider": "opencode-go", "id": "deepseek-v4-pro", "thinkingLevel": "max" }
+    ]
   },
   "enableInstallTelemetry": false,
   "packages": [

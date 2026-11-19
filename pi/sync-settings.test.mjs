@@ -391,10 +391,12 @@ test('CLI bootstraps both ordinary home configs and repeats independently of cwd
   assert.equal(Object.hasOwn(seeded,'enabledModels'),false);
   assert.deepEqual(Object.values(seeded.rigReview).map(pair => pair[0].id),
     ['gpt-6.2-sol','gpt-6.2-sol','gpt-6.2-astra']);
+  const glm = level => ({provider:'opencode-go', id:'glm-5.3', thinkingLevel:level});
+  const deepseek = level => ({provider:'opencode-go', id:'deepseek-v4-pro', thinkingLevel:level});
   assert.deepEqual(seeded.rigReviewAdditional, {
-    low: {provider:'opencode-go', id:'glm-5.3', thinkingLevel:'low'},
-    medium: {provider:'opencode-go', id:'glm-5.3', thinkingLevel:'high'},
-    hard: {provider:'opencode-go', id:'glm-5.3', thinkingLevel:'max'},
+    low: [glm('low'), deepseek('low')],
+    medium: [glm('high'), deepseek('high')],
+    hard: [glm('max'), deepseek('max')],
   });
   const bytes = fs.readFileSync(settingsFile,'utf8');
   assert.equal(run().status,0);

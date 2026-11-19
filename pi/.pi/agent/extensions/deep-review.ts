@@ -41,7 +41,8 @@ return { provider: reviewer.provider.trim(), id: reviewer.id.trim(), thinkingLev
 };
 const reviewers = pair.map((reviewer) => parse(reviewer, pairSetting));
 const additional = includeAdditional ? settings.rigReviewAdditional?.[effort] : undefined;
-if (additional != null) reviewers.push(parse(additional, additionalSetting));
+const additionalList = additional == null ? [] : Array.isArray(additional) ? additional : [additional];
+for (const reviewer of additionalList) reviewers.push(parse(reviewer, additionalSetting));
 return reviewers;
 }
 

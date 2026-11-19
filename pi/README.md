@@ -65,7 +65,7 @@ the example over the whole settings file. It is documentation only and is never 
 | Per-agent models, thinking, speed and enabled roles | `subagents.agentOverrides`, `subagents.agentOverridesByProvider` |
 | Fast mode and watchdog preferences | `pi-codex-fast.mode`, `subagents.watchdog` |
 | Review and council pairs | `rigReview.low`, `rigReview.medium`, `rigReview.hard` |
-| Third reviewer for `/review` and council | `rigReviewAdditional.low`, `rigReviewAdditional.medium`, `rigReviewAdditional.hard` |
+| Extra reviewers for `/review` and council | `rigReviewAdditional.low`, `rigReviewAdditional.medium`, `rigReviewAdditional.hard` |
 
 Compaction budgets follow one rule: Pi auto-compacts when estimated
 context exceeds `contextWindow − reserveTokens`, so to cap a model at T tokens
@@ -89,11 +89,12 @@ Opus 5.5 for low and medium, and Astra 6.2 with Fable 5.2 for hard. Sign in to O
 pi-sub-anthropic to use the default pairs, or configure your own. If Sol 6.2
 or Astra 6.2 is missing, refresh Pi's catalog with `pi update --models`.
 
-Sync also seeds OpenCode Go GLM-5.3 as the third reviewer for `/review` and
-council. Its thinking levels are `low`, `high`, and `max` for low, medium, and
-hard efforts respectively. Authenticate `opencode-go` to use it. To keep two
-reviewers for a mode, set that mode's `rigReviewAdditional` entry to `null`;
-set `"rigReviewAdditional": null` to opt out for every mode.
+Sync also seeds OpenCode Go GLM-5.3 and DeepSeek V4 Pro as extra reviewers for
+`/review` and council. Their thinking levels are `low`, `high`, and `max` for low,
+medium, and hard efforts respectively. Each `rigReviewAdditional` entry accepts a
+single reviewer object or an array of them. Authenticate `opencode-go` to use them.
+To keep two reviewers for a mode, set that mode's `rigReviewAdditional` entry to
+`null`; set `"rigReviewAdditional": null` to opt out for every mode.
 
 Sync updates exact older OpenAI model selections in user defaults, model-cycle
 entries, subagent overrides and review/council pairs. Sol 6.1 becomes Sol 6.2;
@@ -371,7 +372,7 @@ safely; they are not automatically retried as smaller chunks.
 
 Run `/review <low|medium|hard> [message]` to launch reviewers in parallel in the
 background. Effort selects two `{provider, id, thinkingLevel}` entries from
-`rigReview` and an optional third from `rigReviewAdditional` in `settings.json`.
+`rigReview` and any extra reviewers from `rigReviewAdditional` in `settings.json`.
 Sync seeds the reviewers described in [model setup](#personal-model-setup); the
 runner does not substitute fallback models.
 
