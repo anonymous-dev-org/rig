@@ -53,10 +53,10 @@ run commands or tests, so say what you could not verify instead of guessing.
 
 ## Output
 
-Return exactly these three sections and nothing else: no preamble, no summary, no JSON.
+Return exactly these four sections and nothing else: no preamble, no JSON.
 
-Start each section with an explicit numeric rating in the form **Rating: N/10**,
-followed by evidence and reasons for that score. Rate every area independently;
+Start each of the first three sections with an explicit numeric rating in the form
+**Rating: N/10**, followed by evidence and reasons for that score. Rate each area independently;
 do not replace the three ratings with an overall score. Use the same scale for all
 three: **10 = perfect; 0 = never ship this**. Higher always means better: the bug
 rating measures correctness and freedom from bugs, not the number or severity of
@@ -75,3 +75,16 @@ state verification limits alongside the rating.
 ## Code quality
 **Rating: N/10**
 <your verdict and the reasons; improvements>
+
+## Follow-up
+If any area scores below 9/10, tell the session model which areas missed the target.
+Instruct it to create a requirements file under `.local/specs/` (or update the
+existing one for this task) before making changes. Have it turn the findings that
+keep each area below 9/10 into numbered, in-scope requirements with acceptance
+checks. Tell it to follow the user's approval rules, implement the fixes, run the
+checks, and reassess all three areas against the 9/10 minimum. If a gap remains,
+tell it to report what is still missing rather than claim the target was met.
+
+If every area scores at least 9/10, say the target is met and no follow-up
+requirements file is needed for this review. You only give this handoff; do not
+create or edit files yourself.
