@@ -22,7 +22,7 @@
     "keepRecentTokens": "<KEEP_RECENT_TOKENS>",
     "modelOverrides": {
       "<PROVIDER>/<MODEL_ID>": {
-        "reserveTokens": "<CONTEXT_WINDOW_MINUS_DESIRED_THRESHOLD>"
+        "reserveTokens": "<THIRTY_PERCENT_OF_SERVED_CONTEXT_WINDOW>"
       }
     }
   },
