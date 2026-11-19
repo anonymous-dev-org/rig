@@ -2,8 +2,10 @@ import { randomUUID } from "node:crypto";
 import { appendFileSync, mkdirSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { setTimeout as sleep } from "node:timers/promises";
 import { Agent, type AgentTool, type ThinkingLevel } from "@earendil-works/pi-agent-core";
-import { StringEnum, type AssistantMessage } from "@earendil-works/pi-ai";
+import { isRetryableAssistantError, retryDelayMs, StringEnum, type AssistantMessage } from "@earendil-works/pi-ai";
+import { isContextOverflow } from "@earendil-works/pi-ai/compat";
 import { Type } from "typebox";
 import {
 	convertToLlm, createReadOnlyTools, getAgentDir,
@@ -101,7 +103,11 @@ signal: AbortSignal, recordUsage: (message: AssistantMessage) => void,
 ): Promise<string> {
 	const model = ctx.modelRegistry.find(reviewer.provider, reviewer.id);
 	if (!model || !ctx.modelRegistry.hasConfiguredAuth(model)) throw new Error(`Model ${reviewer.provider}/${reviewer.id} is unavailable or unauthenticated.`);
- const sessionId = randomUUID();
+	const sessionId = randomUUID();
+	const serviceTier = codexServiceTier(model, await reviewSpeedMode(cwd));
+	const retry = pi.getSettings().retry;
+	const maxRetries = retry?.enabled === false ? 0 : retry?.maxRetries ?? 6;
+	const backoff = { baseDelayMs: retry?.baseDelayMs ?? 2000, maxAgentDelayMs: retry?.maxAgentDelayMs };
 	const agent = new Agent({
 		initialState: {
 systemPrompt, model, thinkingLevel: reviewer.thinkingLevel,
@@ -129,8 +135,18 @@ systemPrompt, model, thinkingLevel: reviewer.thinkingLevel,
 	try {
 		signal.throwIfAborted();
 		await agent.prompt(prompt);
+		let last = agent.state.messages.at(-1);
+		for (let attempt = 1; attempt <= maxRetries; attempt++) {
+			signal.throwIfAborted();
+			if (last?.role !== "assistant" || !isRetryableAssistantError(last) || isContextOverflow(last, model.contextWindow)) break;
+			await sleep(retryDelayMs(backoff, attempt), undefined, { signal });
+			signal.throwIfAborted();
+			// Remove only the failed response so continuation can reuse earlier tool results.
+			agent.state.messages = agent.state.messages.slice(0, -1);
+			await agent.continue();
+			last = agent.state.messages.at(-1);
+		}
 		signal.throwIfAborted();
-		const last = agent.state.messages.findLast((message) => message.role === "assistant");
 		if (!last || last.role !== "assistant" || last.stopReason !== "stop") throw new Error(last?.role === "assistant" ? last.errorMessage || `Review ended with ${last.stopReason}.` : "Review returned no result.");
 		const text = last.content.filter((block) => block.type === "text").map((block) => block.text).join("");
 		if (!text.trim()) throw new Error("Review returned no final text.");
