@@ -12,6 +12,7 @@ import {
 const MAX_REQUESTS = 64;
 const MIN_SPLIT_CHARS = 1024;
 const SUMMARY_TOKENS = 8192;
+const COMPACTION_MODEL = { provider: "opencode-go", id: "deepseek-v4-pro" } as const;
 
 function errorText(error: unknown): string {
 	return error instanceof Error ? error.message : String(error);
@@ -63,8 +64,16 @@ function totalUsage(usages: Usage[]): Usage {
 
 export default function (pi: ExtensionAPI) {
 	pi.on("session_before_compact", async (event, ctx) => {
-		const model = ctx.model;
+		const sessionModel = ctx.model;
+		// Always summarize with the best DeepSeek model, whatever model the
+		// session is running on. Fall back to the active model only when the
+		// preferred model is unavailable (e.g. its provider is not authenticated).
+		const preferred = ctx.modelRegistry.find(COMPACTION_MODEL.provider, COMPACTION_MODEL.id);
+		const model = preferred ?? sessionModel;
 		if (!model) return;
+		if (!preferred) {
+			ctx.ui.notify(`${COMPACTION_MODEL.provider}/${COMPACTION_MODEL.id} is unavailable; compacting with the active model instead.`, "warning");
+		}
 		const { preparation, signal, customInstructions } = event;
 		let requests = 0;
 		let recovering = false;

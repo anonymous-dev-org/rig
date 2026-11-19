@@ -326,8 +326,11 @@ preset models must be authenticated.
 ## Compaction overflow recovery
 
 The managed `compaction-fallback.ts` extension handles manual `/compact` and
-automatic compaction. It first calls Pi's native compaction helper with the active
-model and configured provider authentication. If a summary request is rejected
+automatic compaction. It always summarizes with OpenCode Go DeepSeek V4 Pro,
+whatever model the session is running on; only if that model is unavailable in
+the registry does it fall back to the active model with a warning. It first
+calls Pi's native compaction helper with configured provider authentication. If a
+summary request is rejected
 because its input is too large, it splits the older history into smaller chunks
 and updates a rolling summary in chronological order. A chunk that still does not
 fit is split again. Recent messages keep Pi's original retention boundary.
