@@ -65,13 +65,17 @@ function totalUsage(usages: Usage[]): Usage {
 export default function (pi: ExtensionAPI) {
 	pi.on("session_before_compact", async (event, ctx) => {
 		const sessionModel = ctx.model;
-		// Always summarize with the best DeepSeek model, whatever model the
-		// session is running on. Fall back to the active model only when the
-		// preferred model is unavailable (e.g. its provider is not authenticated).
-		const preferred = ctx.modelRegistry.find(COMPACTION_MODEL.provider, COMPACTION_MODEL.id);
-		const model = preferred ?? sessionModel;
+		// Automatic compaction always summarizes with the best DeepSeek model,
+		// whatever model the session is running on. Manual /compact keeps the
+		// active model. Fall back to the active model only when the preferred
+		// model is absent from the catalog or its provider is not authenticated;
+		// find() returns catalog entries regardless of credentials, so also gate
+		// on hasConfiguredAuth().
+		const found = ctx.modelRegistry.find(COMPACTION_MODEL.provider, COMPACTION_MODEL.id);
+		const preferred = found && ctx.modelRegistry.hasConfiguredAuth(found) ? found : undefined;
+		const model = event.reason === "manual" ? sessionModel : preferred ?? sessionModel;
 		if (!model) return;
-		if (!preferred) {
+		if (!preferred && event.reason !== "manual") {
 			ctx.ui.notify(`${COMPACTION_MODEL.provider}/${COMPACTION_MODEL.id} is unavailable; compacting with the active model instead.`, "warning");
 		}
 		const { preparation, signal, customInstructions } = event;
