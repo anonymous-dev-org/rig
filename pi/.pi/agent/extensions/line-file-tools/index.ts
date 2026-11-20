@@ -181,18 +181,18 @@ function spacingKeys(file: string, rows: Row[]) {
 }
 
 const readFields = {
-	path: Type.String({ description: "File to read, relative to cwd or absolute." }),
+	path: Type.String({ description: "File to read (relative or absolute)." }),
 	start: Type.Optional(Type.Integer({ minimum: 1, description: "First line, 1-based. Default 1." })),
 	end: Type.Optional(Type.Integer({ minimum: 1, description: "Last line, inclusive. Default start + 199." })),
 };
 
 const editFields = {
-	path: Type.String({ description: "File to edit, relative to cwd or absolute. First obtain numbered content from read, edit or write." }),
+	path: Type.String({ description: "File to edit, relative or absolute. Shown by read/edit/write." }),
 	splices: Type.Optional(Type.Array(Type.Object({
-		start: Type.Integer({ minimum: 1, description: "1-based line where the splice begins. Last line + 1 appends." }),
-		deleteCount: Type.Integer({ minimum: 0, description: "Number of lines to remove starting at start. 0 inserts before start." }),
-		lines: Type.Array(Type.String(), { description: "Lines to put there, one string per line. [] deletes only." }),
-	}), { minItems: 1, description: "Insert, delete or replace line ranges, numbered as in the file before this call." })),
+		start: Type.Integer({ minimum: 1, description: "1-based start line; last line + 1 appends." }),
+		deleteCount: Type.Integer({ minimum: 0, description: "Lines to remove from start; 0 inserts." }),
+		lines: Type.Array(Type.String(), { description: "Replacement lines, one string each; [] deletes." }),
+	}), { minItems: 1, description: "Line splices. Numbers = file before this call." })),
 };
 
 function readAgain(path: string, line: number, total: number) {
@@ -305,7 +305,7 @@ export default function lineFileTools(pi: ExtensionAPI) {
 	const stockWrite = createWriteToolDefinition(process.cwd());
 	pi.registerTool({
 		...stockWrite,
-		description: stockWrite.description + " Returns numbered written content after best-effort project formatting, with usable edit snapshots. Preview is bounded to 50 KiB/2000 lines per call; omitted content needs read before editing. No leading tabs or spaces are needed solely for cosmetic indentation; preserve meaningful whitespace. Unsupported or oversized stock writes still succeed without a numbered preview.",
+		description: stockWrite.description + " Numbered output after formatting; use for next edits. Preview capped 50 KiB/2000 lines; read omitted regions first. Omit cosmetic indent only; keep meaningful whitespace. Unsupported/oversized: written, no preview.",
 		promptGuidelines: [...(stockWrite.promptGuidelines ?? []), "Use numbered write output directly for subsequent edit coordinates; read only omitted content, more context, or after rejection/reset. For write, omit cosmetic indentation only; preserve meaningful whitespace."],
 		renderResult(output, _options, theme, context) {
 			return new Text(theme.fg(context.isError ? "error" : "toolOutput", output.content.filter(item => item.type === "text").map(item => item.text).join("\n")), 0, 0);
@@ -339,7 +339,7 @@ export default function lineFileTools(pi: ExtensionAPI) {
 		promptSnippet: "Read numbered text lines (inclusive start/end) or images from one or several files; edit/write also return usable numbered content.",
 		promptGuidelines: [...(stockRead.promptGuidelines ?? []), "To read several files or ranges together, use reads: [{path, start?, end?}]. Omit top-level path/start/end."],
 		outputSchema: Type.Union([stockRead.outputSchema!, Type.Array(Type.Object({ path: Type.String(), result: stockRead.outputSchema! }))]),
-		description: "Read local UTF-8 text as numbered lines, or images as attachments. One file: {path, start?, end?}. Several files/ranges: {reads: [{path, start?, end?}, ...]}, with no top-level path/start/end. Text ranges are inclusive, 1-based, defaulting to 200 lines. Limits: 4 MiB per text file and 50 KiB of text per call; narrow ranges or split batches if too large. Images ignore ranges and cannot be edited. Batch results follow request order and identify paths; failure stops the batch, but earlier successful reads retain edit snapshots.",
+		description: "Read UTF-8 as numbered lines; images as attachments. Single: {path,start?,end?}. Lines 1-based, inclusive, default 200. Batch: {reads:[{path,start?,end?}]}, no top-level path/start/end. Limit 4 MiB/file, 50 KiB text/call: narrow or split. Images: no range, not editable. Batch: request order, names paths. Fail: earlier reads keep snapshots.",
 		parameters: Type.Object({
 			...readFields,
 			path: Type.Optional(readFields.path),
@@ -416,16 +416,16 @@ export default function lineFileTools(pi: ExtensionAPI) {
 			"For edit, omit leading tabs/spaces used only for cosmetic indentation. Preserve required spaces between tokens and all meaningful whitespace: Python/YAML indentation, Makefile recipe tabs, Markdown structure, and string/template contents.",
 		],
 		description: [
-			"Edit lines in one or more text files previously shown by read or numbered edit/write output. Coordinates refer to each file before this call. Create new files with write.",
-			"One file: {path, splices}. Several files: {edits: [{path, splices}, ...]}, listing each file once and passing no top-level path or splices.",
-			"A splice replaces deleteCount lines at start with lines: insert (deleteCount 0), delete (lines []), replace a range, or append (start = last line + 1, deleteCount 0). Splices in one file must not overlap or share a start. Every string is a single line with no line breaks.",
-			"All files are checked before any is written. Missing or stale snapshots reject the call without changes: read the indicated range and correct coordinates; never bypass rejection with write or bash. Partial disk-write failures name completed files; do not replay the batch.",
-			"Success returns numbered affected resulting ranges (including deletion boundaries) after best-effort project formatting, establishing usable snapshots there. Formatting that changes content returns the whole resulting file, subject to a shared 50 KiB/2000-line preview limit. Omitted regions need read before editing; preview limits never fail a completed mutation. Preserve meaningful whitespace; cosmetic indentation may be omitted.",
+			"Edit files shown numbered by read/edit/write. Coords = file state before call. New file: write.",
+			"Single: {path,splices}. Batch: {edits:[{path,splices}]}, one per file, no top-level path/splices.",
+			"Splice: replace deleteCount lines at start with lines. Insert: deleteCount 0. Delete: lines []. Append: start = last+1. No overlap or shared start per file. One string per line.",
+			"All files checked before write. Missing/stale snapshot: whole call rejected, no change. Read indicated range, fix coords. Never bypass via write/bash. Partial write failure: names done files. Do not replay batch.",
+			"Success: numbered affected ranges incl deletion boundaries, after formatting. Use directly for next edits. Formatting changed content: whole file returned, capped 50 KiB/2000 lines. Read omitted regions first. Limits never fail done mutation. Keep meaningful whitespace; omit cosmetic indent only.",
 		].join("\n\n"),
 		parameters: Type.Object({
 			...editFields,
 			path: Type.Optional(editFields.path),
-			edits: Type.Optional(Type.Array(Type.Object(editFields), { minItems: 1, description: "Edit several files in one call. Each entry is {path, splices}; list each file once. Omit top-level path and splices." })),
+			edits: Type.Optional(Type.Array(Type.Object(editFields), { minItems: 1, description: "Batch: one {path,splices} per file. Omit top-level path/splices." })),
 		}),
 		// Stock edit rendering expects oldText/newText and otherwise hides success text.
 		renderShell: "default",
