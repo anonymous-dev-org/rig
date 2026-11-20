@@ -12,25 +12,25 @@ const SUBAGENT_SCRIPT_PREFIX = "One child: {agent,task}. Independent parallel ch
 
 const PATCHES: Record<string, string> = {
 	bash: [
-		"Run a bash command in the current directory; returns stdout and stderr.",
-		"Output is truncated to the last 2000 lines or 50KB; when truncated, the full output is saved to a temp file. Optional timeout in seconds.",
+		"Run bash in current dir; returns stdout, stderr.",
+		"Output truncated to last 2000 lines or 50KB; full output then saved to temp file. Optional timeout, seconds.",
 		"",
-		"Codemode: tools.bash(args) -> { output, truncated, full_output_path?, exit_code, wall_time_seconds }.",
+		"Codemode: tools.bash(args) returns { output, truncated, full_output_path?, exit_code, wall_time_seconds }.",
 	].join("\n"),
 	codemode: [
-		"Run raw JavaScript (no JSON, no code fence) as an async function body in a QuickJS sandbox; top-level await and return work. No Node, file system, network, or timers.",
-		"- await tools.<name>({...args}) resolves to a string or object per the tool's declaration, and rejects on failure; when it resolves to an object, check its fields even on success. Calls still running when the script ends are cancelled.",
+		"Raw JavaScript (no JSON, no code fence). Async function body in QuickJS sandbox; top-level await and return work. No Node, file system, network, timers.",
+		"- await tools.<name>({...args}): resolves to string or object per tool declaration; rejects on failure. Object result: check its fields even on success. Calls still running at script end are cancelled.",
 		"- Optional first line: // @options: {\"max_output_tokens\": 10000, \"timeout_ms\": 60000}",
 		"",
-		"Globals: text(value), image(dataUrlOrImageBlock), console.log(...), and top-level return add output; exit() ends the script. Several text items get \"==> text N/M <==\" headers and console output follows in one <console_output> block. image() also saves to a temp file and the result names its path.",
+		"Globals: text(value), image(dataUrlOrImageBlock), console.log(...), top-level return add output; exit() ends script. Several text items get \"==> text N/M <==\" headers; console output follows in one <console_output> block. image() also saves temp file; result names path.",
 		"- store(key, value) and load(key) keep JSON values across calls.",
-		"- ALL_TOOLS, searchTools(query, {limit?, namespace?}), describeTool(name), describeNamespace(name) find unlisted tools such as MCP tools.",
-		"- models: classifiers and image generation; read docs/codemode.md first.",
+		"- ALL_TOOLS, searchTools(query, {limit?, namespace?}), describeTool(name), describeNamespace(name): find unlisted tools, e.g. MCP.",
+		"- models: classifiers, image generation. Read docs/codemode.md first.",
 	].join("\n"),
 	subagent: [
-		"One child: {agent,task}. Parallel children: {workflow:\"parallel\",args:{tasks:[{agent,task,cwd?,model?},...]}}. Dependent multi-step work: write one ```js workflow block in this reply, then call subagent({workflow:true}); children launch only inside it.",
-		"Management: {action,id?,options:{...}}; fields not in the schema go in options.",
-		"Launch agents by name; pass models as exact provider/id; an unknown agent or model returns the valid choices.",
+		"One child: {agent,task}. Parallel: {workflow:\"parallel\",args:{tasks:[{agent,task,cwd?,model?},...]}}. Multi-step dependent work: one ```js workflow block in this reply, then subagent({workflow:true}). Children launch only inside it.",
+		"Management: {action,id?,options:{...}}. Fields not in schema go in options.",
+		"Launch agents by name. Models as exact provider/id. Unknown agent or model returns valid choices.",
 		"Guides: workflows/recommended-orchestration-pattern (async, review, recovery), workflows/scripted-workflows, tool-reference/retained-children, tool-reference/external-cli-agent-profiles.",
 		"",
 		"SAFETY-CRITICAL SUBAGENT GUIDANCE:",
@@ -40,44 +40,44 @@ const PATCHES: Record<string, string> = {
 		"- After a launch or runtime failure, stop and report it; never silently switch to interactive_shell, pi -ne or another CLI.",
 	].join("\n"),
 	bg_wait: [
-		"Wait for background work, then return. Ordinary async subagents wake this session natively; use only for provider, detached, or other background work without native notification that needs a same-turn result.",
-		"{} — first active run or provider item to finish or need attention.",
-		"{all:true} — all work active at call time.",
-		"{id} — one run; a finished async run returns its result references.",
-		"{id,nonBlocking:true} — subscribe to that run's wake and return now.",
-		"Timeout or a user message ends the wait without error; work keeps running.",
+		"Wait for background work, then return. Async subagents wake session natively; use only for provider, detached, or other background work without native notification, needing same-turn result.",
+		"{}: first active run or provider item to finish or need attention.",
+		"{all:true}: all work active at call time.",
+		"{id}: one run; finished async run returns its result references.",
+		"{id,nonBlocking:true}: subscribe to run's wake, return now.",
+		"Timeout or user message ends wait, no error; work keeps running.",
 		"",
-		"Codemode: tools.bg_wait(args) -> string.",
+		"Codemode: tools.bg_wait(args) returns string.",
 	].join("\n"),
-	contact_supervisor: "Contact the parent/supervisor for a blocking decision, structured interview, or progress update.",
-	subagent_supervisor: "pi-subagents supervisor channel: reply/pending/status answer child subagent requests without overriding pi-intercom.",
+	contact_supervisor: "Contact parent/supervisor: blocking decision, structured interview, or progress update.",
+	subagent_supervisor: "pi-subagents supervisor: reply/pending/status answer child requests without overriding pi-intercom.",
 	web_enable: [
-		"Enable the configured pi-web-access tools for web research and content retrieval. Does not search or fetch; tools become available on the next model request.",
+		"Enable configured pi-web-access tools for web research and retrieval. Does not search or fetch; tools appear on next model request.",
 		"",
-		"Codemode: tools.web_enable(args) -> string.",
+		"Codemode: tools.web_enable(args) returns string.",
 	].join("\n"),
 };
 
 // [original, replacement] per top-level parameter, applied only on an exact match.
 const PARAM_PATCHES: Record<string, Record<string, [string, string]>> = {
 	subagent: {
-		agent: ["One-child agent or management target.", "Agent name, or a management target."],
-		task: ["One-child task; requires agent.", "Task for one child; requires agent."],
+		agent: ["One-child agent or management target.", "Agent name or management target."],
+		task: ["One-child task; requires agent.", "Child task. Requires agent."],
 		workflow: [
 			"true: run the one ```js workflow block written in this same reply (false invalid). String with '/': script file read from request cwd. Other string: named workflow resource. Raw scripts (true or path) have no runs.host.",
-			"true: run the ```js workflow block in this reply (false is invalid). String with '/': script file from request cwd. Other string: named workflow. Raw scripts (true or path) have no runs.host.",
+			"true: run ```js workflow block in this reply (false invalid). String with '/': script file from request cwd. Other string: named workflow. Raw scripts (true or path): no runs.host.",
 		],
 		args: [
 			"Plain-JSON args for workflow; 16 fields/object, 64 items/array, depth 8, 16 KiB total; raw-script args are exposed deeply frozen and persisted, so do not include secrets.",
-			"Plain-JSON workflow args: 16 fields/object, 64 items/array, depth 8, 16 KiB total. Raw-script args are frozen and persisted; never put secrets here.",
+			"Plain-JSON workflow args: 16 fields/object, 64 items/array, depth 8, 16 KiB total. Raw-script args frozen and persisted: never secrets.",
 		],
 		async: [
 			"Background; default asyncByDefault. false only to block parent.",
-			"Background run (default asyncByDefault). false blocks the parent.",
+			"Background run (default asyncByDefault). false blocks parent.",
 		],
 		model: [
 			"Child model provider/id; bare id only if unique. Suffix :off/minimal/low/medium/high/xhigh/max overrides agent thinking default.",
-			"Child provider/id; bare id only if unique. Suffix :off/minimal/low/medium/high/xhigh/max overrides agent thinking.",
+			"Child provider/id; bare id only if unique. Suffix :off/minimal/low/medium/high/xhigh/max overrides thinking.",
 		],
 		cwd: ["Execution/project-pane directory.", "Execution directory."],
 		worktree: [
@@ -86,22 +86,22 @@ const PARAM_PATCHES: Record<string, Record<string, [string, string]>> = {
 		],
 		output: [
 			"Child output path or false; relative workflow paths use managed artifact routing. Bind durable output here, not task prose; return outputReference/outputPathMapping/artifactPaths.",
-			"Child output path or false; relative paths use managed artifact routing. Bind durable output here, not in task prose; return outputReference/outputPathMapping/artifactPaths.",
+			"Child output path or false. Relative paths: managed artifact routing. Bind durable output here, not in task prose; return outputReference/outputPathMapping/artifactPaths.",
 		],
 		action: [
 			"Management/control only; omit for execution. validate accepts workflow: true or a script path. Discover actions with {action:\"guide\",options:{topic:\"tool-reference\"}}.",
-			"Management only; omit to execute. validate accepts workflow:true or a script path. Discover actions: {action:\"guide\",options:{topic:\"tool-reference\"}}.",
+			"Management only; omit to execute. validate accepts workflow:true or script path. Discover: {action:\"guide\",options:{topic:\"tool-reference\"}}.",
 		],
 		options: [
 			"Every field not listed here, such as acceptance, timeoutMs, context, view and index; guide tool-reference/parameter-reference.",
-			"Any field not listed here (e.g. acceptance, timeoutMs, context, view, index); see guide tool-reference/parameter-reference.",
+			"Any other field (e.g. acceptance, timeoutMs, context, view, index). See guide tool-reference/parameter-reference.",
 		],
 	},
 	bg_wait: {
-		all: ["Wait for all work active at call time.", "Wait for all work active now."],
+		all: ["Wait for all work active at call time.", "All work active now."],
 		nonBlocking: [
 			"Subscribe to id's wake and return immediately; requires id, not with all.",
-			"Subscribe to id's wake and return now. Requires id; not with all.",
+			"Subscribe to id's wake, return now. Requires id; not with all.",
 		],
 		stopOnAttention: [
 			"false: keep waiting through all attention except supervisor requests.",

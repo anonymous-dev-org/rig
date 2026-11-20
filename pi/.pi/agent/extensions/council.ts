@@ -6,14 +6,14 @@ import { truncateHead, type ExtensionAPI, type SessionManager } from "@earendil-
 import { Type, type Static } from "typebox";
 import { REVIEW_EFFORTS, getReviewers, review } from "./deep-review";
 
-const effortGuidance = "low = quick bounded decisions; medium = substantial reasoning; hard = difficult/high-stakes tradeoffs. Uses the rigReview pair plus optional rigReviewAdditional reviewers from settings.json, shared with /review; models must be configured first. Higher effort costs more.";
+const effortGuidance = "low: quick bounded decisions. medium: substantial reasoning. hard: difficult, high-stakes tradeoffs. Uses rigReview pair plus optional rigReviewAdditional reviewers (settings.json), shared with /review. Configure models first. Higher effort costs more.";
 const effortParam = "low: quick bounded decisions. medium: substantial reasoning. hard: difficult or high-stakes tradeoffs. Higher effort costs more.";
 const systemPrompt = "You are a read-only council advisor. Solve the supplied task independently. Do not delegate or modify files. Give concise reasoning and a substantive recommendation.";
 
 type Advisor = { response: string } | { error: string };
 const parameters = Type.Object({
  effort: StringEnum(REVIEW_EFFORTS, { description: effortParam }),
- task: Type.String({ minLength: 1, description: "Self-contained question with context, constraints and file paths." }),
+  task: Type.String({ minLength: 1, description: "Self-contained question: context, constraints, file paths." }),
 }, { additionalProperties: false });
 
 export default function (pi: ExtensionAPI) {
@@ -29,7 +29,7 @@ export default function (pi: ExtensionAPI) {
  pi.on("session_before_compact", (event) => { if (event.reason === "manual") reset(); });
  pi.registerTool({
   name: "council", label: "Council",
-  description: `Run independent read-only advisors in parallel; returns their raw replies when all finish. ${effortGuidance} Output is capped at 2000 lines/50KB; full results go to a temporary file.`,
+   description: `Run read-only advisors in parallel; returns raw replies when all finish. ${effortGuidance} Output capped at 2000 lines/50KB; full results go to a temp file.`,
   promptSnippet: "Consult independent review advisors in parallel",
   promptGuidelines: ["Use council when the user requests it. Supply a self-contained task with relevant context and paths; advisors do not inherit this conversation. Choose council effort explicitly according to its presets. Synthesize the replies yourself, explain important disagreements, and do not claim the tool verified consensus."],
   parameters,
