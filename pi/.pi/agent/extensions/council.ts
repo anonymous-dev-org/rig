@@ -6,7 +6,7 @@ import { truncateHead, type ExtensionAPI, type SessionManager } from "@earendil-
 import { Type, type Static } from "typebox";
 import { REVIEW_EFFORTS, getReviewers, review } from "./deep-review";
 
-const effortGuidance = "low: quick bounded decisions. medium: substantial reasoning. hard: difficult, high-stakes tradeoffs. Uses rigReview pair plus optional rigReviewAdditional reviewers (settings.json), shared with /review. Configure models first. Higher effort costs more.";
+const effortGuidance = "low: quick bounded decisions. medium: substantial reasoning. hard: difficult, high-stakes. Uses rigReview pair + rigReviewAdditional (settings.json), shared with /review. Models must be configured. Higher effort costs more.";
 const effortParam = "low: quick bounded decisions. medium: substantial reasoning. hard: difficult or high-stakes tradeoffs. Higher effort costs more.";
 const systemPrompt = "You are a read-only council advisor. Solve the supplied task independently. Do not delegate or modify files. Give concise reasoning and a substantive recommendation.";
 
@@ -29,7 +29,7 @@ export default function (pi: ExtensionAPI) {
  pi.on("session_before_compact", (event) => { if (event.reason === "manual") reset(); });
  pi.registerTool({
   name: "council", label: "Council",
-   description: `Run read-only advisors in parallel; returns raw replies when all finish. ${effortGuidance} Output capped at 2000 lines/50KB; full results go to a temp file.`,
+   description: `Run read-only advisors in parallel. Returns raw replies when all finish. ${effortGuidance} Output capped 2000 lines/50KB; full results to temp file.`,
   promptSnippet: "Consult independent review advisors in parallel",
   promptGuidelines: ["Use council when the user requests it. Supply a self-contained task with relevant context and paths; advisors do not inherit this conversation. Choose council effort explicitly according to its presets. Synthesize the replies yourself, explain important disagreements, and do not claim the tool verified consensus."],
   parameters,
