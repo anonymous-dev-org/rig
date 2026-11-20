@@ -7,12 +7,13 @@ import { Type, type Static } from "typebox";
 import { REVIEW_EFFORTS, getReviewers, review } from "./deep-review";
 
 const effortGuidance = "low = quick bounded decisions; medium = substantial reasoning; hard = difficult/high-stakes tradeoffs. Uses the rigReview pair plus optional rigReviewAdditional reviewers from settings.json, shared with /review; models must be configured first. Higher effort costs more.";
+const effortParam = "low: quick bounded decisions. medium: substantial reasoning. hard: difficult or high-stakes tradeoffs. Higher effort costs more.";
 const systemPrompt = "You are a read-only council advisor. Solve the supplied task independently. Do not delegate or modify files. Give concise reasoning and a substantive recommendation.";
 
 type Advisor = { response: string } | { error: string };
 const parameters = Type.Object({
- effort: StringEnum(REVIEW_EFFORTS, { description: effortGuidance }),
- task: Type.String({ minLength: 1, description: "Self-contained question/task, context, constraints and relevant file paths." }),
+ effort: StringEnum(REVIEW_EFFORTS, { description: effortParam }),
+ task: Type.String({ minLength: 1, description: "Self-contained question with context, constraints and file paths." }),
 }, { additionalProperties: false });
 
 export default function (pi: ExtensionAPI) {

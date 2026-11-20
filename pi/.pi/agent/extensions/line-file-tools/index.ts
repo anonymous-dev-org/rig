@@ -181,18 +181,18 @@ function spacingKeys(file: string, rows: Row[]) {
 }
 
 const readFields = {
-	path: Type.String({ description: "File to read, relative to cwd or absolute." }),
+	path: Type.String({ description: "File to read (relative or absolute)." }),
 	start: Type.Optional(Type.Integer({ minimum: 1, description: "First line, 1-based. Default 1." })),
 	end: Type.Optional(Type.Integer({ minimum: 1, description: "Last line, inclusive. Default start + 199." })),
 };
 
 const editFields = {
-	path: Type.String({ description: "File to edit, relative to cwd or absolute. First obtain numbered content from read, edit or write." }),
+	path: Type.String({ description: "File to edit (relative or absolute), previously shown by read, edit or write." }),
 	splices: Type.Optional(Type.Array(Type.Object({
-		start: Type.Integer({ minimum: 1, description: "1-based line where the splice begins. Last line + 1 appends." }),
-		deleteCount: Type.Integer({ minimum: 0, description: "Number of lines to remove starting at start. 0 inserts before start." }),
-		lines: Type.Array(Type.String(), { description: "Lines to put there, one string per line. [] deletes only." }),
-	}), { minItems: 1, description: "Insert, delete or replace line ranges, numbered as in the file before this call." })),
+		start: Type.Integer({ minimum: 1, description: "1-based start line; last line + 1 appends." }),
+		deleteCount: Type.Integer({ minimum: 0, description: "Lines to remove from start; 0 inserts." }),
+		lines: Type.Array(Type.String(), { description: "Replacement lines, one string each; [] deletes." }),
+	}), { minItems: 1, description: "Line splices; numbers refer to the file before this call." })),
 };
 
 function readAgain(path: string, line: number, total: number) {
@@ -425,7 +425,7 @@ export default function lineFileTools(pi: ExtensionAPI) {
 		parameters: Type.Object({
 			...editFields,
 			path: Type.Optional(editFields.path),
-			edits: Type.Optional(Type.Array(Type.Object(editFields), { minItems: 1, description: "Edit several files in one call. Each entry is {path, splices}; list each file once. Omit top-level path and splices." })),
+			edits: Type.Optional(Type.Array(Type.Object(editFields), { minItems: 1, description: "Batch: one {path, splices} entry per file; omit top-level path and splices." })),
 		}),
 		// Stock edit rendering expects oldText/newText and otherwise hides success text.
 		renderShell: "default",

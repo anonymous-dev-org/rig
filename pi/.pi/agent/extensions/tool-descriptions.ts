@@ -6,6 +6,7 @@ import { type ExtensionAPI } from "@earendil-works/pi-coding-agent";
 // bytes, so provider prompt caches stay valid. Unknown shapes are left alone.
 // subagent is rewritten only while it uses the script-form essentials text, so
 // a future pi-subagents config change takes precedence over this patch.
+// Parameter patches apply only when the current text equals the exact original.
 
 const SUBAGENT_SCRIPT_PREFIX = "One child: {agent,task}. Independent parallel children:";
 
@@ -57,7 +58,59 @@ const PATCHES: Record<string, string> = {
 	].join("\n"),
 };
 
-type ToolEntry = { name?: string; description?: string; function?: ToolEntry };
+// [original, replacement] per top-level parameter, applied only on an exact match.
+const PARAM_PATCHES: Record<string, Record<string, [string, string]>> = {
+	subagent: {
+		agent: ["One-child agent or management target.", "Agent name, or a management target."],
+		task: ["One-child task; requires agent.", "Task for one child; requires agent."],
+		workflow: [
+			"true: run the one ```js workflow block written in this same reply (false invalid). String with '/': script file read from request cwd. Other string: named workflow resource. Raw scripts (true or path) have no runs.host.",
+			"true: run the ```js workflow block in this reply (false is invalid). String with '/': script file from request cwd. Other string: named workflow. Raw scripts (true or path) have no runs.host.",
+		],
+		args: [
+			"Plain-JSON args for workflow; 16 fields/object, 64 items/array, depth 8, 16 KiB total; raw-script args are exposed deeply frozen and persisted, so do not include secrets.",
+			"Plain-JSON workflow args: 16 fields/object, 64 items/array, depth 8, 16 KiB total. Raw-script args are frozen and persisted; never put secrets here.",
+		],
+		async: [
+			"Background; default asyncByDefault. false only to block parent.",
+			"Background run (default asyncByDefault). false blocks the parent.",
+		],
+		model: [
+			"Child model provider/id; bare id only if unique. Suffix :off/minimal/low/medium/high/xhigh/max overrides agent thinking default.",
+			"Child provider/id; bare id only if unique. Suffix :off/minimal/low/medium/high/xhigh/max overrides agent thinking.",
+		],
+		cwd: ["Execution/project-pane directory.", "Execution directory."],
+		worktree: [
+			"Isolate each workflow child in a managed git worktree; child worktree:false overrides default.",
+			"Isolate each workflow child in a managed git worktree; child worktree:false overrides.",
+		],
+		output: [
+			"Child output path or false; relative workflow paths use managed artifact routing. Bind durable output here, not task prose; return outputReference/outputPathMapping/artifactPaths.",
+			"Child output path or false; relative paths use managed artifact routing. Bind durable output here, not in task prose; return outputReference/outputPathMapping/artifactPaths.",
+		],
+		action: [
+			"Management/control only; omit for execution. validate accepts workflow: true or a script path. Discover actions with {action:\"guide\",options:{topic:\"tool-reference\"}}.",
+			"Management only; omit to execute. validate accepts workflow:true or a script path. Discover actions: {action:\"guide\",options:{topic:\"tool-reference\"}}.",
+		],
+		options: [
+			"Every field not listed here, such as acceptance, timeoutMs, context, view and index; guide tool-reference/parameter-reference.",
+			"Any field not listed here (e.g. acceptance, timeoutMs, context, view, index); see guide tool-reference/parameter-reference.",
+		],
+	},
+	bg_wait: {
+		all: ["Wait for all work active at call time.", "Wait for all work active now."],
+		nonBlocking: [
+			"Subscribe to id's wake and return immediately; requires id, not with all.",
+			"Subscribe to id's wake and return now. Requires id; not with all.",
+		],
+		stopOnAttention: [
+			"false: keep waiting through all attention except supervisor requests.",
+			"false: keep waiting through attention, except supervisor requests.",
+		],
+	},
+};
+
+type ToolEntry = { name?: string; description?: string; function?: ToolEntry; parameters?: unknown };
 
 export default function toolDescriptions(pi: ExtensionAPI) {
 	pi.on("before_provider_request", (event) => {
@@ -83,10 +136,21 @@ function rewriteTools(value: unknown, depth = 0): void {
 			const target = tool.function ?? tool;
 			const name = target.name ?? "";
 			const patch = PATCHES[name];
-			if (patch === undefined) continue;
-			if (name === "subagent" && !(target.description ?? "").startsWith(SUBAGENT_SCRIPT_PREFIX)) continue;
-			target.description = patch;
+			if (patch !== undefined && !(name === "subagent" && !(target.description ?? "").startsWith(SUBAGENT_SCRIPT_PREFIX))) {
+				target.description = patch;
+			}
+			patchParameters(name, target.parameters);
 		}
 	}
 	for (const nested of Object.values(record)) rewriteTools(nested, depth + 1);
+}
+
+function patchParameters(toolName: string, parameters: unknown): void {
+	const patches = PARAM_PATCHES[toolName];
+	const properties = (parameters as { properties?: Record<string, { description?: string }> } | undefined)?.properties;
+	if (patches === undefined || properties === undefined) return;
+	for (const [param, [from, to]] of Object.entries(patches)) {
+		const schema = properties[param];
+		if (schema?.description === from) schema.description = to;
+	}
 }
